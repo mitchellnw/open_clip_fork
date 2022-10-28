@@ -68,6 +68,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
     end = time.time()
     for i, batch in enumerate(dataloader):
         step = num_batches_per_epoch * epoch + i
+        model.apply(lambda m : setattr(m, 'iter', step))
         
         if not args.skip_scheduler:
             scheduler(step)
@@ -136,8 +137,10 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 "batch_time": batch_time_m.val,
                 "samples_per_scond": args.batch_size*args.world_size / batch_time_m.val,
                 "scale":  logit_scale_scalar,
-                "lr": optimizer.param_groups[0]["lr"]
+                "lr": optimizer.param_groups[0]["lr"],
             }
+            if args.precision == 'amp':
+                log_data['amp_scaler'] = scaler._scale.item()
             for name, val in log_data.items():
                 name = "train/" + name
                 if tb_writer is not None:

@@ -37,10 +37,7 @@ def random_seed(seed=42, rank=0):
     np.random.seed(seed + rank)
     random.seed(seed + rank)
 
-
-def main():
-    args = parse_args()
-
+def main_with_args(args):
     if torch.cuda.is_available():
         # This enables tf32 on Ampere GPUs which is only 8% slower than
         # float16 and almost as accurate as float32
@@ -244,8 +241,9 @@ def main():
         # you will have to configure this for your project!
         wandb.init(
             project="open-clip",
-            name=args.name,
+            id=args.name,
             notes=args.wandb_notes,
+            resume=True,
             tags=[],
             config=vars(args),
         )
@@ -257,6 +255,10 @@ def main():
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)
         return
+
+    model.apply(lambda m: setattr(m, 'log_features', is_master(args) and args.wandb))
+    for n, m in model.named_modules():
+        setattr(m, 'module_name', n)
 
     for epoch in range(start_epoch, args.epochs):
         if is_master(args):
@@ -312,6 +314,10 @@ def copy_codebase(args):
     print("Done copying code.")
     return 1
 
+
+def main():
+    args = parse_args()
+    main_with_args(args)
 
 if __name__ == "__main__":
     main()
