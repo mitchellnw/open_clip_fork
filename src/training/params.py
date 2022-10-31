@@ -264,6 +264,11 @@ def get_args_parser():
         help="If true, we copy the entire base on the log diretory, and execute from there."
     )
     parser.add_argument(
+        "--do-hist",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--horovod",
         default=False,
         action="store_true",

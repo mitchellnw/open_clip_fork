@@ -20,6 +20,8 @@ if __name__ == "__main__":
     args.batch_size = 128
     args.nodes = 4
     args.lr = 1e-3
+    args.eps = 1e-8
+    args.beta2 = 0.999
 
     args.partition = 'devlab'
     args.use_volta32 = False

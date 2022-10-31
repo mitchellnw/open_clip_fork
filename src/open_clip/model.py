@@ -18,20 +18,24 @@ from .timm_model import TimmModel
 from .utils import freeze_batch_norm_2d, to_2tuple
 
 import wandb
-def log_features(x, name, log, _iter):
-    if not log or _iter % 20 > 0:
+def log_features(x, name, log, do_hist, _iter):
+    if not log or _iter % 100 > 0:
+        return
+    if not (name.endswith('0') or name.endswith('2') or name.endswith('10')):
         return
     with torch.no_grad():
         features = x.permute(1, 0, 2) # reshape to batch dim at 0
         features = features.view(features.size(0), -1) # concat all patch features
         wandb.log({f'feature_norms/{name}': features.pow(2).sum(-1).pow(0.5).mean(), 'iter': _iter})
-        if _iter % 40 == 0:
-            wandb.log({f'feature_means/{name}': features.abs().mean(), 'iter': _iter})
-            wandb.log({f'feature_maxs/{name}': features.abs().max(), 'iter': _iter})
+        wandb.log({f'feature_means/{name}': features.abs().mean(), 'iter': _iter})
+        wandb.log({f'feature_maxs/{name}': features.abs().max(), 'iter': _iter})
         wandb.log({f'feature_gt_6/{name}': (features.abs() > 6.0).sum(-1).float().mean().item(), 'iter': _iter })
-        if _iter % 40 == 0:
-            bigfeats = (features.abs() > 6.0)
-            wandb.log({f'feature_gt_6_perelt/{name}': bigfeats.float().mean(), 'iter': _iter })
+        bigfeats = (features.abs() > 6.0)
+        wandb.log({f'feature_gt_6_perelt/{name}': bigfeats.float().mean(), 'iter': _iter })
+
+
+        if do_hist:
+            wandb.log({f'features_hist/{name}': wandb.Histogram(features[0].detach().cpu()), 'iter': _iter })
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -343,7 +347,7 @@ class ResidualAttentionBlock(nn.Module):
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.ln_attn(self.attention(self.ln_1(x), attn_mask=attn_mask))
         x = x + self.mlp(self.ln_2(x))
-        log_features(x, self.module_name + '_mlp', self.log_features and self.training, self.iter)
+        log_features(x, 'mlp_' + self.module_name, self.log_features and self.training, self.do_hist, self.iter)
         return x
 
 

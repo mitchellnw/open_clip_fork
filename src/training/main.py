@@ -1,7 +1,9 @@
+from ast import arg
 import logging
 import os
 import random
 from datetime import datetime
+import shutil
 
 import numpy as np
 import torch
@@ -71,10 +73,17 @@ def main_with_args(args):
         log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
         args.log_path = os.path.join(log_base_path, log_filename)
         if os.path.exists(args.log_path):
-            print(
-                "Error. Experiment already exists. Use --name {} to specify a new experiment."
-            )
-            return -1
+            # print(
+            #     "Error. Experiment already exists. Use --name {} to specify a new experiment."
+            # )
+            #return -1
+            cpdir = os.path.join(args.logs, args.name, 'checkpoints/checkpoint.pt')
+            if os.path.exists(cpdir):
+                print('Experiment alrady exists.')
+                # find the most recent checkpoint.
+                args.resume = cpdir
+                # resume from most recent checkpoint.
+
 
     # Set logger
     args.log_level = logging.DEBUG if args.debug else logging.INFO
@@ -241,6 +250,7 @@ def main_with_args(args):
         # you will have to configure this for your project!
         wandb.init(
             project="open-clip",
+            entity="dogml",
             id=args.name,
             notes=args.wandb_notes,
             resume=True,
@@ -257,6 +267,8 @@ def main_with_args(args):
         return
 
     model.apply(lambda m: setattr(m, 'log_features', is_master(args) and args.wandb))
+    model.apply(lambda m: setattr(m, 'do_hist', is_master(args) and args.wandb and args.do_hist))
+
     for n, m in model.named_modules():
         setattr(m, 'module_name', n)
 
@@ -271,7 +283,7 @@ def main_with_args(args):
             evaluate(model, data, completed_epoch, args, writer)
 
         # Saving checkpoints.
-        if args.save_logs:
+        if args.save_logs and is_master(args):
             checkpoint_dict = {
                 "epoch": completed_epoch,
                 "name": args.name,
@@ -284,15 +296,19 @@ def main_with_args(args):
             if completed_epoch == args.epochs or (
                 args.save_frequency > 0 and (completed_epoch % args.save_frequency) == 0
             ):
+                src = os.path.join(args.checkpoint_path, f"iter_{data['train'].dataloader.num_batches * completed_epoch}.pt")
+                dst = os.path.join(args.checkpoint_path, f"checkpoint.pt")
                 torch.save(
                     checkpoint_dict,
-                    os.path.join(args.checkpoint_path, f"epoch_{completed_epoch}.pt"),
+                    src,
                 )
-            if args.save_most_recent:
-                torch.save(
-                    checkpoint_dict,
-                    os.path.join(args.checkpoint_path, f"epoch_latest.pt"),
-                )
+                shutil.copyfile(src, dst)
+            # if args.save_most_recent:
+            #     torch.save(
+            #         checkpoint_dict,
+            #         os.path.join(args.checkpoint_path, f"epoch_latest.pt"),
+            #     )
+            
 
     if args.wandb and is_master(args):
         wandb.finish()

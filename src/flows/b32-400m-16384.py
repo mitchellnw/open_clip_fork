@@ -17,7 +17,7 @@ if __name__ == "__main__":
             print('setting default', name, val)
 
     args.ngpus = 8
-    args.batch_size = 128
+    args.batch_size = 512
     args.nodes = 4
     args.lr = 1e-3
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     
     args.epochs = 160
     args.report_to = 'wandb'
-    args.seed = 1
+    args.seed = 2
     args.ddp_static_graph = True
     args.local_loss = True
     args.dataset_resampled = True

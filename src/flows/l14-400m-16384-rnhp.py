@@ -1,40 +1,41 @@
 import argparse
 import os
-
+from training.params import get_default_params
 
 from run_with_submitit import main_with_args, parse_args
 
 
 if __name__ == "__main__":
 
-    
-
     args = parse_args()
 
+    args.model = 'ViT-L/14'
+    default_params = get_default_params(args.model)
+    for name, val in default_params.items():
+        if getattr(args, name) is None:
+            setattr(args, name, val)
+            print('setting default', name, val)
+
     args.ngpus = 8
-    args.batch_size = 128
-    args.nodes = 4
+    args.batch_size = 256
+    args.nodes = 8
+    args.lr = 1e-3
+    args.beta2 = 0.999
 
-    name = f'b32-400m-bs-{args.batch_size * args.ngpus * args.nodes}-fp32-v3'
-
-    args.partition = 'devlab'
+    args.partition = 'learnlab'
     args.use_volta32 = True
-
-    args.job_dir = name
-    args.name = name
 
     args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
     args.train_data = '/datasets01/laion400m/laion400m-met-release/laion400m-dataset/{00000..41627}.tar'
     args.train_num_samples = 40000000
     args.dataset_type = 'webdataset'
-    args.model = 'ViT-B/32'
-    #args.batch_size = 64
-    args.precision = 'fp32'
+    
+    args.precision = 'amp'
     args.workers = 6
-    args.lr = 1e-3
+    
     args.epochs = 160
     args.report_to = 'wandb'
-    args.seed = 3
+    args.seed = 1
     args.ddp_static_graph = True
     args.local_loss = True
     args.dataset_resampled = True
@@ -43,6 +44,12 @@ if __name__ == "__main__":
     args.save_frequency = 1
     args.zeroshot_frequency = 1
     args.warmup = 10000
+
+    name = f'l14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
+    if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
+        args.logs = '/checkpoint/mitchellw/experiments/open_clip'
+    args.name = name
+    args.job_dir = name
     main_with_args(args)
 
 """

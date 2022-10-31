@@ -36,11 +36,6 @@ def parse_args():
     )
     args = parser.parse_args()
 
-    default_params = get_default_params(args.model)
-    for name, val in default_params.items():
-        if getattr(args, name) is None:
-            setattr(args, name, val)
-
     return args
 
 
@@ -90,7 +85,7 @@ class Trainer(object):
             self.argslist[i].dist_url = get_init_file().as_uri()
         print("Requeuing ", self.argslist)
         empty_trainer = type(self)(self.argslist)
-        #return submitit.helpers.DelayedSubmission(empty_trainer)
+        return submitit.helpers.DelayedSubmission(empty_trainer)
 
     def _setup_gpu_args(self):
         import submitit
