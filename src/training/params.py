@@ -10,8 +10,8 @@ def get_default_params(model_name):
         return {"lr": 5.0e-4, "beta1": 0.9, "beta2": 0.999, "eps": 1.0e-8}
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
+def get_args_parser():
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
         "--train-data",
         type=str,
@@ -38,7 +38,7 @@ def parse_args():
     )
     parser.add_argument(
         "--dataset-type",
-        choices=["webdataset", "csv", "auto"],
+        choices=["webdataset", "csv", "synthetic", "auto"],
         default="auto",
         help="Which type of dataset to process."
     )
@@ -270,6 +270,11 @@ def parse_args():
         help="If true, we copy the entire base on the log diretory, and execute from there."
     )
     parser.add_argument(
+        "--do-hist",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--horovod",
         default=False,
         action="store_true",
@@ -293,6 +298,11 @@ def parse_args():
     parser.add_argument(
         "--norm_gradient_clip", type=float, default=None, help="Gradient clip."
     )
+    return parser
+
+def parse_args():
+    parser = get_args_parser()
+
     args = parser.parse_args()
 
     # If some params are not passed, we use the default values based on model name.

@@ -1,7 +1,9 @@
+from ast import arg
 import logging
 import os
 import random
 from datetime import datetime
+import shutil
 
 import numpy as np
 import torch
@@ -37,10 +39,7 @@ def random_seed(seed=42, rank=0):
     np.random.seed(seed + rank)
     random.seed(seed + rank)
 
-
-def main():
-    args = parse_args()
-
+def main_with_args(args):
     if torch.cuda.is_available():
         # This enables tf32 on Ampere GPUs which is only 8% slower than
         # float16 and almost as accurate as float32
@@ -68,16 +67,23 @@ def main():
     args.local_rank, args.rank, args.world_size = world_info_from_env()
 
     args.log_path = None
-    if is_master(args, local=args.log_local):
-        log_base_path = os.path.join(args.logs, args.name)
-        os.makedirs(log_base_path, exist_ok=True)
-        log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
-        args.log_path = os.path.join(log_base_path, log_filename)
-        if os.path.exists(args.log_path):
-            print(
-                "Error. Experiment already exists. Use --name {} to specify a new experiment."
-            )
-            return -1
+    #if is_master(args, local=args.log_local):
+    log_base_path = os.path.join(args.logs, args.name)
+    os.makedirs(log_base_path, exist_ok=True)
+    log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
+    args.log_path = os.path.join(log_base_path, log_filename)
+    if os.path.exists(args.log_path):
+        # print(
+        #     "Error. Experiment already exists. Use --name {} to specify a new experiment."
+        # )
+        #return -1
+        cpdir = os.path.join(args.logs, args.name, 'checkpoints/checkpoint.pt')
+        if os.path.exists(cpdir):
+            print('Experiment alrady exists.')
+            # find the most recent checkpoint.
+            args.resume = cpdir
+            # resume from most recent checkpoint.
+
 
     # Set logger
     args.log_level = logging.DEBUG if args.debug else logging.INFO
@@ -167,7 +173,8 @@ def main():
     # create optimizer and scaler
     optimizer = None
     scaler = None
-    if args.train_data:
+
+    if args.train_data or args.dataset_type == "synthetic":
         assert not args.trace, 'Cannot train with traced model'
 
         exclude = lambda n, p: p.ndim < 2 or "bn" in n or "ln" in n or "bias" in n or 'logit_scale' in n
@@ -242,9 +249,11 @@ def main():
             args.val_sz = data["val"].dataloader.num_samples
         # you will have to configure this for your project!
         wandb.init(
-            project="open-clip",
-            name=args.name,
+            project="open-clip2",
+            entity="dogml",
+            id=args.name,
             notes=args.wandb_notes,
+            resume=True,
             tags=[],
             config=vars(args),
         )
@@ -259,6 +268,12 @@ def main():
         evaluate(model, data, start_epoch, args, writer)
         return
 
+    model.apply(lambda m: setattr(m, 'log_features', is_master(args) and args.wandb))
+    model.apply(lambda m: setattr(m, 'do_hist', is_master(args) and args.wandb and args.do_hist))
+
+    for n, m in model.named_modules():
+        setattr(m, 'module_name', n)
+
     for epoch in range(start_epoch, args.epochs):
         if is_master(args):
             logging.info(f'Start epoch {epoch}')
@@ -270,7 +285,7 @@ def main():
             evaluate(model, data, completed_epoch, args, writer)
 
         # Saving checkpoints.
-        if args.save_logs:
+        if args.save_logs and is_master(args):
             checkpoint_dict = {
                 "epoch": completed_epoch,
                 "name": args.name,
@@ -283,15 +298,19 @@ def main():
             if completed_epoch == args.epochs or (
                 args.save_frequency > 0 and (completed_epoch % args.save_frequency) == 0
             ):
+                src = os.path.join(args.checkpoint_path, f"iter_{data['train'].dataloader.num_batches * completed_epoch}.pt")
+                dst = os.path.join(args.checkpoint_path, f"checkpoint.pt")
                 torch.save(
                     checkpoint_dict,
-                    os.path.join(args.checkpoint_path, f"epoch_{completed_epoch}.pt"),
+                    src,
                 )
-            if args.save_most_recent:
-                torch.save(
-                    checkpoint_dict,
-                    os.path.join(args.checkpoint_path, f"epoch_latest.pt"),
-                )
+                shutil.copyfile(src, dst)
+            # if args.save_most_recent:
+            #     torch.save(
+            #         checkpoint_dict,
+            #         os.path.join(args.checkpoint_path, f"epoch_latest.pt"),
+            #     )
+            
 
     if args.wandb and is_master(args):
         wandb.finish()
@@ -313,6 +332,10 @@ def copy_codebase(args):
     print("Done copying code.")
     return 1
 
+
+def main():
+    args = parse_args()
+    main_with_args(args)
 
 if __name__ == "__main__":
     main()
