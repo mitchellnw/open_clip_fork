@@ -18,3 +18,11 @@ srun --gpus-per-node=8 --nodes=1 --partition=devlab --time=72:00:00 -C volta32gb
 # vit l runs 512 for 32gb, 256 for 16gb
 # vit h 128 / ?
 # vit g 32 / ?
+
+
+/private/home/mitchellw/miniconda3/envs/open_clip/bin/torchrun --nproc_per_node 2 -m training.main \
+    --batch-size 128 \
+    --precision amp_bfloat16 \
+    --workers 4 --model ViT-B/32 \
+    --imagenet-val /datasets01/imagenet_full_size/061417/val \
+    --pretrained /private/home/mitchellw/epoch_10.pt
