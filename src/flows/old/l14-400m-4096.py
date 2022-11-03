@@ -9,16 +9,16 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    args.model = 'ViT-H/14'
+    args.model = 'ViT-L/14'
     default_params = get_default_params(args.model)
     for name, val in default_params.items():
         if getattr(args, name) is None:
             setattr(args, name, val)
             print('setting default', name, val)
 
-    args.ngpus = 8
-    args.batch_size = 32
-    args.nodes = 64
+    args.ngpus = 4
+    args.batch_size = 256
+    args.nodes = 4
     args.lr = 1e-3
 
     args.partition = 'learnlab'
@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
     args.train_data = '/datasets01/laion400m/laion400m-met-release/laion400m-dataset/{00000..41627}.tar'
-    args.train_num_samples = 10000000
+    args.train_num_samples = 40000000
     args.dataset_type = 'webdataset'
     
     args.precision = 'amp'
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     args.zeroshot_frequency = 1
     args.warmup = 10000
 
-    name = f'g14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
+    name = f'l14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-s{args.seed}'
     if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
         args.logs = '/checkpoint/mitchellw/experiments/open_clip'
     args.name = name

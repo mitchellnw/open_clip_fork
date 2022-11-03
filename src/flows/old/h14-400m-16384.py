@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     args.ngpus = 8
     args.batch_size = 128
-    args.nodes = 4
+    args.nodes = 16
     args.lr = 1e-3
 
     args.partition = 'learnlab'
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     args.zeroshot_frequency = 1
     args.warmup = 10000
 
-    name = f'h14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
+    name = f'h14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-s{args.seed}'
     if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
         args.logs = '/checkpoint/mitchellw/experiments/open_clip'
     args.name = name

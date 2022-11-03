@@ -67,22 +67,22 @@ def main_with_args(args):
     args.local_rank, args.rank, args.world_size = world_info_from_env()
 
     args.log_path = None
-    if is_master(args, local=args.log_local):
-        log_base_path = os.path.join(args.logs, args.name)
-        os.makedirs(log_base_path, exist_ok=True)
-        log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
-        args.log_path = os.path.join(log_base_path, log_filename)
-        if os.path.exists(args.log_path):
-            # print(
-            #     "Error. Experiment already exists. Use --name {} to specify a new experiment."
-            # )
-            #return -1
-            cpdir = os.path.join(args.logs, args.name, 'checkpoints/checkpoint.pt')
-            if os.path.exists(cpdir):
-                print('Experiment alrady exists.')
-                # find the most recent checkpoint.
-                args.resume = cpdir
-                # resume from most recent checkpoint.
+    #if is_master(args, local=args.log_local):
+    log_base_path = os.path.join(args.logs, args.name)
+    os.makedirs(log_base_path, exist_ok=True)
+    log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
+    args.log_path = os.path.join(log_base_path, log_filename)
+    if os.path.exists(args.log_path):
+        # print(
+        #     "Error. Experiment already exists. Use --name {} to specify a new experiment."
+        # )
+        #return -1
+        cpdir = os.path.join(args.logs, args.name, 'checkpoints/checkpoint.pt')
+        if os.path.exists(cpdir):
+            print('Experiment alrady exists.')
+            # find the most recent checkpoint.
+            args.resume = cpdir
+            # resume from most recent checkpoint.
 
 
     # Set logger
@@ -249,7 +249,7 @@ def main_with_args(args):
             args.val_sz = data["val"].dataloader.num_samples
         # you will have to configure this for your project!
         wandb.init(
-            project="open-clip",
+            project="open-clip2",
             entity="dogml",
             id=args.name,
             notes=args.wandb_notes,

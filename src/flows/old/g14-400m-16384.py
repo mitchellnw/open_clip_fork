@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    args.model = 'ViT-H/14'
+    args.model = 'ViT-G/14'
     default_params = get_default_params(args.model)
     for name, val in default_params.items():
         if getattr(args, name) is None:
@@ -17,8 +17,8 @@ if __name__ == "__main__":
             print('setting default', name, val)
 
     args.ngpus = 8
-    args.batch_size = 128
-    args.nodes = 16
+    args.batch_size = 32
+    args.nodes = 64
     args.lr = 1e-3
 
     args.partition = 'learnlab'
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     args.zeroshot_frequency = 1
     args.warmup = 10000
 
-    name = f'h14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
+    name = f'g14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
     if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
         args.logs = '/checkpoint/mitchellw/experiments/open_clip'
     args.name = name

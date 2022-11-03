@@ -26,16 +26,16 @@ def log_features(x, name, log, do_hist, _iter):
     with torch.no_grad():
         features = x.permute(1, 0, 2) # reshape to batch dim at 0
         features = features.view(features.size(0), -1) # concat all patch features
-        wandb.log({f'feature_norms/{name}': features.pow(2).sum(-1).pow(0.5).mean(), 'iter': _iter})
-        wandb.log({f'feature_means/{name}': features.abs().mean(), 'iter': _iter})
-        wandb.log({f'feature_maxs/{name}': features.abs().max(), 'iter': _iter})
-        wandb.log({f'feature_gt_6/{name}': (features.abs() > 6.0).sum(-1).float().mean().item(), 'iter': _iter })
+        wandb.log({f'feature_norms/{name}': features.pow(2).sum(-1).pow(0.5).mean(), 'step': _iter})
+        wandb.log({f'feature_means/{name}': features.abs().mean(), 'step': _iter})
+        wandb.log({f'feature_maxs/{name}': features.abs().max(), 'step': _iter})
+        wandb.log({f'feature_gt_6/{name}': (features.abs() > 6.0).sum(-1).float().mean().item(), 'step': _iter })
         bigfeats = (features.abs() > 6.0)
-        wandb.log({f'feature_gt_6_perelt/{name}': bigfeats.float().mean(), 'iter': _iter })
+        wandb.log({f'feature_gt_6_perelt/{name}': bigfeats.float().mean(), 'step': _iter })
 
 
         if do_hist:
-            wandb.log({f'features_hist/{name}': wandb.Histogram(features[0].detach().cpu()), 'iter': _iter })
+            wandb.log({f'features_hist/{name}': wandb.Histogram(features[0].detach().cpu()), 'step': _iter })
 
 class Bottleneck(nn.Module):
     expansion = 4

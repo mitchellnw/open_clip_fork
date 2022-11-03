@@ -235,34 +235,34 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                         ]:
                             continue
 
-                        wandb.log({f'weight_norms/{n}': p.pow(2).sum().pow(0.5), 'iter': it})
-                        #wandb.log({f'weight_mins/{n}': p.abs().min(), 'iter': it})
-                        wandb.log({f'weight_maxs/{n}': p.abs().max(), 'iter': it})
+                        wandb.log({f'weight_norms/{n}': p.pow(2).sum().pow(0.5), 'step': it})
+                        #wandb.log({f'weight_mins/{n}': p.abs().min(), 'step': it})
+                        wandb.log({f'weight_maxs/{n}': p.abs().max(), 'step': it})
 
                         if args.do_hist:
-                            wandb.log({f'weight_hist/{n}': wandb.Histogram(p.detach().cpu()), 'iter': it})
+                            wandb.log({f'weight_hist/{n}': wandb.Histogram(p.detach().cpu()), 'step': it})
 
-                        wandb.log({f'grad_norms/{n}': p.grad.pow(2).sum().pow(0.5), 'iter': it})
-                        #wandb.log({f'grad_mins/{n}': p.grad.abs().min(), 'iter': it})
-                        wandb.log({f'grad_maxs/{n}': p.grad.abs().max(), 'iter': it})
+                        wandb.log({f'grad_norms/{n}': p.grad.pow(2).sum().pow(0.5), 'step': it})
+                        #wandb.log({f'grad_mins/{n}': p.grad.abs().min(), 'step': it})
+                        wandb.log({f'grad_maxs/{n}': p.grad.abs().max(), 'step': it})
 
                         if args.do_hist:
-                            wandb.log({f'grad_hist/{n}': wandb.Histogram(p.grad.detach().cpu()), 'iter': it})
+                            wandb.log({f'grad_hist/{n}': wandb.Histogram(p.grad.detach().cpu()), 'step': it})
 
                         if 'exp_avg' in optimizer.state[p] and 'exp_avg_sq' in optimizer.state[p]:
-                            wandb.log({f'exp_avgs_norms/{n}': optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5), 'iter': it})
-                            #wandb.log({f'exp_avgs_mins/{n}': optimizer.state[p]['exp_avg'].abs().min(), 'iter': it})
-                            wandb.log({f'exp_avgs_maxs/{n}': optimizer.state[p]['exp_avg'].abs().max(), 'iter': it})
+                            wandb.log({f'exp_avgs_norms/{n}': optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5), 'step': it})
+                            #wandb.log({f'exp_avgs_mins/{n}': optimizer.state[p]['exp_avg'].abs().min(), 'step': it})
+                            wandb.log({f'exp_avgs_maxs/{n}': optimizer.state[p]['exp_avg'].abs().max(), 'step': it})
 
                             if args.do_hist:
-                                wandb.log({f'exp_avgs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg'].detach().cpu()), 'iter': it})
+                                wandb.log({f'exp_avgs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg'].detach().cpu()), 'step': it})
 
-                            wandb.log({f'exp_avg_sqs_norms/{n}': optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5), 'iter': it})
-                            #wandb.log({f'exp_avg_sqs_mins/{n}': optimizer.state[p]['exp_avg_sq'].abs().min(), 'iter': it})
-                            wandb.log({f'exp_avg_sqs_maxs/{n}': optimizer.state[p]['exp_avg_sq'].abs().max(), 'iter': it})
+                            wandb.log({f'exp_avg_sqs_norms/{n}': optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5), 'step': it})
+                            #wandb.log({f'exp_avg_sqs_mins/{n}': optimizer.state[p]['exp_avg_sq'].abs().min(), 'step': it})
+                            wandb.log({f'exp_avg_sqs_maxs/{n}': optimizer.state[p]['exp_avg_sq'].abs().max(), 'step': it})
 
                             if args.do_hist:
-                                wandb.log({f'exp_avgs_sqs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg_sq'].detach().cpu()), 'iter': it})
+                                wandb.log({f'exp_avgs_sqs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg_sq'].detach().cpu()), 'step': it})
 
 
                         if len(p.size()) == 1:
@@ -273,7 +273,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                             out = p[0, 0, 0]
                         elif len(p.size()) == 4:
                             out = p[0, 0, 0, 0]
-                        wandb.log({f'weight_val/{n}': out.item(), 'iter': it})
+                        wandb.log({f'weight_val/{n}': out.item(), 'step': it})
 
             if (i % 500) == 0:
                 loss_detach = total_loss.detach()
