@@ -107,7 +107,6 @@ def main_with_args(args):
     if args.copy_codebase:
         copy_codebase(args)
 
-    assert args.precision in ['amp', 'amp_bfloat16', 'fp16', 'fp32']
     if args.precision == 'fp16':
         logging.warning(
             'It is recommended to use AMP mixed-precision instead of FP16. '
@@ -132,6 +131,7 @@ def main_with_args(args):
         device=device,
         jit=args.torchscript,
         force_quick_gelu=args.force_quick_gelu,
+        force_custom_text=args.force_custom_text,
         pretrained_image=args.pretrained_image,
         image_mean=args.image_mean,
         image_std=args.image_std,
@@ -261,6 +261,8 @@ def main_with_args(args):
             wandb.watch(model, log='all')
         wandb.save(params_file)
         logging.debug('Finished loading wandb.')
+
+    torch.save(model.state_dict(), f'{args.model}-openai.pt')
 
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)
