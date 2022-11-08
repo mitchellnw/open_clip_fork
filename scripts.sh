@@ -26,3 +26,11 @@ srun --gpus-per-node=8 --nodes=1 --partition=devlab --time=72:00:00 -C volta32gb
     --workers 4 --model ViT-B/32 \
     --imagenet-val /datasets01/imagenet_full_size/061417/val \
     --pretrained /private/home/mitchellw/epoch_10.pt
+
+
+torchrun --nproc_per_node 4 -m training.main \
+    --batch-size 128 \
+    --precision amp_bfloat16 \
+    --workers 4 --model ViT-B/32 --force-custom-text \
+    --imagenet-val /p/scratch/ccstdl/gordon2/imagenet_val \
+    --pretrained /p//wortsman1/open_clip/logs/B-32_400M_epochs-32_precision-bfloat16/B-32_run-force-text-resume/checkpoints/epoch_32.pt

@@ -42,7 +42,7 @@ if __name__ == "__main__":
     args.grad_checkpointing = True
     args.save_frequency = 1
     args.zeroshot_frequency = 2
-    args.warmup = 10000
+    args.warmup = 5000
 
     name = f'l14-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
     if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):

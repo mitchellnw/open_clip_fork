@@ -78,6 +78,7 @@ def init_distributed_device(args):
         os.environ['WORLD_SIZE'] = str(args.world_size)
     elif is_using_distributed():
         if 'SLURM_PROCID' in os.environ:
+            print('DDP using SLURM!')
             # DDP via SLURM
             args.local_rank, args.rank, args.world_size = world_info_from_env()
             # SLURM var -> torch.distributed vars in case needed
@@ -90,12 +91,19 @@ def init_distributed_device(args):
                 world_size=args.world_size,
                 rank=args.rank,
             )
+            print('pre-barrier')
+            torch.distributed.barrier()
+            print('post-barrier')
         else:
+            print('no DDP using SLURM!')
             # DDP via torchrun, torch.distributed.launch
             args.local_rank, _, _ = world_info_from_env()
             torch.distributed.init_process_group(
                 backend=args.dist_backend,
                 init_method=args.dist_url)
+            print('pre-barrier')
+            torch.distributed.barrier()
+            print('post-barrier')
             args.world_size = torch.distributed.get_world_size()
             args.rank = torch.distributed.get_rank()
         args.distributed = True

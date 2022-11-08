@@ -9,6 +9,27 @@ from torch.utils.checkpoint import checkpoint
 
 from .utils import to_2tuple
 
+import wandb
+def log_features(x, name, log, do_hist, _iter):
+    if not log or _iter % 100 > 0:
+        return
+    if not (name.endswith('0') or name.endswith('2') or name.endswith('10')):
+        return
+    with torch.no_grad():
+        features = x.permute(1, 0, 2) # reshape to batch dim at 0
+        features = features.view(features.size(0), -1) # concat all patch features
+        wandb.log({f'feature_norms/{name}': features.pow(2).sum(-1).pow(0.5).mean(), 'step': _iter})
+        wandb.log({f'feature_means/{name}': features.abs().mean(), 'step': _iter})
+        wandb.log({f'feature_maxs/{name}': features.abs().max(), 'step': _iter})
+        wandb.log({f'feature_gt_6/{name}': (features.abs() > 6.0).sum(-1).float().mean().item(), 'step': _iter })
+        bigfeats = (features.abs() > 6.0)
+        wandb.log({f'feature_gt_6_perelt/{name}': bigfeats.float().mean(), 'step': _iter })
+
+
+        if do_hist:
+            wandb.log({f'features_hist/{name}': wandb.Histogram(features[0].detach().cpu()), 'step': _iter })
+
+
 
 class LayerNormFp32(nn.LayerNorm):
     """Subclass torch's LayerNorm to handle fp16 (by casting to float32 and back)."""
@@ -143,6 +164,7 @@ class ResidualAttentionBlock(nn.Module):
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask))
         x = x + self.ls_2(self.mlp(self.ln_2(x)))
+        log_features(x, 'mlp_' + self.module_name, self.log_features and self.training, self.do_hist, self.iter)
         return x
 
 

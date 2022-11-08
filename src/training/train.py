@@ -276,29 +276,29 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                             out = p[0, 0, 0, 0]
                         wandb.log({f'weight_val/{n}': out.item(), 'step': it})
 
-            if (i % 500) == 0:
-                loss_detach = total_loss.detach()
-                if loss_detach > loss_thresh:
-                    if can_detect_blowups:
-                        if possible_blowup:
-                            print('THIS IS A BLOWUP', loss_detach, loss_thresh)
-                            sys.exit(1)
-                        else:
-                            print('THIS IS A POSSIBLE BLOWUP', loss_detach, loss_thresh)
-                            possible_blowup = True
-                else:
-                    print('LOOKS FINE', loss_detach, loss_thresh)
-                    can_detect_blowups = True
-                    possible_blowup = False
-                    checkpoint_dict = {
-                        "state_dict": model.state_dict(),
-                        "optimizer": optimizer.state_dict(),
-                        "epoch": epoch,
-                    }
-                    if scaler is not None:
-                        checkpoint_dict["scaler"] = scaler.state_dict()
-                    src = os.path.join(args.checkpoint_path, f"current.pt")
-                    torch.save(checkpoint_dict, src)
+            # if (i % 500) == 0:
+            #     loss_detach = total_loss.detach()
+            #     if loss_detach > loss_thresh:
+            #         if can_detect_blowups:
+            #             if possible_blowup:
+            #                 print('THIS IS A BLOWUP', loss_detach, loss_thresh)
+            #                 sys.exit(1)
+            #             else:
+            #                 print('THIS IS A POSSIBLE BLOWUP', loss_detach, loss_thresh)
+            #                 possible_blowup = True
+            #     else:
+            #         print('LOOKS FINE', loss_detach, loss_thresh)
+            #         can_detect_blowups = True
+            #         possible_blowup = False
+            #         checkpoint_dict = {
+            #             "state_dict": model.state_dict(),
+            #             "optimizer": optimizer.state_dict(),
+            #             "epoch": epoch,
+            #         }
+            #         if scaler is not None:
+            #             checkpoint_dict["scaler"] = scaler.state_dict()
+            #         src = os.path.join(args.checkpoint_path, f"current.pt")
+            #         torch.save(checkpoint_dict, src)
 
     # end for
 

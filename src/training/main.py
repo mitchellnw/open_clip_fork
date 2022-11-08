@@ -40,6 +40,11 @@ def random_seed(seed=42, rank=0):
     random.seed(seed + rank)
 
 def main_with_args(args):
+    # if 'MASTER_ADDR' in os.environ:
+    #     print('master addr is', os.environ['MASTER_ADDR'])
+    #     if not os.environ['MASTER_ADDR'].endswith('i'):
+    #         os.environ['MASTER_ADDR'] = os.environ['MASTER_ADDR'] + 'i'
+
     if torch.cuda.is_available():
         # This enables tf32 on Ampere GPUs which is only 8% slower than
         # float16 and almost as accurate as float32
@@ -249,7 +254,7 @@ def main_with_args(args):
             args.val_sz = data["val"].dataloader.num_samples
         # you will have to configure this for your project!
         wandb.init(
-            project="open-clip2",
+            project="open-clip5",
             entity="dogml",
             id=args.name,
             notes=args.wandb_notes,
