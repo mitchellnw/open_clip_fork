@@ -81,8 +81,8 @@ class Trainer(object):
         # import submitit
         if self.args is not None:
             self.argslist = [self.args] + self.argslist
-        # for i in range(len(self.argslist)):
-        #     self.argslist[i].dist_url = get_init_file().as_uri()
+        for i in range(len(self.argslist)):
+            self.argslist[i].dist_url = get_init_file().as_uri()
         print("Requeuing ", self.argslist)
         empty_trainer = type(self)(self.argslist)
         return submitit.helpers.DelayedSubmission(empty_trainer)
@@ -165,18 +165,18 @@ def main_with_args(args_list, run_as_array=False, h1=False):
             # Below are cluster dependent parameters
             slurm_partition=partition,
             slurm_signal_delay_s=120,
-            setup=[
-                'export MASTER_PORT=12802',
-                """master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)""",
-                """export MASTER_ADDR=$master_addr"i" """,
-                """echo "MASTER_ADDR="$MASTER_ADDR""",
-            ],
+            # setup=[
+            #     'export MASTER_PORT=12802',
+            #     """master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)""",
+            #     """export MASTER_ADDR=$master_addr"i" """,
+            #     """echo "MASTER_ADDR="$MASTER_ADDR""",
+            # ],
             **kwargs,
         )
 
     executor.update_parameters(name="lofi", slurm_array_parallelism=15)
     for i in range(len(args_list)):
-        #args_list[i].dist_url = get_init_file().as_uri()
+        args_list[i].dist_url = get_init_file().as_uri()
         args_list[i].output_dir = args_list[i].job_dir
         if i >= 1:
             os.makedirs(args_list[i].output_dir, exist_ok=True)
