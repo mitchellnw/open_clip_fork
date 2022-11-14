@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import os
 import math
 from typing import Callable, Optional
 
@@ -10,10 +11,24 @@ from torch.utils.checkpoint import checkpoint
 from .utils import to_2tuple
 
 import wandb
-def log_features(x, name, log, do_hist, _iter):
-    if not log or _iter % 100 > 0:
-        return
+def log_features(x, name, log, do_hist, _iter, data_path, rank):
     if not (name.endswith('0') or name.endswith('2') or name.endswith('10')):
+        return
+    with torch.no_grad():
+        features = x.permute(1, 0, 2)
+        features = features.view(features.size(0), -1)
+        bigfeats = (features.abs() > 6.0)
+        to_log = [
+            features.pow(2).sum(-1).pow(0.5).mean().item(), # norms
+            features.abs().mean().item(), # mean
+            features.abs().max().item(), # max
+            bigfeats.sum(-1).float().mean().item(), # gt-6
+            bigfeats.float().mean().item(), # gt-6 per-elt
+        ]
+        with open(os.path.join(data_path, f'features-{name}.csv'), 'a') as f:
+            f.write(','.join([str(x) for x in to_log]) + '\n')
+
+    if not log or _iter % 100 > 0:
         return
     with torch.no_grad():
         features = x.permute(1, 0, 2) # reshape to batch dim at 0
@@ -164,7 +179,7 @@ class ResidualAttentionBlock(nn.Module):
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask))
         x = x + self.ls_2(self.mlp(self.ln_2(x)))
-        log_features(x, 'mlp_' + self.module_name, self.log_features and self.training, self.do_hist, self.iter)
+        log_features(x, 'mlp_' + self.module_name, self.log_features and self.training, self.do_hist, self.iter, self.data_path, self.rank)
         return x
 
 

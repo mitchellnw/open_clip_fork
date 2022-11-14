@@ -108,6 +108,9 @@ def main_with_args(args):
     else:
         args.tensorboard_path = ''
         args.checkpoint_path = ''
+    args.data_path = os.path.join(args.logs, args.name, "data", str(args.rank))
+    if not os.path.exists(args.data_path):
+        os.makedirs(args.data_path)
 
     if args.copy_codebase:
         copy_codebase(args)
@@ -275,6 +278,9 @@ def main_with_args(args):
 
     model.apply(lambda m: setattr(m, 'log_features', is_master(args) and args.wandb))
     model.apply(lambda m: setattr(m, 'do_hist', is_master(args) and args.wandb and args.do_hist))
+    model.apply(lambda m: setattr(m, 'data_path', args.data_path))
+    model.apply(lambda m: setattr(m, 'rank', args.rank))
+
 
     for n, m in model.named_modules():
         setattr(m, 'module_name', n)

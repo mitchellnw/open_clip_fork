@@ -19,6 +19,47 @@ from .zero_shot import zero_shot_eval
 from .precision import get_autocast
 
 
+modules_to_log = [
+    'module.positional_embedding',
+    'module.text_projection',
+    'module.logit_scale',
+    'module.visual.class_embedding',
+    'module.visual.positional_embedding',
+    'module.visual.proj',
+    'module.visual.conv1.weight',
+    'module.visual.ln_pre.weight',
+    'module.visual.ln_pre.bias',
+    'module.visual.transformer.resblocks.0.ln_1.weight',
+    'module.visual.transformer.resblocks.0.ln_1.bias',
+    'module.visual.transformer.resblocks.0.attn.in_proj_weight',
+    'module.visual.transformer.resblocks.0.attn.in_proj_bias',
+    'module.visual.transformer.resblocks.0.attn.out_proj.weight',
+    'module.visual.transformer.resblocks.0.attn.out_proj.bias',
+    'module.visual.transformer.resblocks.0.ln_2.weight',
+    'module.visual.transformer.resblocks.0.ln_2.bias',
+    'module.visual.transformer.resblocks.0.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.0.mlp.c_fc.bias',
+    'module.visual.transformer.resblocks.0.mlp.c_proj.weight',
+    'module.visual.transformer.resblocks.0.mlp.c_proj.bias',
+    'module.visual.transformer.resblocks.11.ln_1.weight',
+    'module.visual.transformer.resblocks.11.ln_1.bias',
+    'module.visual.transformer.resblocks.11.attn.in_proj_weight',
+    'module.visual.transformer.resblocks.11.attn.in_proj_bias',
+    'module.visual.transformer.resblocks.11.attn.out_proj.weight',
+    'module.visual.transformer.resblocks.11.attn.out_proj.bias',
+    'module.visual.transformer.resblocks.11.ln_2.weight',
+    'module.visual.transformer.resblocks.11.ln_2.bias',
+    'module.visual.transformer.resblocks.11.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.11.mlp.c_fc.bias',
+    'module.visual.transformer.resblocks.11.mlp.c_proj.weight',
+    'module.visual.transformer.resblocks.11.mlp.c_proj.bias',
+    'module.visual.ln_post.weight',
+    'module.visual.ln_post.bias',
+    'module.token_embedding.weight',
+    'module.ln_final.bias',
+    'module.ln_final.weight',
+]
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
     def __init__(self):
@@ -136,18 +177,6 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         end = time.time()
         batch_count = i + 1
 
-        # ################################################
-        # if detected_blowup:
-        #     checkpoint_dict = {
-        #         "state_dict": model.state_dict(),
-        #         "optimizer": optimizer.state_dict(),
-        #     }
-        #     if scaler is not None:
-        #         checkpoint_dict["scaler"] = scaler.state_dict()
-        #     src = os.path.join(args.checkpoint_path, f"current_{step}.pt")
-        #     torch.save(checkpoint_dict, src)
-        # ################################################
-
         if is_master(args) and (i % 100 == 0 or batch_count == num_batches_per_epoch):
             batch_size = len(images)
             num_samples = batch_count * batch_size * args.world_size
@@ -194,46 +223,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 with torch.no_grad():
                     it = step
                     for n, p in model.named_parameters():
-                        if n not in [
-                            'module.positional_embedding',
-                            'module.text_projection',
-                            'module.logit_scale',
-                            'module.visual.class_embedding',
-                            'module.visual.positional_embedding',
-                            'module.visual.proj',
-                            'module.visual.conv1.weight',
-                            'module.visual.ln_pre.weight',
-                            'module.visual.ln_pre.bias',
-                            'module.visual.transformer.resblocks.0.ln_1.weight',
-                            'module.visual.transformer.resblocks.0.ln_1.bias',
-                            'module.visual.transformer.resblocks.0.attn.in_proj_weight',
-                            'module.visual.transformer.resblocks.0.attn.in_proj_bias',
-                            'module.visual.transformer.resblocks.0.attn.out_proj.weight',
-                            'module.visual.transformer.resblocks.0.attn.out_proj.bias',
-                            'module.visual.transformer.resblocks.0.ln_2.weight',
-                            'module.visual.transformer.resblocks.0.ln_2.bias',
-                            'module.visual.transformer.resblocks.0.mlp.c_fc.weight',
-                            'module.visual.transformer.resblocks.0.mlp.c_fc.bias',
-                            'module.visual.transformer.resblocks.0.mlp.c_proj.weight',
-                            'module.visual.transformer.resblocks.0.mlp.c_proj.bias',
-                            'module.visual.transformer.resblocks.11.ln_1.weight',
-                            'module.visual.transformer.resblocks.11.ln_1.bias',
-                            'module.visual.transformer.resblocks.11.attn.in_proj_weight',
-                            'module.visual.transformer.resblocks.11.attn.in_proj_bias',
-                            'module.visual.transformer.resblocks.11.attn.out_proj.weight',
-                            'module.visual.transformer.resblocks.11.attn.out_proj.bias',
-                            'module.visual.transformer.resblocks.11.ln_2.weight',
-                            'module.visual.transformer.resblocks.11.ln_2.bias',
-                            'module.visual.transformer.resblocks.11.mlp.c_fc.weight',
-                            'module.visual.transformer.resblocks.11.mlp.c_fc.bias',
-                            'module.visual.transformer.resblocks.11.mlp.c_proj.weight',
-                            'module.visual.transformer.resblocks.11.mlp.c_proj.bias',
-                            'module.visual.ln_post.weight',
-                            'module.visual.ln_post.bias',
-                            'module.token_embedding.weight',
-                            'module.ln_final.bias',
-                            'module.ln_final.weight',
-                        ]:
+                        if n not in modules_to_log:
                             continue
 
                         wandb.log({f'weight_norms/{n}': p.pow(2).sum().pow(0.5), 'step': it})
@@ -275,33 +265,27 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                         elif len(p.size()) == 4:
                             out = p[0, 0, 0, 0]
                         wandb.log({f'weight_val/{n}': out.item(), 'step': it})
-
-            # if (i % 500) == 0:
-            #     loss_detach = total_loss.detach()
-            #     if loss_detach > loss_thresh:
-            #         if can_detect_blowups:
-            #             if possible_blowup:
-            #                 print('THIS IS A BLOWUP', loss_detach, loss_thresh)
-            #                 sys.exit(1)
-            #             else:
-            #                 print('THIS IS A POSSIBLE BLOWUP', loss_detach, loss_thresh)
-            #                 possible_blowup = True
-            #     else:
-            #         print('LOOKS FINE', loss_detach, loss_thresh)
-            #         can_detect_blowups = True
-            #         possible_blowup = False
-            #         checkpoint_dict = {
-            #             "state_dict": model.state_dict(),
-            #             "optimizer": optimizer.state_dict(),
-            #             "epoch": epoch,
-            #         }
-            #         if scaler is not None:
-            #             checkpoint_dict["scaler"] = scaler.state_dict()
-            #         src = os.path.join(args.checkpoint_path, f"current.pt")
-            #         torch.save(checkpoint_dict, src)
-
-    # end for
-
+        
+        # log loss.
+        with open(os.path.join(args.data_path, f'loss.csv'), 'a') as f:
+            f.write(f'{step},{total_loss.item()}\n')
+        for n, p in model.named_parameters():
+            if n not in modules_to_log:
+                continue
+            to_log = [
+                step,
+                p.pow(2).sum().pow(0.5).item(), #'weight_norms'
+                p.abs().max().item(), # 'weight_maxs'
+                p.grad.pow(2).sum().pow(0.5).item(), # 'grad_norms'
+                p.grad.abs().max().item(), # 'grad_maxs'
+                optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5).item(), # 'exp_avgs_norms'
+                optimizer.state[p]['exp_avg'].abs().max().item(), # 'exp_avgs_maxs'
+                optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5).item(), # 'exp_avg_sqs_norms'
+                optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'exp_avg_sqs_maxs'
+            ]
+            with open(os.path.join(args.data_path, f'params-{n}.csv'), 'a') as f:
+                f.write(','.join([str(x) for x in to_log]) + '\n')
+            
 
 def evaluate(model, data, epoch, args, tb_writer=None):
     metrics = {}

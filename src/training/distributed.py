@@ -85,6 +85,7 @@ def init_distributed_device(args):
             os.environ['LOCAL_RANK'] = str(args.local_rank)
             os.environ['RANK'] = str(args.rank)
             os.environ['WORLD_SIZE'] = str(args.world_size)
+            print('dist backend', args.dist_backend)
             torch.distributed.init_process_group(
                 backend=args.dist_backend,
                 init_method=args.dist_url,

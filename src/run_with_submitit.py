@@ -165,6 +165,7 @@ def main_with_args(args_list, run_as_array=False, h1=False):
             # Below are cluster dependent parameters
             slurm_partition=partition,
             slurm_signal_delay_s=120,
+            setup = ["""export NCCL_DEBUG=INFO"""],
             # setup=[
             #     'export MASTER_PORT=12802',
             #     """master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)""",
