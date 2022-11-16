@@ -23,11 +23,11 @@ if __name__ == "__main__":
     args.beta2 = 0.999
 
     args.partition = 'devlab'
-    args.use_volta32 = False
+    args.use_volta32 = True
 
     args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
     args.train_data = '/datasets01/laion400m/laion400m-met-release/laion400m-dataset/{00000..41627}.tar'
-    args.train_num_samples = 5000000
+    args.train_num_samples = 1000000 #5000000
     args.dataset_type = 'webdataset'
     
     args.precision = 'amp'
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     args.warmup = 5000
 
     #name = f'b32-400m-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
-    name = 'b32-small-4'
+    name = 'b32-baseline-speed-test-compute-train-write-feats-writev6'
     if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
         args.logs = '/checkpoint/mitchellw/experiments/open_clip'
     args.name = name

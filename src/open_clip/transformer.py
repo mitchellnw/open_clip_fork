@@ -11,38 +11,41 @@ from torch.utils.checkpoint import checkpoint
 from .utils import to_2tuple
 
 import wandb
-def log_features(x, name, log, do_hist, _iter, data_path, rank):
-    if not (name.endswith('0') or name.endswith('2') or name.endswith('10')):
+def log_features(x, name, training, do_hist, _iter, logger_file):
+    if not training or logger_file is None:
         return
     with torch.no_grad():
-        features = x.permute(1, 0, 2)
-        features = features.view(features.size(0), -1)
-        bigfeats = (features.abs() > 6.0)
+        # features = x.permute(1, 0, 2)
+        # features = features.view(features.size(0), -1).abs()
+        #bigfeats = (features.abs() > 6.0)
+        features = x.abs()
         to_log = [
-            features.pow(2).sum(-1).pow(0.5).mean().item(), # norms
-            features.abs().mean().item(), # mean
-            features.abs().max().item(), # max
-            bigfeats.sum(-1).float().mean().item(), # gt-6
-            bigfeats.float().mean().item(), # gt-6 per-elt
+            features.std().item(), # std
+            features.mean().item(), # mean
+            features.max().item(), # max
+            # bigfeats.sum(-1).float().mean().item(), # gt-6
+            # bigfeats.float().mean().item(), # gt-6 per-elt
         ]
-        with open(os.path.join(data_path, f'features-{name}.csv'), 'a') as f:
-            f.write(','.join([str(x) for x in to_log]) + '\n')
+        logger_file.write(','.join([str(x) for x in to_log]) + '\n')
+    # #     with open(os.path.join(data_path, f'features-{name}.csv'), 'a') as f:
+    # #         f.write(','.join([str(x) for x in to_log]) + '\n')
+    # return
+    # if not log or _iter % 100 > 0:
+    #     return
+    # with torch.no_grad():
+    #     features = x.abs()
+    #     #features = x.permute(1, 0, 2) # reshape to batch dim at 0
+    #     #features = features.view(features.size(0), -1) # concat all patch features
+    #     wandb.log({f'feature_std/{name}': features.std(), 'step': _iter})
+    #     wandb.log({f'feature_means/{name}': features.mean(), 'step': _iter})
+    #     wandb.log({f'feature_maxs/{name}': features.max(), 'step': _iter})
+    #     # wandb.log({f'feature_gt_6/{name}': (features.abs() > 6.0).sum(-1).float().mean().item(), 'step': _iter })
+    #     # bigfeats = (features.abs() > 6.0)
+    #     # wandb.log({f'feature_gt_6_perelt/{name}': bigfeats.float().mean(), 'step': _iter })
 
-    if not log or _iter % 100 > 0:
-        return
-    with torch.no_grad():
-        features = x.permute(1, 0, 2) # reshape to batch dim at 0
-        features = features.view(features.size(0), -1) # concat all patch features
-        wandb.log({f'feature_norms/{name}': features.pow(2).sum(-1).pow(0.5).mean(), 'step': _iter})
-        wandb.log({f'feature_means/{name}': features.abs().mean(), 'step': _iter})
-        wandb.log({f'feature_maxs/{name}': features.abs().max(), 'step': _iter})
-        wandb.log({f'feature_gt_6/{name}': (features.abs() > 6.0).sum(-1).float().mean().item(), 'step': _iter })
-        bigfeats = (features.abs() > 6.0)
-        wandb.log({f'feature_gt_6_perelt/{name}': bigfeats.float().mean(), 'step': _iter })
 
-
-        if do_hist:
-            wandb.log({f'features_hist/{name}': wandb.Histogram(features[0].detach().cpu()), 'step': _iter })
+    #     if do_hist:
+    #         wandb.log({f'features_hist/{name}': wandb.Histogram(features[0].detach().cpu()), 'step': _iter })
 
 
 
@@ -179,7 +182,7 @@ class ResidualAttentionBlock(nn.Module):
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask))
         x = x + self.ls_2(self.mlp(self.ln_2(x)))
-        log_features(x, 'mlp_' + self.module_name, self.log_features and self.training, self.do_hist, self.iter, self.data_path, self.rank)
+        log_features(x, 'mlp_' + self.module_name, self.log_features and self.training, self.do_hist, self.iter, self.logger_file)
         return x
 
 
@@ -345,6 +348,8 @@ class VisionTransformer(nn.Module):
 
         if self.proj is not None:
             x = x @ self.proj
+
+        log_features(x, self.module_name, self.log_features and self.training, self.do_hist, self.iter, self.logger_file)
 
         return x
 

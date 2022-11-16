@@ -128,52 +128,26 @@ def main_with_args(args_list, run_as_array=False, h1=False):
     if first_args.comment:
         kwargs["slurm_comment"] = first_args.comment
 
-    if os.path.exists('/fsx-labs'):
-        executor.update_parameters(
-            # mem_gb=20 * num_gpus_per_node,
-            gpus_per_node=num_gpus_per_node,
-            tasks_per_node=num_gpus_per_node,  # one task per GPU
-            cpus_per_task=12,
-            nodes=nodes,
-            timeout_min=timeout_min,  # max is 60 * 72
-            # Below are cluster dependent parameters
-            slurm_partition=partition,
-            slurm_signal_delay_s=120,
-            **kwargs,
-        )
-    elif h1:
-        executor.update_parameters(
-            # mem_gb=40 * num_gpus_per_node,
-            gpus_per_node=num_gpus_per_node,
-            tasks_per_node=num_gpus_per_node,  # one task per GPU
-            cpus_per_task=10,
-            nodes=nodes,
-            timeout_min=timeout_min,  # max is 60 * 72
-            # Below are cluster dependent parameters
-            slurm_partition=partition,
-            slurm_signal_delay_s=120,
-            **kwargs,
-        )
-    else:
-        executor.update_parameters(
-            mem_gb=40 * num_gpus_per_node,
-            gpus_per_node=num_gpus_per_node,
-            tasks_per_node=num_gpus_per_node,  # one task per GPU
-            cpus_per_task=10,
-            nodes=nodes,
-            timeout_min=timeout_min,  # max is 60 * 72
-            # Below are cluster dependent parameters
-            slurm_partition=partition,
-            slurm_signal_delay_s=120,
-            setup = ["""export NCCL_DEBUG=INFO"""],
-            # setup=[
-            #     'export MASTER_PORT=12802',
-            #     """master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)""",
-            #     """export MASTER_ADDR=$master_addr"i" """,
-            #     """echo "MASTER_ADDR="$MASTER_ADDR""",
-            # ],
-            **kwargs,
-        )
+
+    executor.update_parameters(
+        mem_gb=40 * num_gpus_per_node,
+        gpus_per_node=num_gpus_per_node,
+        tasks_per_node=num_gpus_per_node,  # one task per GPU
+        cpus_per_task=10,
+        nodes=nodes,
+        timeout_min=timeout_min,  # max is 60 * 72
+        # Below are cluster dependent parameters
+        slurm_partition=partition,
+        slurm_signal_delay_s=120,
+        setup = ["""export NCCL_DEBUG=INFO"""],
+        # setup=[
+        #     'export MASTER_PORT=12802',
+        #     """master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)""",
+        #     """export MASTER_ADDR=$master_addr"i" """,
+        #     """echo "MASTER_ADDR="$MASTER_ADDR""",
+        # ],
+        **kwargs,
+    )
 
     executor.update_parameters(name="lofi", slurm_array_parallelism=15)
     for i in range(len(args_list)):

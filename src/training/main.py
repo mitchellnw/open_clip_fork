@@ -276,14 +276,10 @@ def main_with_args(args):
         evaluate(model, data, start_epoch, args, writer)
         return
 
-    model.apply(lambda m: setattr(m, 'log_features', is_master(args) and args.wandb))
+    model.apply(lambda m: setattr(m, 'log_features', True))
     model.apply(lambda m: setattr(m, 'do_hist', is_master(args) and args.wandb and args.do_hist))
     model.apply(lambda m: setattr(m, 'data_path', args.data_path))
     model.apply(lambda m: setattr(m, 'rank', args.rank))
-
-
-    for n, m in model.named_modules():
-        setattr(m, 'module_name', n)
 
     for epoch in range(start_epoch, args.epochs):
         if is_master(args):

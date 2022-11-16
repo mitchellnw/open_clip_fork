@@ -41,18 +41,73 @@ modules_to_log = [
     'module.visual.transformer.resblocks.0.mlp.c_fc.bias',
     'module.visual.transformer.resblocks.0.mlp.c_proj.weight',
     'module.visual.transformer.resblocks.0.mlp.c_proj.bias',
-    'module.visual.transformer.resblocks.11.ln_1.weight',
-    'module.visual.transformer.resblocks.11.ln_1.bias',
-    'module.visual.transformer.resblocks.11.attn.in_proj_weight',
-    'module.visual.transformer.resblocks.11.attn.in_proj_bias',
-    'module.visual.transformer.resblocks.11.attn.out_proj.weight',
-    'module.visual.transformer.resblocks.11.attn.out_proj.bias',
-    'module.visual.transformer.resblocks.11.ln_2.weight',
-    'module.visual.transformer.resblocks.11.ln_2.bias',
-    'module.visual.transformer.resblocks.11.mlp.c_fc.weight',
-    'module.visual.transformer.resblocks.11.mlp.c_fc.bias',
-    'module.visual.transformer.resblocks.11.mlp.c_proj.weight',
-    'module.visual.transformer.resblocks.11.mlp.c_proj.bias',
+    'module.visual.transformer.resblocks.10.ln_1.weight',
+    'module.visual.transformer.resblocks.10.ln_1.bias',
+    'module.visual.transformer.resblocks.10.attn.in_proj_weight',
+    'module.visual.transformer.resblocks.10.attn.in_proj_bias',
+    'module.visual.transformer.resblocks.10.attn.out_proj.weight',
+    'module.visual.transformer.resblocks.10.attn.out_proj.bias',
+    'module.visual.transformer.resblocks.10.ln_2.weight',
+    'module.visual.transformer.resblocks.10.ln_2.bias',
+    'module.visual.transformer.resblocks.10.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.10.mlp.c_fc.bias',
+    'module.visual.transformer.resblocks.10.mlp.c_proj.weight',
+    'module.visual.transformer.resblocks.10.mlp.c_proj.bias',
+    'module.visual.transformer.resblocks.20.ln_1.weight',
+    'module.visual.transformer.resblocks.20.ln_1.bias',
+    'module.visual.transformer.resblocks.20.attn.in_proj_weight',
+    'module.visual.transformer.resblocks.20.attn.in_proj_bias',
+    'module.visual.transformer.resblocks.20.attn.out_proj.weight',
+    'module.visual.transformer.resblocks.20.attn.out_proj.bias',
+    'module.visual.transformer.resblocks.20.ln_2.weight',
+    'module.visual.transformer.resblocks.20.ln_2.bias',
+    'module.visual.transformer.resblocks.20.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.20.mlp.c_fc.bias',
+    'module.visual.transformer.resblocks.20.mlp.c_proj.weight',
+    'module.visual.transformer.resblocks.20.mlp.c_proj.bias',
+    'module.visual.transformer.resblocks.30.ln_1.weight',
+    'module.visual.transformer.resblocks.30.ln_1.bias',
+    'module.visual.transformer.resblocks.30.attn.in_proj_weight',
+    'module.visual.transformer.resblocks.30.attn.in_proj_bias',
+    'module.visual.transformer.resblocks.30.attn.out_proj.weight',
+    'module.visual.transformer.resblocks.30.attn.out_proj.bias',
+    'module.visual.transformer.resblocks.30.ln_2.weight',
+    'module.visual.transformer.resblocks.30.ln_2.bias',
+    'module.visual.transformer.resblocks.30.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.30.mlp.c_fc.bias',
+    'module.visual.transformer.resblocks.30.mlp.c_proj.weight',
+    'module.visual.transformer.resblocks.30.mlp.c_proj.bias',
+    'module.transformer.resblocks.0',
+    'module.transformer.resblocks.0.ln_1',
+    'module.transformer.resblocks.0.attn',
+    'module.transformer.resblocks.0.attn.out_proj',
+    'module.transformer.resblocks.0.ls_1',
+    'module.transformer.resblocks.0.ln_2',
+    'module.transformer.resblocks.0.mlp',
+    'module.transformer.resblocks.0.mlp.c_fc',
+    'module.transformer.resblocks.0.mlp.gelu',
+    'module.transformer.resblocks.0.mlp.c_proj',
+    'module.transformer.resblocks.0.ls_2',
+    'module.transformer.resblocks.10.ln_1',
+    'module.transformer.resblocks.10.attn',
+    'module.transformer.resblocks.10.attn.out_proj',
+    'module.transformer.resblocks.10.ls_1',
+    'module.transformer.resblocks.10.ln_2',
+    'module.transformer.resblocks.10.mlp',
+    'module.transformer.resblocks.10.mlp.c_fc',
+    'module.transformer.resblocks.10.mlp.gelu',
+    'module.transformer.resblocks.10.mlp.c_proj',
+    'module.transformer.resblocks.10.ls_2',
+    'module.transformer.resblocks.20.ln_1',
+    'module.transformer.resblocks.20.attn',
+    'module.transformer.resblocks.20.attn.out_proj',
+    'module.transformer.resblocks.20.ls_1',
+    'module.transformer.resblocks.20.ln_2',
+    'module.transformer.resblocks.20.mlp',
+    'module.transformer.resblocks.20.mlp.c_fc',
+    'module.transformer.resblocks.20.mlp.gelu',
+    'module.transformer.resblocks.20.mlp.c_proj',
+    'module.transformer.resblocks.20.ls_2',
     'module.visual.ln_post.weight',
     'module.visual.ln_post.bias',
     'module.token_embedding.weight',
@@ -108,12 +163,29 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
     end = time.time()
+
+    for n, _ in model.named_parameters():
+        print(n)
+    print('---')
     
-    loss_thresh = - math.log( 1. / (args.world_size * args.batch_size) ) - 0.3
-    print('loss thresh is ', loss_thresh)
-    can_detect_blowups = epoch > 0
-    possible_blowup = False
-    
+    if is_master(args):
+        amp_log = open(os.path.join(args.data_path, f'amp.csv'), 'a')
+        param_n_log = {n : open(os.path.join(args.data_path, f'params-{n}.csv'), 'a') for n in modules_to_log}
+    else:
+        amp_log = None
+        param_n_log = {}
+
+    loss_log = open(os.path.join(args.data_path, f'loss.csv'), 'a')
+    feats_n_log = {}
+
+    for n, m in model.named_modules():
+        setattr(m, 'module_name', n)
+        if n.endswith('0') or n.endswith('module.visual') or n.endswith('module.transformer'):
+            feats_n_log[n] = open(os.path.join(args.data_path, f'features-{n}.csv'), 'a')
+            setattr(m, 'logger_file', feats_n_log[n])
+        else:
+            setattr(m, 'logger_file', None)
+
 
     for i, batch in enumerate(dataloader):
         step = num_batches_per_epoch * epoch + i
@@ -218,74 +290,95 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
             batch_time_m.reset()
             data_time_m.reset()
             
-            ####
-            if args.wandb:
-                with torch.no_grad():
-                    it = step
-                    for n, p in model.named_parameters():
-                        if n not in modules_to_log:
-                            continue
+            # ####
+            # if args.wandb:
+            #     with torch.no_grad():
+            #         it = step
+            #         for n, p in model.named_parameters():
+            #             if n not in modules_to_log:
+            #                 continue
 
-                        wandb.log({f'weight_norms/{n}': p.pow(2).sum().pow(0.5), 'step': it})
-                        #wandb.log({f'weight_mins/{n}': p.abs().min(), 'step': it})
-                        wandb.log({f'weight_maxs/{n}': p.abs().max(), 'step': it})
+            #             wandb.log({f'weight_norms/{n}': p.pow(2).sum().pow(0.5), 'step': it})
+            #             #wandb.log({f'weight_mins/{n}': p.abs().min(), 'step': it})
+            #             wandb.log({f'weight_maxs/{n}': p.abs().max(), 'step': it})
 
-                        if args.do_hist:
-                            wandb.log({f'weight_hist/{n}': wandb.Histogram(p.detach().cpu()), 'step': it})
+            #             if args.do_hist:
+            #                 wandb.log({f'weight_hist/{n}': wandb.Histogram(p.detach().cpu()), 'step': it})
 
-                        wandb.log({f'grad_norms/{n}': p.grad.pow(2).sum().pow(0.5), 'step': it})
-                        #wandb.log({f'grad_mins/{n}': p.grad.abs().min(), 'step': it})
-                        wandb.log({f'grad_maxs/{n}': p.grad.abs().max(), 'step': it})
+            #             wandb.log({f'grad_norms/{n}': p.grad.pow(2).sum().pow(0.5), 'step': it})
+            #             #wandb.log({f'grad_mins/{n}': p.grad.abs().min(), 'step': it})
+            #             wandb.log({f'grad_maxs/{n}': p.grad.abs().max(), 'step': it})
 
-                        if args.do_hist:
-                            wandb.log({f'grad_hist/{n}': wandb.Histogram(p.grad.detach().cpu()), 'step': it})
+            #             if args.do_hist:
+            #                 wandb.log({f'grad_hist/{n}': wandb.Histogram(p.grad.detach().cpu()), 'step': it})
 
-                        if 'exp_avg' in optimizer.state[p] and 'exp_avg_sq' in optimizer.state[p]:
-                            wandb.log({f'exp_avgs_norms/{n}': optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5), 'step': it})
-                            #wandb.log({f'exp_avgs_mins/{n}': optimizer.state[p]['exp_avg'].abs().min(), 'step': it})
-                            wandb.log({f'exp_avgs_maxs/{n}': optimizer.state[p]['exp_avg'].abs().max(), 'step': it})
+            #             if 'exp_avg' in optimizer.state[p] and 'exp_avg_sq' in optimizer.state[p]:
+            #                 wandb.log({f'exp_avgs_norms/{n}': optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5), 'step': it})
+            #                 #wandb.log({f'exp_avgs_mins/{n}': optimizer.state[p]['exp_avg'].abs().min(), 'step': it})
+            #                 wandb.log({f'exp_avgs_maxs/{n}': optimizer.state[p]['exp_avg'].abs().max(), 'step': it})
 
-                            if args.do_hist:
-                                wandb.log({f'exp_avgs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg'].detach().cpu()), 'step': it})
+            #                 if args.do_hist:
+            #                     wandb.log({f'exp_avgs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg'].detach().cpu()), 'step': it})
 
-                            wandb.log({f'exp_avg_sqs_norms/{n}': optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5), 'step': it})
-                            #wandb.log({f'exp_avg_sqs_mins/{n}': optimizer.state[p]['exp_avg_sq'].abs().min(), 'step': it})
-                            wandb.log({f'exp_avg_sqs_maxs/{n}': optimizer.state[p]['exp_avg_sq'].abs().max(), 'step': it})
+            #                 wandb.log({f'exp_avg_sqs_norms/{n}': optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5), 'step': it})
+            #                 #wandb.log({f'exp_avg_sqs_mins/{n}': optimizer.state[p]['exp_avg_sq'].abs().min(), 'step': it})
+            #                 wandb.log({f'exp_avg_sqs_maxs/{n}': optimizer.state[p]['exp_avg_sq'].abs().max(), 'step': it})
 
-                            if args.do_hist:
-                                wandb.log({f'exp_avgs_sqs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg_sq'].detach().cpu()), 'step': it})
+            #                 if args.do_hist:
+            #                     wandb.log({f'exp_avgs_sqs_hist/{n}': wandb.Histogram(optimizer.state[p]['exp_avg_sq'].detach().cpu()), 'step': it})
 
 
-                        if len(p.size()) == 1:
-                            out = p[0]
-                        elif len(p.size()) == 2:
-                            out = p[0, 0]
-                        elif len(p.size()) == 3:
-                            out = p[0, 0, 0]
-                        elif len(p.size()) == 4:
-                            out = p[0, 0, 0, 0]
-                        wandb.log({f'weight_val/{n}': out.item(), 'step': it})
+            #             if len(p.size()) == 1:
+            #                 out = p[0]
+            #             elif len(p.size()) == 2:
+            #                 out = p[0, 0]
+            #             elif len(p.size()) == 3:
+            #                 out = p[0, 0, 0]
+            #             elif len(p.size()) == 4:
+            #                 out = p[0, 0, 0, 0]
+            #             wandb.log({f'weight_val/{n}': out.item(), 'step': it})
         
         # log loss.
-        with open(os.path.join(args.data_path, f'loss.csv'), 'a') as f:
-            f.write(f'{step},{total_loss.item()}\n')
-        for n, p in model.named_parameters():
-            if n not in modules_to_log:
-                continue
-            to_log = [
-                step,
-                p.pow(2).sum().pow(0.5).item(), #'weight_norms'
-                p.abs().max().item(), # 'weight_maxs'
-                p.grad.pow(2).sum().pow(0.5).item(), # 'grad_norms'
-                p.grad.abs().max().item(), # 'grad_maxs'
-                optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5).item(), # 'exp_avgs_norms'
-                optimizer.state[p]['exp_avg'].abs().max().item(), # 'exp_avgs_maxs'
-                optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5).item(), # 'exp_avg_sqs_norms'
-                optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'exp_avg_sqs_maxs'
-            ]
-            with open(os.path.join(args.data_path, f'params-{n}.csv'), 'a') as f:
-                f.write(','.join([str(x) for x in to_log]) + '\n')
+        with torch.no_grad():
+            loss_log.write(f'{step},{total_loss.item()}\n')
+            if is_master(args):
+                if 'amp' in args.precision:
+                    amp_log.write(f'{step},{scaler._scale.item()}\n')
+                for n, p in model.named_parameters():
+                    if n not in modules_to_log:
+                        continue
+                    to_log = [
+                        step,
+                        p.pow(2).sum().pow(0.5).item(), #'weight_norms'
+                        p.abs().max().item(), # 'weight_maxs'
+                        p.grad.pow(2).sum().pow(0.5).item(), # 'grad_norms'
+                        p.grad.abs().max().item(), # 'grad_maxs'
+                        optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5).item(), # 'exp_avgs_norms'
+                        optimizer.state[p]['exp_avg'].abs().max().item(), # 'exp_avgs_maxs'
+                        optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5).item(), # 'exp_avg_sqs_norms'
+                        optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'exp_avg_sqs_maxs'
+                    ]
+                    param_n_log[n].write(','.join([str(x) for x in to_log]) + '\n')
             
+            if (i % 100) == 0:
+                loss_log.flush()
+                for n in feats_n_log:
+                    feats_n_log[n].flush()
+                if is_master(args):
+                    if 'amp' in args.precision:
+                        amp_log.flush()
+                    for n, p in model.named_parameters():
+                        if n in modules_to_log:
+                            param_n_log[n].flush()
+                            
+    loss_log.close()
+    for n in feats_n_log:
+        feats_n_log[n].close()
+    if is_master(args):
+        if amp_log is not None:
+            amp_log.close()
+        for n in modules_to_log:
+            param_n_log[n].close()
 
 def evaluate(model, data, epoch, args, tb_writer=None):
     metrics = {}
