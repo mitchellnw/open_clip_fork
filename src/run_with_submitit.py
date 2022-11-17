@@ -18,15 +18,34 @@ def parse_args():
         "--nodes", default=1, type=int, help="Number of nodes to request"
     )
     parser.add_argument("--timeout", default=4320, type=int, help="Duration of the job")
+    parser.add_argument("--cpus-per-task", default=10, type=int)
+
     parser.add_argument(
         "--job-dir", default="", type=str, help="Job dir. Leave empty for automatic."
     )
-
+    parser.add_argument(
+        "--shared-folder", default="/checkpoint/mitchellw/experiments/open_clip", type=str,
+    )
     parser.add_argument(
         "--partition", default="devlab", type=str, help="Partition where to submit"
     )
     parser.add_argument(
+        "--account", default="", type=str, help="Slurm account"
+    )
+    parser.add_argument(
         "--use-volta32", action="store_true", help="Big models? Use this"
+    )
+    parser.add_argument(
+        "--setup", action="store_true",
+    )
+    parser.add_argument(
+        "--exclude-dist-url", action="store_true",
+    )
+    parser.add_argument(
+        "--exclude-mem", action="store_true",
+    )
+    parser.add_argument(
+        "--srun-args", action="store_true",
     )
     parser.add_argument(
         "--comment",
@@ -38,25 +57,16 @@ def parse_args():
 
     return args
 
+def get_shared_folder(args):
+    p = Path(args.shared_folder)
+    p.mkdir(exist_ok=True)
+    return p
 
 
-def get_shared_folder():
-    # user = os.getenv("USER")
-    if Path("/fsx-labs/").is_dir():
-        p = Path("/fsx-labs/mitchellw/experiments/open_clip")
-        p.mkdir(exist_ok=True)
-        return p
-    elif Path("/checkpoint/").is_dir():
-        p = Path("/checkpoint/mitchellw/experiments/open_clip")
-        p.mkdir(exist_ok=True)
-        return p
-    raise RuntimeError("No shared folder available")
-
-
-def get_init_file():
+def get_init_file(args):
     # Init file must not exist, but it's parent dir must exist.
-    os.makedirs(str(get_shared_folder()), exist_ok=True)
-    init_file = get_shared_folder() / f"{uuid.uuid4().hex}_init"
+    os.makedirs(str(get_shared_folder(args)), exist_ok=True)
+    init_file = get_shared_folder(args) / f"{uuid.uuid4().hex}_init"
     if init_file.exists():
         os.remove(str(init_file))
     return init_file
@@ -77,12 +87,11 @@ class Trainer(object):
             main_train(self.args)
 
     def checkpoint(self):
-        # import os
-        # import submitit
         if self.args is not None:
             self.argslist = [self.args] + self.argslist
-        for i in range(len(self.argslist)):
-            self.argslist[i].dist_url = get_init_file().as_uri()
+        if not self.args.exclude_dist_url:
+            for i in range(len(self.argslist)):
+                self.argslist[i].dist_url = get_init_file(self.args).as_uri()
         print("Requeuing ", self.argslist)
         empty_trainer = type(self)(self.argslist)
         return submitit.helpers.DelayedSubmission(empty_trainer)
@@ -104,15 +113,14 @@ class Trainer(object):
 def main_with_args(args_list, run_as_array=False, h1=False):
     if type(args_list) is not list:
         args_list = [args_list]
+    
+    first_args = args_list[0]
     for i in range(len(args_list)):
         if args_list[i].job_dir == "":
-            args_list[i].job_dir = get_shared_folder() / "%j"
+            args_list[i].job_dir = get_shared_folder(first_args) / "%j"
         else:
-            args_list[i].job_dir = get_shared_folder() / args_list[i].job_dir
+            args_list[i].job_dir = get_shared_folder(first_args) / args_list[i].job_dir
 
-    first_args = args_list[0]
-
-    # Note that the folder will depend on the job_id, to easily track experiments
     executor = submitit.AutoExecutor(
         folder=first_args.job_dir, slurm_max_num_timeout=30
     )
@@ -123,41 +131,61 @@ def main_with_args(args_list, run_as_array=False, h1=False):
 
     partition = first_args.partition
     kwargs = {}
-    if first_args.use_volta32 and not os.path.exists('/fsx-labs'):
+    if first_args.use_volta32:
         kwargs["slurm_constraint"] = "volta32gb"
     if first_args.comment:
         kwargs["slurm_comment"] = first_args.comment
 
+    if first_args.setup:
+        kwargs['slurm_setup'] = [
+            #'export NCCL_DEBUG=INFO',
+            #'export NCCL_DEBUG_SUBSYS=ALL',
+            'export CUDA_VISIBLE_DEVICES=0,1,2,3',
+            'export NCCL_DEBUG=INFO',
+            'export NCCL_IB_TIMEOUT=50',
+            'export UCX_RC_TIMEOUT=4s',
+            'export NCCL_IB_RETRY_CNT=10',
+            'export NCCL_ASYNC_ERROR_HANDLING=1',
+            'export WANDB_MODE=offline',
+            'export MASTER_PORT=12802',
+            """master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)""",
+            """export MASTER_ADDR=$master_addr"i" """,
+            """echo "MASTER_ADDR="$MASTER_ADDR""",
+        ]
+    else:
+        kwargs['slurm_setup'] = ["""export NCCL_DEBUG=INFO"""]
+    if not first_args.exclude_mem:
+        kwargs['mem_gb'] = 40 * num_gpus_per_node
+
+    if first_args.account != "":
+        kwargs['slurm_account'] = first_args.account
+
+    if first_args.srun_args:
+        kwargs['slurm_srun_args'] = ["--cpu_bind=none,v", "--accel-bind=gn"]
 
     executor.update_parameters(
-        mem_gb=40 * num_gpus_per_node,
+        # mem_gb=40 * num_gpus_per_node,
         gpus_per_node=num_gpus_per_node,
         tasks_per_node=num_gpus_per_node,  # one task per GPU
-        cpus_per_task=10,
+        cpus_per_task=first_args.cpus_per_task,
         nodes=nodes,
         timeout_min=timeout_min,  # max is 60 * 72
         # Below are cluster dependent parameters
         slurm_partition=partition,
         slurm_signal_delay_s=120,
-        setup = ["""export NCCL_DEBUG=INFO"""],
-        # setup=[
-        #     'export MASTER_PORT=12802',
-        #     """master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)""",
-        #     """export MASTER_ADDR=$master_addr"i" """,
-        #     """echo "MASTER_ADDR="$MASTER_ADDR""",
-        # ],
+        #slurm_requeue=True,
         **kwargs,
     )
 
-    executor.update_parameters(name="lofi", slurm_array_parallelism=15)
+    executor.update_parameters(name="open-clip", slurm_array_parallelism=15)
     for i in range(len(args_list)):
-        args_list[i].dist_url = get_init_file().as_uri()
+        if not first_args.exclude_dist_url:
+            args_list[i].dist_url = get_init_file(first_args).as_uri()
         args_list[i].output_dir = args_list[i].job_dir
         if i >= 1:
             os.makedirs(args_list[i].output_dir, exist_ok=True)
 
     if run_as_array:
-        # Note: currently beta and not tested.
         jobs = []
         with executor.batch():
             for i in range(len(args_list)):
@@ -173,13 +201,6 @@ def main_with_args(args_list, run_as_array=False, h1=False):
         job = executor.submit(trainer)
 
         print("Submitted job_id:", job.job_id)
-
-    # import time
-
-    # t0 = time.time()
-    # time.sleep(25)
-    # print(f"preempting {job} after {time.time() - t0:.0f}s")
-    # job._interrupt()
 
 
 def main_without_args():
