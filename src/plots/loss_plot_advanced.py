@@ -19,9 +19,11 @@ if __name__ == '__main__':
     optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5).item(), # 'exp_avg_sqs_norms'
     optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'exp_avg_sqs_maxs'
     """
-
+    file_list = []
     file_list = ['h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1', 'h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v2', 'h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1-try2']
-    file_list = ['b32-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1-test']
+    file_list = [file_list[1], file_list[-1]]
+    file_list.append('l14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
+    file_list.append('b16-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
     #file_list = [file_list[1], file_list[-1]]
     #file_list = [file_list[2]]
     fig, axlist = plt.subplots(log_level, 1, figsize=(8, 5 * log_level))
@@ -49,14 +51,14 @@ if __name__ == '__main__':
         if log_level >= 3:
             ax = axlist[2]
             for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.visual.transformer.resblocks.0.ln_1.weight.csv')
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.logit_scale.csv')
                 # idxs = df.iloc[:, 0]
                 # ax.plot(df.iloc[:, 0], np.maximum(max_scaler, df.iloc[:, 1]))#, alpha=0.2)
                 # ax.plot(df.iloc[:, 0], np.maximum(max_scaler, df.iloc[:, 2]))
                 #ax.plot(df.iloc[:, 0], np.maximum(max_scaler, df.iloc[:, 3]))
                 #ax.plot(df.iloc[:, 0], np.maximum(max_scaler, df.iloc[:, 1]))
-                ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=f'C{j}')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}', linestyle='--', alpha=0.5)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=f'C{j}')
+                #ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}', linestyle='--', alpha=0.5)
                 #ax.set_yscale('log')
                 #ax.set_ylim([0.2, 0.3])
                 ax.set_yscale('log')
