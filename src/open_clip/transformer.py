@@ -20,6 +20,7 @@ def log_features(x, name, training, do_hist, _iter, logger_file):
         #bigfeats = (features.abs() > 6.0)
         features = x.abs()
         to_log = [
+            _iter,
             features.std().item(), # std
             features.mean().item(), # mean
             features.max().item(), # max

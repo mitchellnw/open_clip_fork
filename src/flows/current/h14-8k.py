@@ -19,14 +19,14 @@ if __name__ == "__main__":
     args.ngpus = 8
     args.batch_size = 64
     args.nodes = 16
-    args.lr = 1e-3
+    args.lr = 5e-4
 
     args.partition = 'learnlab'
     args.use_volta32 = True
 
     args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
     args.train_data = '/datasets01/laion400m/laion400m-met-release/laion400m-dataset/{00000..41627}.tar'
-    args.train_num_samples = 5000000
+    args.train_num_samples = 50000000
     args.dataset_type = 'webdataset'
     
     args.precision = 'amp'
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     
     args.epochs = int(16 * 400000000 / args.train_num_samples)
     args.report_to = 'wandb'
-    args.seed = 1
+    args.seed = 0
     args.ddp_static_graph = True
     args.local_loss = True
     args.dataset_resampled = True
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     args.grad_checkpointing = True
     args.save_frequency = 1
     args.zeroshot_frequency = 10
-    args.warmup = 5000*2
+    args.warmup = 10000
 
     name = f'h14-400m-l0-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
     if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):

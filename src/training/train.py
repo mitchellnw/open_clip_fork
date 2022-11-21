@@ -163,10 +163,6 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
     end = time.time()
-
-    for n, _ in model.named_parameters():
-        print(n)
-    print('---')
     
     if is_master(args):
         amp_log = open(os.path.join(args.data_path, f'amp.csv'), 'a')
@@ -347,16 +343,31 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 for n, p in model.named_parameters():
                     if n not in modules_to_log:
                         continue
+                    # to_log = [
+                    #     step,
+                    #     p.pow(2).sum().pow(0.5).item(), #'weight_norms'
+                    #     p.abs().max().item(), # 'weight_maxs'
+                    #     p.grad.pow(2).sum().pow(0.5).item(), # 'grad_norms'
+                    #     p.grad.abs().max().item(), # 'grad_maxs'
+                    #     optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5).item(), # 'exp_avgs_norms'
+                    #     optimizer.state[p]['exp_avg'].abs().max().item(), # 'exp_avgs_maxs'
+                    #     optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5).item(), # 'exp_avg_sqs_norms'
+                    #     optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'exp_avg_sqs_maxs'
+                    # ]
                     to_log = [
                         step,
-                        p.pow(2).sum().pow(0.5).item(), #'weight_norms'
-                        p.abs().max().item(), # 'weight_maxs'
-                        p.grad.pow(2).sum().pow(0.5).item(), # 'grad_norms'
-                        p.grad.abs().max().item(), # 'grad_maxs'
-                        optimizer.state[p]['exp_avg'].pow(2).sum().pow(0.5).item(), # 'exp_avgs_norms'
-                        optimizer.state[p]['exp_avg'].abs().max().item(), # 'exp_avgs_maxs'
-                        optimizer.state[p]['exp_avg_sq'].pow(2).sum().pow(0.5).item(), # 'exp_avg_sqs_norms'
-                        optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'exp_avg_sqs_maxs'
+                        p.abs().mean().item(), #'weight_means'
+                        p.abs().std().item(), # 'weight_std'
+                        p.abs().max().item(), # 'weight_max'
+                        p.grad.abs().mean().item(), #'grad_means'
+                        p.grad.abs().std().item(), # 'grad_std'
+                        p.grad.abs().max().item(), # 'grad_max'
+                        optimizer.state[p]['exp_avg'].abs().mean().item(), #'v_means'
+                        optimizer.state[p]['exp_avg'].abs().std().item(), # 'v_std'
+                        optimizer.state[p]['exp_avg'].abs().max().item(), # 'v_max'
+                        optimizer.state[p]['exp_avg_sq'].abs().mean().item(), #'g_means'
+                        optimizer.state[p]['exp_avg_sq'].abs().std().item(), # 'g_std'
+                        optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'g_max'
                     ]
                     param_n_log[n].write(','.join([str(x) for x in to_log]) + '\n')
             

@@ -146,6 +146,8 @@ src/misc
 src/debug
 core.*
 
+*.pt
+
 # Allow
 !src/evaluation/misc/results_dbs/*
 *.pt
