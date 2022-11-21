@@ -338,7 +338,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         with torch.no_grad():
             loss_log.write(f'{step},{total_loss.item()}\n')
             if is_master(args):
-                if 'amp' in args.precision:
+                if args.precision == 'amp':
                     amp_log.write(f'{step},{scaler._scale.item()}\n')
                 for n, p in model.named_parameters():
                     if n not in modules_to_log:
@@ -376,7 +376,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 for n in feats_n_log:
                     feats_n_log[n].flush()
                 if is_master(args):
-                    if 'amp' in args.precision:
+                    if args.precision == 'amp':
                         amp_log.flush()
                     for n, p in model.named_parameters():
                         if n in modules_to_log:

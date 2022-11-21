@@ -34,3 +34,10 @@ torchrun --nproc_per_node 4 -m training.main \
     --workers 4 --model ViT-B/32 --force-custom-text \
     --imagenet-val /p/scratch/ccstdl/gordon2/imagenet_val \
     --pretrained /p//wortsman1/open_clip/logs/B-32_400M_epochs-32_precision-bfloat16/B-32_run-force-text-resume/checkpoints/epoch_32.pt
+
+
+torchrun --nproc_per_node 4 -m training.main   \
+      --batch-size 208   --workers 2 --model ViT-B/32     --dataset-type webdataset   \
+      --train-data="pipe:aws s3 cp s3://s-datasets/laion400m/laion400m-dat-release/{00000..41455}.tar -"  \
+      --train-num-samples 413000000     --local-loss     --gather-with-grad     --grad-checkpointing \
+      --precision amp_bfloat16
