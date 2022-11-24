@@ -21,7 +21,7 @@ if __name__ == "__main__":
     args.nodes = 16 // 4
     args.lr = 5e-4
 
-    args.partition = 'devlab'
+    args.partition = 'learnlab'
     args.use_volta32 = False
 
     args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     args.zeroshot_frequency = 10
     args.warmup = 10000
 
-    name = f'b16-400m-l0-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
+    name = f'clip-b16-400m-l0-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
     if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
         args.logs = '/checkpoint/mitchellw/experiments/open_clip'
     args.name = name
