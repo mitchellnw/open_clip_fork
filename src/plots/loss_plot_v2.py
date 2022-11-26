@@ -5,15 +5,19 @@ import numpy as np
 if __name__ == '__main__':
     kernel_size = 40
     min_loss = 10
-    max_scaler = 0.00001
+    max_scaler = 0.01
     log_level = 4
 
     file_list = []
     file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v2']
-    file_list.append('clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v0')
-    file_list.append('clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v1')
-    file_list.append('clip-l14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
-    file_list.append('clip-b16-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
+    #file_list = [file_list[0], file_list[2], 'h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1-try2']
+    # file_list.append('clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v0')
+    # file_list.append('clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v1')
+    # file_list.append('clip-l14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
+    # file_list.append('clip-b16-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
+    #file_list = [file_list[0], 'scps/clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0/clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0']
+    #file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v1', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v2']
+    #file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v1', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v2']
 
     #file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v2']
     fig, axlist = plt.subplots(log_level, 1, figsize=(8, 5 * log_level))
@@ -41,20 +45,20 @@ if __name__ == '__main__':
                 ax.set_ylabel('Grad Scaler for Mixed Precision')
                 stored_xlim = ax.get_xlim()
         
-        print(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.transformer.resblocks.0.attn.out_proj.weight.csv')
-        if log_level >= 3:
-            ax = axlist[2]
-            for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.visual.transformer.resblocks.0.mlp.c_fc.weight.csv', names=list(range(13))).drop_duplicates(0, keep='last')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}')
-                #ax.set_yscale('log')
-                ax.set_ylabel('MLP-W Gradient Max (block 0)')
-                ax.set_xlim(stored_xlim)
+        # print(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.transformer.resblocks.0.attn.out_proj.weight.csv')
+        # if log_level >= 3:
+        #     ax = axlist[2]
+        #     for i in range(1):
+        #         df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.visual.transformer.resblocks.0.mlp.c_fc.weight.csv', names=list(range(13))).drop_duplicates(0, keep='last')
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}')
+        #         #ax.set_yscale('log')
+        #         ax.set_ylabel('MLP-W Gradient Max (block 0)')
+        #         ax.set_xlim(stored_xlim)
 
         if log_level >= 4:
-            ax = axlist[3]
-            for i in range(10):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.10.csv', names=list(range(4))).drop_duplicates(0, keep='last')
+            ax = axlist[2]
+            for i in range(1):
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4))).drop_duplicates(0, keep='last')
 
                 ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=f'C{j}')
                 #ax.set_yscale('log')
@@ -71,6 +75,8 @@ if __name__ == '__main__':
         # ax.set_xlim(9889 - 8, 9889 + 8)
         # ax.axvline(110434, linestyle='--', color='gray', alpha=0.5)
         #ax.set_xscale('log')
+        # ax.axvline(48350, linestyle='--', color='gray', alpha=0.5)
+        # ax.set_xlim(48350 - 10000, 48350 + 10000)
 
     plt.savefig('plots/loss_plot_advanced.png', bbox_inches='tight')
 
