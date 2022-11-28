@@ -11,15 +11,16 @@ if __name__ == '__main__':
     # NOTE: LOOK AT FEATURE STDDEV!
 
     file_list = []
-    file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v2', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v3', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v4', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v5']
-    file_list = [file_list[0], file_list[2], file_list[4]]
-    print(file_list)
+    file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v2']#, 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v3', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v4', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v5']
+    file_list = [file_list[0], file_list[2]]#, file_list[4]]
+    #file_list = [file_list[0]]
+    #print(file_list)
     #file_list = [file_list[0], file_list[2], 'h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1-try2']
     #file_list = ['h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1-try2']
     # file_list.append('clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v0')
     # file_list.append('clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v1')
-    # file_list.append('clip-l14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
-    # file_list.append('clip-b16-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
+    #file_list.append('clip-l14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
+    #file_list.append('clip-b16-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v1')
     #file_list = [file_list[0], 'scps/clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0/clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0']
     #file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v1', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4096-amp-v2']
    # file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v1', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp-v2']
@@ -50,27 +51,29 @@ if __name__ == '__main__':
                 ax.set_ylabel('Grad Scaler for Mixed Precision')
                 stored_xlim = ax.get_xlim()
         
-        print(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.transformer.resblocks.0.attn.out_proj.weight.csv')
         if log_level >= 3:
-            ax = axlist[3]
-            for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.visual.transformer.resblocks.0.mlp.c_fc.weight.csv', names=list(range(13))).drop_duplicates(0, keep='last')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}')
-                ax.set_yscale('log')
-                ax.set_ylabel('MLP-W Gradient Max (block 0)')
-                ax.set_xlim(stored_xlim)
-
-        if log_level >= 4:
             ax = axlist[2]
             for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.0.csv', names=list(range(4))).drop_duplicates(0, keep='last')
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4))).drop_duplicates(0, keep='last')
                 #df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
 
                 ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=f'C{j}')
-                ax.set_yscale('log')
+                #ax.set_yscale('log')
                 ax.set_ylabel('Feature max (block 10)')
                 ax.set_xlim(stored_xlim)
                 
+
+        #print(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
+        if log_level >= 4:
+            ax = axlist[3]
+            for i in range(1):
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.visual.transformer.resblocks.30.mlp.c_fc.weight.csv', names=list(range(13))).drop_duplicates(0, keep='last')
+                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}')
+                ax.set_yscale('log')
+                ax.set_ylabel('MLP-W Gradient Max (block 10)')
+                ax.set_xlim(stored_xlim)
+
+
 
     for ax in axlist:
         ax.grid()
@@ -84,11 +87,13 @@ if __name__ == '__main__':
         # ax.axvline(48350, linestyle='--', color='gray', alpha=0.5)
         # ax.set_xlim(48350 - 10000, 48350 + 10000)
         # ax.axvline(71091, linestyle='--', color='gray', alpha=0.5)
-        # ax.set_xlim(71091 - 10, 71091 + 10)
+        # ax.set_xlim(71091 - 2000, 71091 + 2000)
         # ax.axvline(69647, linestyle='--', color='gray', alpha=0.5)
         # ax.set_xlim(69647 - 1e1, 69647 + 1e1)
-        #ax.axvline(92426, linestyle='--', color='gray', alpha=0.5)
-        #ax.set_xlim(92426 - 1e1, 92426 + 1e1)
+        # ax.axvline(92426, linestyle='--', color='gray', alpha=0.5)
+        # ax.set_xlim(92426 - 1e1, 92426 + 1e1)
+        # ax.axvline(92426, linestyle='--', color='gray', alpha=0.5)
+        # ax.set_xlim(94000 - 3e3, 94000 + 3e3)
     plt.savefig('plots/loss_plot_advanced.png', bbox_inches='tight')
 
 
