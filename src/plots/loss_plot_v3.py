@@ -26,26 +26,32 @@ if __name__ == '__main__':
 
     #file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v2']
     fig, axlist = plt.subplots(log_level, 1, figsize=(8, 5 * log_level))
+    reset_list = []
+    reset_loc_list = []
     for j, file in enumerate(file_list):
 
         if log_level >= 1:
             ax = axlist[0]
             for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/loss.csv', names=list(range(2))).drop_duplicates(0, keep='last')
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.2, color=f'C{j}')
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/loss.csv', names=list(range(2)))#.drop_duplicates(0, keep='last')
+
+                reset_list.append((df.iloc[1:, 0].values < df.iloc[:-1, 0].values).nonzero()[0][0] + 1)
+                reset_loc_list.append(df.iloc[:, 0].values[reset_list[-1]])
+
+                ax.plot(np.minimum(min_loss, df.iloc[:, 1]), alpha=0.2, color=f'C{j}')
                 
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=f'C{j}')
+                #ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=f'C{j}')
                 ax.set_ylabel('Loss')
 
             #ax1.set_ylim([0, 2])
         if log_level >= 2:
             ax = axlist[1]
             for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/amp.csv', names=list(range(2))).drop_duplicates(0, keep='last')
-                ax.plot(df.iloc[:, 0], np.maximum(max_scaler, df.iloc[:, 1]))#, alpha=0.2)
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/amp.csv', names=list(range(2)))#.drop_duplicates(0, keep='last')
+                ax.plot(np.maximum(max_scaler, df.iloc[:, 1]))#, alpha=0.2)
                 ax.set_yscale('log')
                 ax.set_ylabel('Grad Scaler for Mixed Precision')
                 stored_xlim = ax.get_xlim()
@@ -54,8 +60,8 @@ if __name__ == '__main__':
         if log_level >= 3:
             ax = axlist[3]
             for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.visual.transformer.resblocks.0.mlp.c_fc.weight.csv', names=list(range(13))).drop_duplicates(0, keep='last')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}')
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/params-module.visual.transformer.resblocks.0.mlp.c_fc.weight.csv', names=list(range(13)))#.drop_duplicates(0, keep='last')
+                ax.plot(df.iloc[:, 6], color=f'C{j}')
                 ax.set_yscale('log')
                 ax.set_ylabel('MLP-W Gradient Max (block 0)')
                 ax.set_xlim(stored_xlim)
@@ -63,10 +69,11 @@ if __name__ == '__main__':
         if log_level >= 4:
             ax = axlist[2]
             for i in range(1):
-                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.0.csv', names=list(range(4))).drop_duplicates(0, keep='last')
+                df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.0.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
                 #df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
-
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=f'C{j}')
+                xs = df.shape[0]
+                xs = [jj // 2 for jj in range(xs)]
+                ax.plot(xs, df.iloc[:, 3], color=f'C{j}')
                 ax.set_yscale('log')
                 ax.set_ylabel('Feature max (block 10)')
                 ax.set_xlim(stored_xlim)
@@ -75,6 +82,10 @@ if __name__ == '__main__':
     for ax in axlist:
         ax.grid()
         ax.set_xlabel('Iterations')
+        for i, reset in enumerate(reset_list):
+            ax.axvline(reset, color=f'C{i}', linestyle='--')
+            ax.axvline(reset_loc_list[i], color=f'gray', linestyle='--')
+            print(reset_loc_list)
         # ax.axvline(9978, linestyle='--', color='gray', alpha=0.5)
         # ax.set_xlim(9978 - 8, 9978 + 8)
         # ax.axvline(9889, linestyle='--', color='gray', alpha=0.5)
@@ -89,6 +100,8 @@ if __name__ == '__main__':
         # ax.set_xlim(69647 - 1e1, 69647 + 1e1)
         #ax.axvline(92426, linestyle='--', color='gray', alpha=0.5)
         #ax.set_xlim(92426 - 1e1, 92426 + 1e1)
+
+        ax.set_xlim(93000 - 5e3, 93000 + 5e3)
     plt.savefig('plots/loss_plot_advanced.png', bbox_inches='tight')
 
 
