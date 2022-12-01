@@ -7,7 +7,7 @@ from run_with_submitit import main_with_args, parse_args
 
 if __name__ == "__main__":
 
-    for seed in [3, 4, 5]:
+    for seed in [0]:
         args = parse_args()
 
         args.model = 'ViT-H/14'
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         args.nodes = 8
         args.lr = 5e-4
 
-        args.partition = 'scavenge'
+        args.partition = 'learnlab'
         args.use_volta32 = True
 
         args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'

@@ -21,3 +21,10 @@ def cosine_lr(optimizer, base_lr, warmup_length, steps):
         assign_learning_rate(optimizer, lr)
         return lr
     return _lr_adjuster
+
+def get_batch_size(step, batch_size, warmup_length):
+    return int(
+        max(2, 
+            batch_size * min(1, (step + 1) / warmup_length)
+        )
+    )

@@ -17,6 +17,7 @@ from open_clip import ClipLoss, get_cast_dtype
 from .distributed import is_master
 from .zero_shot import zero_shot_eval
 from .precision import get_autocast
+from .scheduler import get_batch_size
 
 
 modules_to_log = [
@@ -182,6 +183,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
     loss_log = open(os.path.join(args.data_path, f'loss.csv'), 'a')
     feats_n_log = {}
 
+    batch_size = args.batch_size
+
     for n, m in model.named_modules():
         setattr(m, 'module_name', n)
         if n.endswith('0') or n.endswith('module.visual') or n.endswith('module.transformer'):
@@ -199,6 +202,11 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
             scheduler(step)
 
         images, texts = batch
+
+        if step < args.batch_warmup:
+            batch_size = get_batch_size(step, args.batch_size, args.batch_warmup)
+            images, texts = images[:batch_size], texts[:batch_size]
+
         images = images.to(device=device, dtype=cast_dtype, non_blocking=True)
         texts = texts.to(device=device, non_blocking=True)
 
@@ -253,6 +261,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         end = time.time()
         batch_count = i + 1
 
+        print('bs', batch_size)
+
         if is_master(args) and (i % 100 == 0 or batch_count == num_batches_per_epoch):
             batch_size = len(images)
             num_samples = batch_count * batch_size * args.world_size
@@ -276,10 +286,12 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 "loss": loss_m.val,
                 "data_time": data_time_m.val,
                 "batch_time": batch_time_m.val,
-                "samples_per_scond": args.batch_size*args.world_size / batch_time_m.val,
+                "samples_per_scond": batch_size*args.world_size / batch_time_m.val,
                 "scale":  logit_scale_scalar,
                 "lr": optimizer.param_groups[0]["lr"],
             }
+            if args.batch_warmup:
+                log_data["batch_size"] = batch_size*args.world_size
             if args.precision == 'amp':
                 log_data['amp_scaler'] = scaler._scale.item()
             for name, val in log_data.items():

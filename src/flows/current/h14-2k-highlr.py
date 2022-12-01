@@ -6,9 +6,7 @@ from run_with_submitit import main_with_args, parse_args
 
 
 if __name__ == "__main__":
-
-    #for seed in [0,1,2]:
-    for seed in [4]:
+    for seed in [0, 2]:
         args = parse_args()
 
         args.model = 'ViT-H/14'
@@ -20,10 +18,10 @@ if __name__ == "__main__":
 
         args.ngpus = 8
         args.batch_size = 64
-        args.nodes = 16
-        args.lr = 5e-4
+        args.nodes = 4
+        args.lr = 1e-3
 
-        args.partition = 'learnlab'#'learnlab'
+        args.partition = 'learnlab'
         args.use_volta32 = True
 
         args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
@@ -53,3 +51,24 @@ if __name__ == "__main__":
         args.job_dir = name
         main_with_args(args)
 
+"""
+srun --cpu_bind=none,v --accel-bind=gn python -u src/training/main.py \
+    --save-frequency 1 \
+    --zeroshot-frequency 1 \
+    --train-data="/p/fastdata/mmlaion/laion2B-en/{00000..23295}.tar" \
+    --train-num-samples=200000000 \
+    --warmup 10000 \
+    --lr "1e-3" \
+    --batch-size=208 \
+    --epochs=160 \
+    --workers=6 \
+    --model ViT-L-14 \
+    --name "L14-laion2B" \
+    --report-to "tensorboard" \
+    --seed 0 \
+    --ddp-static-graph \
+    --local-loss \
+    --dataset-resampled \
+    --gather-with-grad \
+    --grad-checkpointing
+"""

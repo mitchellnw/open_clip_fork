@@ -8,7 +8,7 @@ from run_with_submitit import main_with_args, parse_args
 if __name__ == "__main__":
 
     #for seed in [0,1,2]:
-    for seed in [4]:
+    for seed in [0, 2]:
         args = parse_args()
 
         args.model = 'ViT-H/14'
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         args.ngpus = 8
         args.batch_size = 64
         args.nodes = 16
-        args.lr = 5e-4
+        args.lr = 1e-3
 
         args.partition = 'learnlab'#'learnlab'
         args.use_volta32 = True
@@ -45,6 +45,7 @@ if __name__ == "__main__":
         args.save_frequency = 1
         args.zeroshot_frequency = 10
         args.warmup = 10000
+        args.batch_warmup = 10000
 
         name = f'clip-h14-400m-l0-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
         if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):

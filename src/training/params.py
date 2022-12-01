@@ -298,6 +298,12 @@ def get_args_parser():
     parser.add_argument(
         "--norm_gradient_clip", type=float, default=None, help="Gradient clip."
     )
+    parser.add_argument(
+        "--batch-warmup",
+        default=0,
+        type=int,
+        help="Linearly warms up the batch size over this many iterations.",
+    )
     return parser
 
 def parse_args():
