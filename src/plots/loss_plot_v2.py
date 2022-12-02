@@ -12,7 +12,13 @@ if __name__ == '__main__':
 
     file_list = []
     file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v4', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v2']#, 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v3', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v4', 'clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v5']
-    file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.001-0.9-0.98-1e-06-bs-8192-amp-v0']
+    #file_list = ['clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0', 'clip-h14-400m-l0-opt-0.001-0.9-0.98-1e-06-bs-8192-amp-v0']
+    file_list = ['clip-h14-400m-l0-opt-0.004-0.9-0.98-1e-06-bs-2048-amp-v0', 'clip-h14-ls0-400m-l0-opt-0.004-0.9-0.98-1e-06-bs-2048-amp-v0', 'clip-h14-400m-l0-opt-0.004-0.9-0.95-1e-06-bs-2048-amp-v0', 'clip-h14-ls0-400m-l0-opt-0.004-0.9-0.95-1e-06-bs-2048-amp-v0',  'clip-h14-400m-l0-opt-0.004-0.9-0.9-1e-06-bs-2048-amp-v0']
+    file_list = [file_list[3]]
+    file_list = ['clip-h14-400m-l0-opt-0.001-0.9-0.98-1e-06-bs-8192-amp-v0']
+    #file_list = ['clip-h14-400m-l0-opt-0.004-0.9-0.98-1e-06-bs-2048-amp-v0', 'clip-h14-400m-l0-opt-0.004-0.9-0.95-1e-06-bs-2048-amp-v0', 'clip-h14-400m-l0-opt-0.004-0.9-0.9-1e-06-bs-2048-amp-v0']
+    #file_list = [file_list[1], file_list[-1]]
+    #file_list = [file_list[0], ]
     # file_list = [file_list[0], file_list[2], file_list[1], 'scps/clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0/clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0']#, file_list[4]]
     #file_list = [file_list[0]]
     #print(file_list)
@@ -34,12 +40,12 @@ if __name__ == '__main__':
             ax = axlist[0]
             for i in range(1):
                 df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/loss.csv', names=list(range(2))).drop_duplicates(0, keep='last')
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.2, color=f'C{j}')
+                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.5, color=f'C{j}')
                 
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=f'C{j}')
+                #ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=f'C{j}')
                 ax.set_ylabel('Loss')
 
             #ax1.set_ylim([0, 2])
@@ -54,7 +60,7 @@ if __name__ == '__main__':
         
         if log_level >= 3:
             ax = axlist[2]
-            for i in range(1):
+            for i in range(64):
                 df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4))).drop_duplicates(0, keep='last')
                 #df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
 
@@ -70,17 +76,28 @@ if __name__ == '__main__':
         if log_level >= 4:
             ax = axlist[3]
             for i in range(1):
-                layer = 'params-module.visual.transformer.resblocks.0.mlp.c_fc.weight.csv'
+                # layer = 'params-module.visual.transformer.resblocks.30.mlp.c_fc.weight.csv'
+                # layer = 'params-module.visual.transformer.resblocks.10.mlp.c_fc.weight.csv'
+
                 # 
                 layer = 'params-module.logit_scale.csv'
-                layer = 'params-module.positional_embedding.csv'
-                layer = 'params-module.text_projection.csv'
-                layer = 'params-module.token_embedding.weight.csv'
+                layer = 'params-module.positional_embedding.csv' # YES!
+                # layer = 'params-module.text_projection.csv' # NO!
+                # layer = 'params-module.token_embedding.weight.csv'
                 df = pd.read_csv(f'/checkpoint/mitchellw/experiments/open_clip/{file}/data/{i}/{layer}', names=list(range(13))).drop_duplicates(0, keep='last')
                 ax.plot(df.iloc[:, 0], df.iloc[:, 10], color=f'C{j}')
                 ax.plot(df.iloc[:, 0], df.iloc[:, 12], color=f'C{j}', alpha=0.5)
+                # ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=f'C{j}')
+                # ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}', alpha=0.5)
+
+                # ax.axhline(df.iloc[12365, 4], color='gray')
+                # ax.axhline(df.iloc[12365, 6], color='gray')
                 ax.set_yscale('log')
+                #ax.set_ylim([1e-4, 1])
+                #ax.set_ylim([1e-10, 1e-8])
                 ax.set_ylabel('MLP-W Gradient Max (block 10)')
+                #ax.axhline(2e-3, color='gray')
+                #ax.axhline(2e-8, color='gray')
                 ax.set_xlim(stored_xlim)
 
 
@@ -107,6 +124,14 @@ if __name__ == '__main__':
         # ax.set_xticks([int(j) for j in range(8280 - int(1e1), 8280 + int(1e1))])
         # ax.axvline(92426, linestyle='--', color='gray', alpha=0.5)
         # ax.set_xlim(94000 - 3e3, 94000 + 3e3)
+        # ax.axvline(12655, linestyle='--', color='gray', alpha=0.5)
+        # ax.set_xlim(12655 - 1e1, 12655 + 1e1)
+        # ax.axvline(12365, linestyle='--', color='gray', alpha=0.5)
+        # ax.set_xlim(12365 - 1e1, 12365 )#+ 1e1)
+        # ax.set_xlim(0, 12365)
+        ax.axvline(54350, linestyle='--', color='gray', alpha=0.5)
+        ax.set_xlim(54350 - 1e4, 54350 + 1e4)#+ 1e1)
+
     plt.savefig('plots/loss_plot_advanced.png', bbox_inches='tight')
 
 

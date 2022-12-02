@@ -149,7 +149,7 @@ def unwrap_model(model):
         return model
 
 
-def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_writer=None):
+def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, beta2_scheduler, args, tb_writer=None):
     device = torch.device(args.device)
     autocast = get_autocast(args.precision)
     cast_dtype = get_cast_dtype(args.precision)
@@ -183,7 +183,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
     loss_log = open(os.path.join(args.data_path, f'loss.csv'), 'a')
     feats_n_log = {}
 
-    batch_size = args.batch_size
+    #batch_size = args.batch_size
 
     for n, m in model.named_modules():
         setattr(m, 'module_name', n)
@@ -200,12 +200,14 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         
         if not args.skip_scheduler:
             scheduler(step)
+        if beta2_scheduler is not None:
+            beta2_scheduler(step)
 
         images, texts = batch
 
-        if step < args.batch_warmup:
-            batch_size = get_batch_size(step, args.batch_size, args.batch_warmup)
-            images, texts = images[:batch_size], texts[:batch_size]
+        # if step < args.batch_warmup:
+        #     batch_size = get_batch_size(step, args.batch_size, args.batch_warmup)
+        #     images, texts = images[:batch_size], texts[:batch_size]
 
         images = images.to(device=device, dtype=cast_dtype, non_blocking=True)
         texts = texts.to(device=device, non_blocking=True)
@@ -261,8 +263,6 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         end = time.time()
         batch_count = i + 1
 
-        print('bs', batch_size)
-
         if is_master(args) and (i % 100 == 0 or batch_count == num_batches_per_epoch):
             batch_size = len(images)
             num_samples = batch_count * batch_size * args.world_size
@@ -289,9 +289,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 "samples_per_scond": batch_size*args.world_size / batch_time_m.val,
                 "scale":  logit_scale_scalar,
                 "lr": optimizer.param_groups[0]["lr"],
+                "beta2": optimizer.param_groups[0]["betas"][1],
             }
-            if args.batch_warmup:
-                log_data["batch_size"] = batch_size*args.world_size
             if args.precision == 'amp':
                 log_data['amp_scaler'] = scaler._scale.item()
             for name, val in log_data.items():
@@ -362,6 +361,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                     amp_log.write(f'{step},{scaler._scale.item()}\n')
                 for n, p in model.named_parameters():
                     if n not in modules_to_log:
+                        continue
+                    if not p.requires_grad:
                         continue
                     # to_log = [
                     #     step,

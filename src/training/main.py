@@ -30,7 +30,7 @@ from training.data import get_data
 from training.distributed import is_master, init_distributed_device, world_info_from_env
 from training.logger import setup_logging
 from training.params import parse_args
-from training.scheduler import cosine_lr
+from training.scheduler import cosine_lr, linearly_warmup_beta2
 from training.train import train_one_epoch, evaluate
 
 
@@ -146,6 +146,12 @@ def main_with_args(args):
     )
     random_seed(args.seed, args.rank)
 
+    if args.fix_proj:
+        def apply_fix_proj(m):
+            if hasattr(m, 'fix_proj'):
+                m.fix_proj()
+        model.apply(apply_fix_proj)
+
     if args.trace:
         model = trace_model(model, batch_size=args.batch_size, device=device)
 
@@ -238,9 +244,12 @@ def main_with_args(args):
 
     # create scheduler if train
     scheduler = None
+    beta2_scheduler = None
     if 'train' in data and optimizer is not None:
         total_steps = data["train"].dataloader.num_batches * args.epochs
         scheduler = cosine_lr(optimizer, args.lr, args.warmup, total_steps)
+        if args.warmup_beta2 > 0:
+            beta2_scheduler = linearly_warmup_beta2(optimizer, args.init_beta2, args.beta2, args.warmup_beta2, total_steps)
 
     # determine if this worker should save logs and checkpoints. only do so if it is rank == 0
     args.save_logs = args.logs and args.logs.lower() != 'none' and is_master(args)
@@ -285,7 +294,7 @@ def main_with_args(args):
         if is_master(args):
             logging.info(f'Start epoch {epoch}')
 
-        train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
+        train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, beta2_scheduler, args, writer)
         completed_epoch = epoch + 1
 
         if any(v in data for v in ('val', 'imagenet-val', 'imagenet-v2')):

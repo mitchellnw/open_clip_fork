@@ -6,8 +6,6 @@ from run_with_submitit import main_with_args, parse_args
 
 
 if __name__ == "__main__":
-
-    #for seed in [0,1,2]:
     for seed in [0]:
         args = parse_args()
 
@@ -21,9 +19,9 @@ if __name__ == "__main__":
         args.ngpus = 8
         args.batch_size = 64
         args.nodes = 4
-        args.lr = 1e-3
+        args.lr = 4e-3
 
-        args.partition = 'devlab'#'learnlab'
+        args.partition = 'learnlab'
         args.use_volta32 = True
 
         args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
@@ -45,12 +43,34 @@ if __name__ == "__main__":
         args.save_frequency = 1
         args.zeroshot_frequency = 10
         args.warmup = 10000
-        args.batch_warmup = 10000
 
-        name = f'clip-h14-400m-l0-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}-batchwarmup'
+        args.beta2 = 0.9
+
+        name = f'clip-h14-400m-l0-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
         if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
             args.logs = '/checkpoint/mitchellw/experiments/open_clip'
         args.name = name
         args.job_dir = name
         main_with_args(args)
 
+"""
+srun --cpu_bind=none,v --accel-bind=gn python -u src/training/main.py \
+    --save-frequency 1 \
+    --zeroshot-frequency 1 \
+    --train-data="/p/fastdata/mmlaion/laion2B-en/{00000..23295}.tar" \
+    --train-num-samples=200000000 \
+    --warmup 10000 \
+    --lr "1e-3" \
+    --batch-size=208 \
+    --epochs=160 \
+    --workers=6 \
+    --model ViT-L-14 \
+    --name "L14-laion2B" \
+    --report-to "tensorboard" \
+    --seed 0 \
+    --ddp-static-graph \
+    --local-loss \
+    --dataset-resampled \
+    --gather-with-grad \
+    --grad-checkpointing
+"""

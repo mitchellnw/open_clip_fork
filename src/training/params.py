@@ -304,6 +304,15 @@ def get_args_parser():
         type=int,
         help="Linearly warms up the batch size over this many iterations.",
     )
+    parser.add_argument(
+        "--fix-proj",
+        default=False,
+        action='store_true',
+    )
+    parser.add_argument(
+        "--warmup-beta2", type=int, default=0, help="Number of steps to warmup beta2 for."
+    )
+    parser.add_argument("--init-beta2", type=float, default=0., help="Initial adam beta 2, if warmup up.")
     return parser
 
 def parse_args():

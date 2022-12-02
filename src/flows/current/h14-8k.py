@@ -8,7 +8,7 @@ from run_with_submitit import main_with_args, parse_args
 if __name__ == "__main__":
 
     #for seed in [0,1,2]:
-    for seed in [4]:
+    for seed in [2,4]:
         args = parse_args()
 
         args.model = 'ViT-H/14'

@@ -41,3 +41,18 @@ torchrun --nproc_per_node 4 -m training.main   \
       --train-data="pipe:aws s3 cp s3://s-datasets/laion400m/laion400m-dat-release/{00000..41455}.tar -"  \
       --train-num-samples 413000000     --local-loss     --gather-with-grad     --grad-checkpointing \
       --precision amp_bfloat16
+
+
+## checkpoint analyzer script
+/private/home/mitchellw/miniconda3/envs/open_clip/bin/torchrun --nproc_per_node 2 -m training.main \
+    --train-data '/datasets01/laion400m/laion400m-met-release/laion400m-dataset/{00000..41627}.tar' \
+    --train-num-samples 10968539 \
+    --dataset-type webdataset \
+    --batch-size 10 \
+    --precision amp \
+    --workers 4 --model ViT-H-14 \
+    --seed 1000 \
+    --resume /checkpoint/mitchellw/experiments/open_clip/clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8192-amp-v0/checkpoints/iter_73296.pt \
+    --ddp-static-graph --local-loss --dataset-resampled --gather-with-grad --grad-checkpointing \
+    --name cp_analyzer
+    
