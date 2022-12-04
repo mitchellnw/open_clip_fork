@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=gpu
 #SBATCH --job-name=openclip
-#SBATCH --nodes 20
+#SBATCH --nodes 8
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=6
 #SBATCH --gres=gpu:8
@@ -61,8 +61,8 @@ LOGS_NAME="b32-test-3"
     --train-num-samples 135646078 \
     --dataset-type webdataset \
     --dataset-resampled \
-    --warmup 2000 \
-    --batch-size=200 \
+    --warmup 10000 \
+    --batch-size=128 \
     --epochs=256 \
     --lr 5.5e-4 \
     --workers=2 \
@@ -77,15 +77,4 @@ LOGS_NAME="b32-test-3"
     --grad-checkpointing \
     --precision amp \
     --save-most-recent \
-
-
-{"dataset": "imagenet1k-unverified", "model": "ViT-H-14", "pretrained": "laion2b_s32b_b79k", "task": "zeroshot_classification", "metrics": {"acc1": 0.78942, "acc5": 0.95784, "mean_per_class_recall": 0.7895599999999999}, "language": "en"}
-
-python clip_benchmark/cli.py --dataset=imagenet1k-unverified --dataset_root ~/imagenet --task=zeroshot_classification --pretrained=frozen_laion5b_s13b_b90k --model=xlm-roberta-large-ViT-H-14 --output=result.json --cupl --batch_size=128 --save_clf roberta_cupl.pt
-python clip_benchmark/cli.py --dataset=imagenet1k-unverified --dataset_root ~/imagenet --task=zeroshot_classification --pretrained=frozen_laion5b_s13b_b90k --model=xlm-roberta-large-ViT-H-14 --output=result.json --batch_size=128 --save_clf roberta_standard.pt
-python clip_benchmark/cli.py --dataset=imagenet1k-unverified --dataset_root ~/imagenet --task=zeroshot_classification --pretrained=laion2b_s32b_b79k --model=ViT-H-14 --output=result.json --cupl --batch_size=128 --save_clf standard_cupl.pt
-python clip_benchmark/cli.py --dataset=imagenet1k-unverified --dataset_root ~/imagenet --task=zeroshot_classification --pretrained=laion2b_s32b_b79k --model=ViT-H-14 --output=result.json --batch_size=128 --save_clf standard_standard.pt
-
-python clip_benchmark/cli.py --dataset=imagenet1k-unverified --dataset_root ~/imagenet --task=zeroshot_classification --pretrained=laion2b_s32b_b79k --model=ViT-H-14 --output=result.json --batch_size=128 --load_clfs  standard_cupl.pt standard_standard.pt
-
 

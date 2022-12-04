@@ -147,6 +147,7 @@ src/debug
 core.*
 
 *.pt
+openclip*
 
 # Allow
 !src/evaluation/misc/results_dbs/*

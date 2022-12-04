@@ -56,3 +56,5 @@ torchrun --nproc_per_node 4 -m training.main   \
     --ddp-static-graph --local-loss --dataset-resampled --gather-with-grad --grad-checkpointing \
     --name cp_analyzer
     
+rsync -avz --exclude '*.pt'  mitchellw@laion.hpc.stability.ai:/fsx/home-mitchellw/experimetns/open_clip/ .
+rsync -avz ../scps  devfair:/checkpoint/mitchellw/experiments/open_clip/

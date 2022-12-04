@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --partition=gpu
 #SBATCH --job-name=openclip
-#SBATCH --nodes 5
+#SBATCH --nodes 3
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=6
 #SBATCH --gres=gpu:8
 #SBATCH --output=%x_%j.out
-#SBATCH --comment=laion
+#SBATCH --comment=mila
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 
@@ -27,17 +27,17 @@ echo $HOSTNAMES
 cd /fsx/home-mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx/home-mitchellw/open_clip_fork/src"
 
-EXP_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0"
-LOGS_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0"
+EXP_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4080-amp_bfloat16-v0"
+LOGS_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-4080-amp_bfloat16-v0"
 
-/opt/slurm/sbin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
+/opt/slurm/sbin/srun --comment mila --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
     --train-data="pipe:aws s3 cp s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar -" \
     --train-num-samples 135646078 \
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 10000 \
-    --batch-size=205 \
+    --batch-size=170 \
     --epochs=256 \
     --lr 5e-4 \
     --workers=2 \

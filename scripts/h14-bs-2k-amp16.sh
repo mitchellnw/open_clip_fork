@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=gpu
 #SBATCH --job-name=openclip
-#SBATCH --nodes 5
+#SBATCH --nodes 2
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=6
 #SBATCH --gres=gpu:8
@@ -27,8 +27,8 @@ echo $HOSTNAMES
 cd /fsx/home-mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx/home-mitchellw/open_clip_fork/src"
 
-EXP_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0"
-LOGS_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0"
+EXP_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp_bfloat16-v0"
+LOGS_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-2048-amp_bfloat16-v0"
 
 /opt/slurm/sbin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -37,7 +37,7 @@ LOGS_NAME="clip-h14-400m-l0-opt-0.0005-0.9-0.98-1e-06-bs-8200-amp_bfloat16-v0"
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 10000 \
-    --batch-size=205 \
+    --batch-size=128 \
     --epochs=256 \
     --lr 5e-4 \
     --workers=2 \
