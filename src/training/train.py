@@ -362,7 +362,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, beta2_sche
                 for n, p in model.named_parameters():
                     if n not in modules_to_log:
                         continue
-                    if not p.requires_grad:
+                    if p.grad is None:
                         continue
                     # to_log = [
                     #     step,

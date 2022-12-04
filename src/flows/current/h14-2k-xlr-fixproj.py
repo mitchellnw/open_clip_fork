@@ -21,7 +21,7 @@ if __name__ == "__main__":
         args.nodes = 4
         args.lr = 4e-3
 
-        args.partition = 'learnlab'
+        args.partition = 'devlab'
         args.use_volta32 = True
 
         args.imagenet_val = '/datasets01/imagenet_full_size/061417/val'
@@ -44,6 +44,8 @@ if __name__ == "__main__":
         args.zeroshot_frequency = 10
         args.warmup = 10000
         args.fix_proj = True
+
+        args.beta2 = 0.95
 
         name = f'clip-h14-fixproj-400m-l0-opt-{args.lr}-{args.beta1}-{args.beta2}-{args.eps}-bs-{args.batch_size * args.ngpus * args.nodes}-{args.precision}-v{args.seed}'
         if os.path.exists('/checkpoint/mitchellw/experiments/open_clip'):
