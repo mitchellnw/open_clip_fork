@@ -332,7 +332,18 @@ def parse_args(args):
         default=100,
         help="Log every n steps to tensorboard/console/wandb.",
     )
-
+    parser.add_argument(
+        "--advanced-logging",
+        default=False,
+        action='store_true',
+        help="Store more information such as grad/feature norms.",
+    )
+    parser.add_argument(
+        "--pinit",
+        default=False,
+        action='store_true',
+        help="Pinit scheme for model initialization.",
+    )
 
     args = parser.parse_args(args)
 

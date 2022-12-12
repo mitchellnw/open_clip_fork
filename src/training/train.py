@@ -17,6 +17,7 @@ from open_clip import ClipLoss, get_cast_dtype
 from .distributed import is_master
 from .zero_shot import zero_shot_eval
 from .precision import get_autocast
+from .modules_to_log import modules_to_log
 
 
 class AverageMeter(object):
@@ -71,12 +72,34 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
     if args.accum_freq > 1:
         accum_images, accum_texts, accum_image_features, accum_text_features = [], [], [], []
 
+    if args.advanced_logging:
+        if is_master(args):
+            amp_log = open(os.path.join(args.data_path, f'amp.csv'), 'a')
+            param_n_log = {n : open(os.path.join(args.data_path, f'params-{n}.csv'), 'a') for n in modules_to_log}
+        else:
+            amp_log = None
+            param_n_log = {}
+
+        loss_log = open(os.path.join(args.data_path, f'loss.csv'), 'a')
+        feats_n_log = {}
+
+        #batch_size = args.batch_size
+
+        for n, m in model.named_modules():
+            setattr(m, 'module_name', n)
+            if n.endswith('0') or n.endswith('module.visual') or n.endswith('module.transformer'):
+                feats_n_log[n] = open(os.path.join(args.data_path, f'features-{n}.csv'), 'a')
+                setattr(m, 'logger_file', feats_n_log[n])
+            else:
+                setattr(m, 'logger_file', None)
+
     loss_m = AverageMeter()
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
     end = time.time()
     for i, batch in enumerate(dataloader):
         step = num_batches_per_epoch * epoch + (i // args.accum_freq)
+        model.apply(lambda m : setattr(m, 'iter', step))
         
         if not args.skip_scheduler:
             scheduler(step)
@@ -181,6 +204,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 "scale":  logit_scale_scalar,
                 "lr": optimizer.param_groups[0]["lr"]
             }
+            if args.precision == 'amp':
+                log_data['amp_scaler'] = scaler._scale.item()
             for name, val in log_data.items():
                 name = "train/" + name
                 if tb_writer is not None:
@@ -192,6 +217,59 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
             # resetting batch / data time meters per log window
             batch_time_m.reset()
             data_time_m.reset()
+
+        # log loss.
+        if args.advanced_logging:
+            with torch.no_grad():
+                loss_log.write(f'{step},{total_loss.item()}\n')
+                if is_master(args):
+                    if args.precision == 'amp':
+                        amp_log.write(f'{step},{scaler._scale.item()}\n')
+                    for n, p in model.named_parameters():
+                        if n not in modules_to_log:
+                            continue
+                        if p.grad is None:
+                            continue
+                        to_log = [
+                            step,
+                            p.abs().mean().item(), #'weight_means'
+                            p.abs().std().item(), # 'weight_std'
+                            p.abs().max().item(), # 'weight_max'
+                            p.grad.abs().mean().item(), #'grad_means'
+                            p.grad.abs().std().item(), # 'grad_std'
+                            p.grad.abs().max().item(), # 'grad_max'
+                        ]
+                        
+                        to_log = to_log + [
+                            optimizer.state[p]['exp_avg'].abs().mean().item(), #'v_means'
+                            optimizer.state[p]['exp_avg'].abs().std().item(), # 'v_std'
+                            optimizer.state[p]['exp_avg'].abs().max().item(), # 'v_max'
+                            optimizer.state[p]['exp_avg_sq'].abs().mean().item(), #'g_means'
+                            optimizer.state[p]['exp_avg_sq'].abs().std().item(), # 'g_std'
+                            optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'g_max'
+                        ]
+                        param_n_log[n].write(','.join([str(x) for x in to_log]) + '\n')
+                
+                if (i % 100) == 0:
+                    loss_log.flush()
+                    for n in feats_n_log:
+                        feats_n_log[n].flush()
+                    if is_master(args):
+                        if args.precision == 'amp':
+                            amp_log.flush()
+                        for n, p in model.named_parameters():
+                            if n in modules_to_log:
+                                param_n_log[n].flush()
+    
+    if args.advanced_logging:
+        loss_log.close()
+        for n in feats_n_log:
+            feats_n_log[n].close()
+        if is_master(args):
+            if amp_log is not None:
+                amp_log.close()
+            for n in modules_to_log:
+                param_n_log[n].close()
     # end for
 
 

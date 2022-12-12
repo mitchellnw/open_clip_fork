@@ -68,17 +68,16 @@ def main(args):
     args.distributed = False
     args.local_rank, args.rank, args.world_size = world_info_from_env()
 
-    args.log_path = None
-    if is_master(args, local=args.log_local):
-        log_base_path = os.path.join(args.logs, args.name)
-        os.makedirs(log_base_path, exist_ok=True)
-        log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
-        args.log_path = os.path.join(log_base_path, log_filename)
-        if os.path.exists(args.log_path):
-            print(
-                "Error. Experiment already exists. Use --name {} to specify a new experiment."
-            )
-            return -1
+
+    log_base_path = os.path.join(args.logs, args.name)
+    os.makedirs(log_base_path, exist_ok=True)
+    log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
+    args.log_path = os.path.join(log_base_path, log_filename)
+    if os.path.exists(args.log_path):
+        assert args.save_most_recent
+        cpdir = os.path.join(args.logs, args.name, 'checkpoints/epoch_latest.pt')
+        if os.path.exists(cpdir):
+            args.resume = cpdir
 
     # Set logger
     args.log_level = logging.DEBUG if args.debug else logging.INFO
@@ -101,6 +100,10 @@ def main(args):
 
     if args.copy_codebase:
         copy_codebase(args)
+    if args.advanced_logging:
+        args.data_path = os.path.join(args.logs, args.name, "data", str(args.rank))
+        if not os.path.exists(args.data_path):
+            os.makedirs(args.data_path)
 
     if args.precision == 'fp16':
         logging.warning(
@@ -259,6 +262,22 @@ def main(args):
             wandb.watch(model, log='all')
         wandb.save(params_file)
         logging.debug('Finished loading wandb.')
+    
+
+    model.apply(lambda m : setattr(m, 'advanced_logging', args.advanced_logging))
+    if args.advanced_logging:
+        for n, m in model.named_modules():
+            setattr(m, 'module_name', n)
+        model.apply(lambda m: setattr(m, 'data_path', args.data_path))
+        model.apply(lambda m: setattr(m, 'logger_file', None))
+        model.apply(lambda m: setattr(m, 'iter', None))
+
+    if args.pinit and start_epoch == 0:
+        def do_pinit(m):
+            if hasattr(m, 'pinit'):
+                m.pinit()
+        model.apply(lambda m: setattr(m, 'rank', args.rank))
+        model.apply(do_pinit)
 
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)
