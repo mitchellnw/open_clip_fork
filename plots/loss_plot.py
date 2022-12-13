@@ -2,10 +2,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-def proc(df):
+def proc(df, lim):
     df.drop(df[df[0] == 0].index[1:], axis=0, inplace=True)
     df.drop_duplicates(0, keep='last', inplace=True)
-
+    if lim > 0:
+        df = df[df[0] < lim]
+    return df
 if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
@@ -16,26 +18,30 @@ if __name__ == '__main__':
 
     file_list = []
     file_list = [
-        'clip-bigG14-pd05-pinit-160k-2e-3-amp_bfloat16-v1',
-        'clip-bigG14-pd05-160k-2e-3-amp_bfloat16-v1',
-        'clip-bigG14-pd05-ls0-160k-2e-3-amp_bfloat16-v1'
+        #('clip-bigG14-pd05-pinit-160k-2e-3-amp_bfloat16-v1', 'p-init (blew-up)', 'C0', -1),
+        ('clip-bigG14-pd05-160k-2e-3-amp_bfloat16-v1', 'standard (blew-up)', 'C0', 4000),#3900),
+        #('clip-bigG14-pd05-ls0-160k-2e-3-amp_bfloat16-v1', 'layer-scale=0', 'C2', -1),
+        ('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'p-init + layer-scale=1 + beta2=0.95', 'C1', -1),
     ]
-    file_list = file_list[:2]
+    #file_list = file_list[1:2]
+    #file_list = file_list[:2]
 
     fig, axlist = plt.subplots(log_level, 1, figsize=(8, 5 * log_level))
-    for j, file in enumerate(file_list):
+    if log_level == 1:
+        axlist = [axlist]
+    for j, (file, name, color, lim) in enumerate(file_list):
 
         if log_level >= 1:
             ax = axlist[0]
             for i in range(1):
                 df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/loss.csv', names=list(range(2)))
-                proc(df)
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.5, color=f'C{j}')
+                df = proc(df, lim)
+                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.5, color=color)
                 
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                #ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=f'C{j}')
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name)
                 ax.set_ylabel('Loss')
 
         
@@ -43,15 +49,15 @@ if __name__ == '__main__':
             ax = axlist[1]
             for i in range(1):
                 df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.40.csv', names=list(range(4)))
-                proc(df)
+                df = proc(df, lim)
                 #df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
 
 
-                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=f'C{j}')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=f'C{j}', alpha=0.3)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=f'C{j}', alpha=0.6)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color)
+                #ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.6)
                 ax.set_yscale('log')
-                ax.set_ylabel('Feature max (block 10)')
+                ax.set_ylabel('Feature mean and max (block 40)')
 
                 
 
@@ -64,22 +70,26 @@ if __name__ == '__main__':
                 #layer = 'params-module.text_projection.csv' # NO!
                 layer = 'params-module.token_embedding.weight.csv'
                 df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/{layer}', names=list(range(13)))
-                proc(df)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=f'C{j}')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 5], color=f'C{j}', alpha=0.6)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=f'C{j}', alpha=0.3)
+                df = proc(df, lim)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=color)
+                #ax.plot(df.iloc[:, 0], df.iloc[:, 5], color=color, alpha=0.6)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=color, alpha=0.3)
                 ax.set_yscale('log')
-                ax.set_ylabel('MLP-W Gradient Max (block 10)')
+                ax.set_ylabel('token_embedding grad mean and max')
 
 
 
-    for ax in axlist:
+    for j, ax in enumerate(axlist):
+        if j == 0:
+            ax.legend()
         ax.grid()
         ax.set_xlabel('Iterations')
-        vv = 3785
+        vv = 3787
         dd = 1e2
-        vv = 2186
-        dd = 1e3
+        # vv = 2186
+        # dd = 1e3
+        vv =8010
+        dd = 1e1
         continue
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)
