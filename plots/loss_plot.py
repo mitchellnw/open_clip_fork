@@ -44,6 +44,7 @@ if __name__ == '__main__':
                 data_convolved = data_convolved[kernel_size:-kernel_size]
                 ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name)
                 ax.set_ylabel('Loss')
+                #ax.set_yscale('log')
 
         
         if log_level >= 2:
