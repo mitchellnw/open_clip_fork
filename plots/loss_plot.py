@@ -12,16 +12,17 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level = 3
+    log_level = 1
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
     file_list = []
     file_list = [
         #('clip-bigG14-pd05-pinit-160k-2e-3-amp_bfloat16-v1', 'p-init (blew-up)', 'C0', -1),
-        ('clip-bigG14-pd05-160k-2e-3-amp_bfloat16-v1', 'standard (blew-up)', 'C0', 4000),#3900),
+        #('clip-bigG14-pd05-160k-2e-3-amp_bfloat16-v1', 'standard (blew-up)', 'C1', 4000),#3900),
         #('clip-bigG14-pd05-ls0-160k-2e-3-amp_bfloat16-v1', 'layer-scale=0', 'C2', -1),
-        ('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'p-init + layer-scale=1 + beta2=0.95', 'C1', -1),
+        #('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'p-init + layer-scale=1 + beta2=0.95', 'C3', -1),
+        ('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'ViT-bigG-14', 'C4', -1),
     ]
     #file_list = file_list[1:2]
     #file_list = file_list[:2]
@@ -54,7 +55,7 @@ if __name__ == '__main__':
 
 
                 ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color)
-                #ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
                 ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.6)
                 ax.set_yscale('log')
                 ax.set_ylabel('Feature mean and max (block 40)')
