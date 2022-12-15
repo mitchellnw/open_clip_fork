@@ -192,10 +192,38 @@ class ResidualAttentionBlock(nn.Module):
             ("c_proj", nn.Linear(mlp_width, d_model))
         ]))
         self.ls_2 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
+        self.mlp_ratio = mlp_ratio
 
     def attention(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         attn_mask = attn_mask.to(x.dtype) if attn_mask is not None else None
         return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
+
+    def cinit(self):
+        from torch.nn import MultiheadAttention
+        print('Applying cinit')
+        S = self.d_model
+        
+        # Q: stddev=sqrt(0.5/S)
+        nn.init.uniform_(self.attn.q_proj_weight, a=-2*math.sqrt(0.5/S), b=2*math.sqrt(0.5/S))
+        
+        # K: stddev=sqrt(0.5/S)
+        nn.init.uniform_(self.attn.k_proj_weight, a=-2*math.sqrt(0.5/S), b=2*math.sqrt(0.5/S))
+        
+        # V: stddev=sqrt(1.0/S)
+        nn.init.uniform_(self.attn.v_proj_weight, a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
+        
+        # U: stddev=sqrt(1.0/S)
+        nn.init.uniform_(self.attn.out_proj.weight, a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
+        nn.init.zeros_(self.attn.out_proj.bias)
+
+        # W: stddev=sqrt(1.0/S)
+        nn.init.uniform_(self.attn.c_fc.weight, a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
+        nn.init.zeros_(self.attn.c_fc.bias)
+
+        # X: stddev=sqrt(2.0/(S+MLP_multiplier*S))
+        stddev = math.sqrt(2.0/(S + self.mlp_ratio*S))
+        nn.init.uniform_(self.attn.c_proj.weight, a=-2*stddev, b=2*stddev)
+        nn.init.zeros_(self.attn.c_proj.bias)
 
     def pinit(self):
         print('Applying pinit')
@@ -508,3 +536,30 @@ class TextTransformer(nn.Module):
         x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
 
         return x
+
+    # def cinit(self):
+    #     from torch.nn import MultiheadAttention
+    #     print('Applying cinit')
+    #     S = self.d_model
+        
+    #     # Q: stddev=sqrt(0.5/S)
+    #     nn.init.trunc_normal_(self.attn.q_proj_weight, std=math.sqrt(0.5/S), a=-2*math.sqrt(0.5/S), b=2*math.sqrt(0.5/S))
+        
+    #     # K: stddev=sqrt(0.5/S)
+    #     nn.init.trunc_normal_(self.attn.k_proj_weight, std=math.sqrt(0.5/S), a=-2*math.sqrt(0.5/S), b=2*math.sqrt(0.5/S))
+        
+    #     # V: stddev=sqrt(1.0/S)
+    #     nn.init.trunc_normal_(self.attn.v_proj_weight, std=math.sqrt(1.0/S), a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
+        
+    #     # U: stddev=sqrt(1.0/S)
+    #     nn.init.trunc_normal_(self.attn.out_proj.weight, std=math.sqrt(1.0/S), a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
+    #     nn.init.zeros_(self.attn.out_proj.bias)
+
+    #     # W: stddev=sqrt(1.0/S)
+    #     nn.init.trunc_normal_(self.attn.c_fc.weight, std=math.sqrt(1.0/S), a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
+    #     nn.init.zeros_(self.attn.c_fc.bias)
+
+    #     # X: stddev=sqrt(2.0/(S+MLP_multiplier*S))
+    #     stddev = math.sqrt(2.0/(S + self.mlp_ratio*S))
+    #     nn.init.trunc_normal_(self.attn.c_proj.weight, std=stddev, a=-2*stddev, b=2*stddev)
+    #     nn.init.zeros_(self.attn.c_proj.bias)

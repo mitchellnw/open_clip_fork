@@ -344,7 +344,12 @@ def parse_args(args):
         action='store_true',
         help="Pinit scheme for model initialization.",
     )
-
+    parser.add_argument(
+        "--cinit",
+        default=False,
+        action='store_true',
+        help="Cinit scheme for model initialization.",
+    )
     args = parser.parse_args(args)
 
     # If some params are not passed, we use the default values based on model name.

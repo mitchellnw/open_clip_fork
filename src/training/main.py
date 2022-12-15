@@ -272,6 +272,13 @@ def main(args):
         model.apply(lambda m: setattr(m, 'logger_file', None))
         model.apply(lambda m: setattr(m, 'iter', None))
 
+    if args.cinit and start_epoch == 0:
+        def do_cinit(m):
+            if hasattr(m, 'cinit'):
+                m.cinit()
+        model.apply(lambda m: setattr(m, 'rank', args.rank))
+        model.apply(do_cinit)
+
     if args.pinit and start_epoch == 0:
         def do_pinit(m):
             if hasattr(m, 'pinit'):
