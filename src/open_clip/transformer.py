@@ -232,10 +232,6 @@ class ResidualAttentionBlock(nn.Module):
         nn.init.zeros_(self.mlp.c_proj.weight)
         nn.init.zeros_(self.mlp.c_proj.bias)
 
-    def cinit(self):
-        print('Applying cinit')
-        # TODO: Code from Sho.
-
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask))
         x = x + self.ls_2(self.mlp(self.ln_2(x)))
