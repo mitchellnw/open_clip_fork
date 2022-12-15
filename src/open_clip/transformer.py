@@ -199,7 +199,6 @@ class ResidualAttentionBlock(nn.Module):
         return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
 
     def cinit(self):
-        from torch.nn import MultiheadAttention
         print('Applying cinit')
         S = self.d_model
         
