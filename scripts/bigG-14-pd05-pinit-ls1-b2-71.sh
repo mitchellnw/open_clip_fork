@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --partition=g80n132
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 83
+#SBATCH --nodes 71
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=6
 #SBATCH --output=%x_%j.out
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
 #SBATCH --exclusive
+
 module load openmpi
 # source /opt/intel/mpi/latest/env/vars.sh
 
@@ -34,7 +35,7 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 13000 \
-    --batch-size=241 \
+    --batch-size=282 \
     --epochs=256 \
     --lr 2e-3 \
     --beta2 0.95 \
