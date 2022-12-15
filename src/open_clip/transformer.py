@@ -7,6 +7,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
+from torch.nn import MultiheadAttention
 from .utils import to_2tuple
 
 import wandb
@@ -192,6 +193,8 @@ class ResidualAttentionBlock(nn.Module):
             ("c_proj", nn.Linear(mlp_width, d_model))
         ]))
         self.ls_2 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
+        
+        self.d_model = d_model
         self.mlp_ratio = mlp_ratio
 
     def attention(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
@@ -199,30 +202,42 @@ class ResidualAttentionBlock(nn.Module):
         return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
 
     def cinit(self):
+
         print('Applying cinit')
         S = self.d_model
-        
-        # Q: stddev=sqrt(0.5/S)
-        nn.init.uniform_(self.attn.q_proj_weight, a=-2*math.sqrt(0.5/S), b=2*math.sqrt(0.5/S))
-        
-        # K: stddev=sqrt(0.5/S)
-        nn.init.uniform_(self.attn.k_proj_weight, a=-2*math.sqrt(0.5/S), b=2*math.sqrt(0.5/S))
-        
-        # V: stddev=sqrt(1.0/S)
-        nn.init.uniform_(self.attn.v_proj_weight, a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
-        
+        m = math.sqrt(3)
+
+        if self.attn._qkv_same_embed_dim:
+            # Q: stddev=sqrt(0.5/S)
+            nn.init.uniform_(self.attn.in_proj_weight[0:S], a=-m*math.sqrt(0.5/S), b=m*math.sqrt(0.5/S))
+            
+            # K: stddev=sqrt(0.5/S)
+            nn.init.uniform_(self.attn.in_proj_weight[S:2*S], a=-m*math.sqrt(0.5/S), b=m*math.sqrt(0.5/S))
+            
+            # V: stddev=sqrt(1.0/S)
+            nn.init.uniform_(self.attn.in_proj_weight[2*S:], a=-m*math.sqrt(1.0/S), b=m*math.sqrt(1.0/S))
+        else:
+            # Q: stddev=sqrt(0.5/S)
+            nn.init.uniform_(self.attn.q_proj_weight, a=-m*math.sqrt(0.5/S), b=m*math.sqrt(0.5/S))
+            
+            # K: stddev=sqrt(0.5/S)
+            nn.init.uniform_(self.attn.k_proj_weight, a=-m*math.sqrt(0.5/S), b=m*math.sqrt(0.5/S))
+            
+            # V: stddev=sqrt(1.0/S)
+            nn.init.uniform_(self.attn.v_proj_weight, a=-m*math.sqrt(1.0/S), b=m*math.sqrt(1.0/S))
+            
         # U: stddev=sqrt(1.0/S)
-        nn.init.uniform_(self.attn.out_proj.weight, a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
+        nn.init.uniform_(self.attn.out_proj.weight, a=-m*math.sqrt(1.0/S), b=m*math.sqrt(1.0/S))
         nn.init.zeros_(self.attn.out_proj.bias)
 
         # W: stddev=sqrt(1.0/S)
-        nn.init.uniform_(self.attn.c_fc.weight, a=-2*math.sqrt(1.0/S), b=2*math.sqrt(1.0/S))
-        nn.init.zeros_(self.attn.c_fc.bias)
+        nn.init.uniform_(self.mlp.c_fc.weight, a=-m*math.sqrt(1.0/S), b=m*math.sqrt(1.0/S))
+        nn.init.zeros_(self.mlp.c_fc.bias)
 
         # X: stddev=sqrt(2.0/(S+MLP_multiplier*S))
         stddev = math.sqrt(2.0/(S + self.mlp_ratio*S))
-        nn.init.uniform_(self.attn.c_proj.weight, a=-2*stddev, b=2*stddev)
-        nn.init.zeros_(self.attn.c_proj.bias)
+        nn.init.uniform_(self.mlp.c_proj.weight, a=-m*stddev, b=m*stddev)
+        nn.init.zeros_(self.mlp.c_proj.bias)
 
     def pinit(self):
         print('Applying pinit')
