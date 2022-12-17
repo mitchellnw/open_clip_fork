@@ -9,11 +9,11 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
+#SBATCH --exclude=a100-st-p4d24xlarge-477
 
 # can get up to 320
 # 16 * 256 is right
 # 14 * 292
-# 13 * 315
 
 export MASTER_PORT=12802
 
@@ -27,7 +27,7 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
-EXP_NAME="clip-H-14-pd05-bs32k-w8k-opt2e-3-09-098-amp_bfloat16-pinit-cinit-v1"
+EXP_NAME="clip-H-14-pd05-bs32k-w8k-opt5e-4-09-098-amp_bfloat16-v1"
 
 srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -41,7 +41,7 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --workers 4 \
     --model ViT-H-14-pd05 \
     --seed 0 \
-    --lr 2e-3 \
+    --lr 5e-4 \
     --name ${EXP_NAME} \
     --ddp-static-graph \
     --local-loss \
@@ -50,6 +50,5 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --precision amp_bfloat16 \
     --save-most-recent \
     --logs "/fsx-labs/mitchellw/experiments/openclip2" \
-    --wandb-project-name open_clip10 \
     --advanced-logging \
-    --pinit --cinit
+    --wandb-project-name open_clip10

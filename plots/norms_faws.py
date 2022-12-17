@@ -12,7 +12,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level = 1
+    log_level = 2
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
@@ -47,10 +47,26 @@ if __name__ == '__main__':
                 #ax.set_xscale('log')
 
         
-        if log_level >= 2:
-            ax = axlist[1]
+        for ii, v in enumerate([
+            # ('features-module.visual.transformer.resblocks.0.csv', 'vision block 0'),
+            # ('features-module.visual.transformer.resblocks.10.csv', 'vision block 10'),
+            # ('features-module.visual.transformer.resblocks.20.csv', 'vision block 20'),
+            # ('features-module.visual.transformer.resblocks.30.csv', 'vision block 30'),
+            ('features-module.visual.csv', 'vision encoder'),
+            # ('features-module.transformer.resblocks.0.csv', 'text block 0'),
+            # ('features-module.transformer.resblocks.10.csv', 'text block 10'),
+            # ('features-module.transformer.resblocks.20.csv', 'text block 20'),
+            #('features-module.transformer.csv', 'text encoder'),
+            ]):
+            v1, v2 = v
+            ax = axlist[1+ii]
             for i in range(1):
-                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4)))
+                #df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4)))
+                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/{v1}', names=list(range(4)))
+                #features-module.transformer.csv
+                #features-module.transformer.resblocks.0.csv
+                #features-module.visual
+                #df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))
                 df = proc(df, lim)
                 #df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
 
@@ -58,30 +74,32 @@ if __name__ == '__main__':
                 ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color)
                 #ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
                 ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.6)
-                ax.set_yscale('log')
-                ax.set_ylabel('Feature mean and max (block 30)')
+                #ax.set_yscale('log')
+                ax.set_ylabel(f'Feature mean and max ({v2})')
+                ax.set_ylim([0, 6])
 
                 
 
-        #print(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
-        if log_level >= 3:
-            ax = axlist[2]
-            for i in range(1):
-                #layer = 'params-module.logit_scale.csv'
-                #layer = 'params-module.positional_embedding.csv' # YES!
-                #layer = 'params-module.text_projection.csv' # NO!
-                layer = 'params-module.token_embedding.weight.csv'
-                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/{layer}', names=list(range(13)))
-                df = proc(df, lim)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=color)
-                #ax.plot(df.iloc[:, 0], df.iloc[:, 5], color=color, alpha=0.6)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=color, alpha=0.3)
-                ax.set_yscale('log')
-                ax.set_ylabel('token_embedding grad mean and max')
+        # #print(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
+        # #if log_level >= 3:
+        # ax = axlist[-1]
+        # for i in range(1):
+        #     layer = 'params-module.logit_scale.csv'
+        #     #layer = 'params-module.positional_embedding.csv' # YES!
+        #     #layer = 'params-module.text_projection.csv' # NO!
+        #     #layer = 'params-module.token_embedding.weight.csv'
+        #     df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/{layer}', names=list(range(13)))
+        #     df = proc(df, lim)
+        #     ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color)
+        #     #ax.plot(df.iloc[:, 0], df.iloc[:, 5], color=color, alpha=0.6)
+        #     # ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=color, alpha=0.3)
+        #     ax.set_yscale('log')
+        #     ax.set_ylabel('logit_scale (this multiplies logits before softmax)')
 
 
 
     for j, ax in enumerate(axlist):
+        #ax.set_xscale('log')
         if j == 0:
             ax.legend()
         ax.grid()
@@ -92,11 +110,13 @@ if __name__ == '__main__':
         # dd = 1e3
         vv =8010
         dd = 1e1
+        ax.set_xlim([0, 100])
+        
         continue
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)
 
-    plt.savefig('plots/loss_plot_faws.png', bbox_inches='tight')
+    plt.savefig('plots/norms_faws.png', bbox_inches='tight')
 
 
 

@@ -2,6 +2,37 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
+import glob
+import wandb
+
+def get_metrics(sname):
+    files = list(glob.glob("src/evals-faws/*.pt"))
+    metrics = {}
+    for filename in files:
+        if 'latest' in filename:
+            continue
+        # get name
+        name = filename.split('/')[-1].split('---')[0]
+        if name not in metrics:
+            metrics[name] = []
+        epoch = int(filename.split("_")[-1].split(".")[0])
+        f = open(filename, "r")
+        c = f.read()
+        good =[l for l in c.split("\n") if "imagenet-zero" in l]
+        if len(good) != 1:
+            continue
+        top5 = float(good[0].split("\t")[1].split(" ")[-1])
+        top1 = float(good[0].split("\t")[0].split(" ")[-1])
+        metrics[name].append([epoch, top1, top5])
+
+    for name in metrics:
+        metrics[name].sort(key=lambda x:x[0])
+        #print(name, metrics)
+    return metrics[sname]
+
+
+
+
 def proc(df, lim):
     df.drop(df[df[0] == 0].index[1:], axis=0, inplace=True)
     df.drop_duplicates(0, keep='last', inplace=True)
@@ -12,7 +43,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level = 1
+    log_level = 2
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
@@ -50,35 +81,12 @@ if __name__ == '__main__':
         if log_level >= 2:
             ax = axlist[1]
             for i in range(1):
-                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4)))
-                df = proc(df, lim)
-                #df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
-
-
-                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color)
-                #ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.6)
-                ax.set_yscale('log')
-                ax.set_ylabel('Feature mean and max (block 30)')
-
-                
-
-        #print(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
-        if log_level >= 3:
-            ax = axlist[2]
-            for i in range(1):
-                #layer = 'params-module.logit_scale.csv'
-                #layer = 'params-module.positional_embedding.csv' # YES!
-                #layer = 'params-module.text_projection.csv' # NO!
-                layer = 'params-module.token_embedding.weight.csv'
-                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/{layer}', names=list(range(13)))
-                df = proc(df, lim)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=color)
-                #ax.plot(df.iloc[:, 0], df.iloc[:, 5], color=color, alpha=0.6)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=color, alpha=0.3)
-                ax.set_yscale('log')
-                ax.set_ylabel('token_embedding grad mean and max')
-
+                metrics = get_metrics('eval_' + file)
+                print(color)
+                if lim > 0:
+                    metrics = metrics[:3]
+                ax.plot([x[0] for x in metrics], [100*x[1] for x in metrics], color=color, marker='o')
+                ax.set_ylabel("Zero-shot ImageNet (top-1, %)")
 
 
     for j, ax in enumerate(axlist):
@@ -86,6 +94,8 @@ if __name__ == '__main__':
             ax.legend()
         ax.grid()
         ax.set_xlabel('Iterations')
+        if j == 1:
+            ax.set_xlabel('Checkpoint intervals')
         vv = 3787
         dd = 1e2
         # vv = 2186
@@ -96,7 +106,7 @@ if __name__ == '__main__':
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)
 
-    plt.savefig('plots/loss_plot_faws.png', bbox_inches='tight')
+    plt.savefig('plots/combined_plot_faws.png', bbox_inches='tight')
 
 
 
