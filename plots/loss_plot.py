@@ -12,7 +12,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level = 1
+    log_level = 3
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
@@ -21,7 +21,7 @@ if __name__ == '__main__':
         #('clip-bigG14-pd05-pinit-160k-2e-3-amp_bfloat16-v1', 'p-init (blew-up)', 'C0', -1),
         #('clip-bigG14-pd05-160k-2e-3-amp_bfloat16-v1', 'standard (blew-up)', 'C1', 4000),#3900),
         #('clip-bigG14-pd05-ls0-160k-2e-3-amp_bfloat16-v1', 'layer-scale=0', 'C2', -1),
-        #('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'p-init + layer-scale=1 + beta2=0.95', 'C3', -1),
+        #('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'p-init + layer-scale=1 + beta2=0.95', 'C4', -1),
         ('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'ViT-bigG-14', 'C4', -1),
     ]
     #file_list = file_list[1:2]
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
 
                 ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
+                #ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
                 ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.6)
                 ax.set_yscale('log')
                 ax.set_ylabel('Feature mean and max (block 40)')
@@ -73,9 +73,9 @@ if __name__ == '__main__':
                 layer = 'params-module.token_embedding.weight.csv'
                 df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/{layer}', names=list(range(13)))
                 df = proc(df, lim)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=color)
-                #ax.plot(df.iloc[:, 0], df.iloc[:, 5], color=color, alpha=0.6)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 6], color=color, alpha=0.3)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 10], color=color)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 11], color=color, alpha=0.6)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 12], color=color, alpha=0.3)
                 ax.set_yscale('log')
                 ax.set_ylabel('token_embedding grad mean and max')
 
@@ -90,8 +90,10 @@ if __name__ == '__main__':
         dd = 1e2
         # vv = 2186
         # dd = 1e3
-        vv =8010
-        dd = 1e1
+        # vv = 5632
+        # dd = 1e2
+        # vv =8010
+        # dd = 1e1
         continue
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)

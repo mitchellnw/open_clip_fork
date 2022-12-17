@@ -3,12 +3,11 @@
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 90
 #SBATCH --ntasks-per-node=8
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=12
 #SBATCH --output=%x_%j.out
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
 #SBATCH --exclusive
-#SBATCH --exclude=ip-26-0-131-225
 
 module load openmpi
 # source /opt/intel/mpi/latest/env/vars.sh

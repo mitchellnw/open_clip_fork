@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --partition=g80n54
+#SBATCH --partition=g40n404
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 48
+#SBATCH --nodes 80
 #SBATCH --ntasks-per-node=8
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=12
 #SBATCH --output=%x_%j.out
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
@@ -26,7 +26,7 @@ echo $HOSTNAMES
 cd /fsx/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx/home-mitchellw/forks/open_clip_fork/src"
 
-EXP_NAME="H-8-pd05-90k-amp_bfloat16-v0"
+EXP_NAME="H-8-pd06725-160k-amp_bfloat16-v0"
 
 srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -34,10 +34,10 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --train-num-samples 135646078 \
     --dataset-type webdataset \
     --dataset-resampled \
-    --warmup 10000 \
-    --batch-size=235 \
+    --warmup 13000 \
+    --batch-size=250 \
     --epochs=256 \
-    --lr 1e-3 \
+    --lr 2e-3 \
     --workers=2 \
     --report-to wandb \
     --name ${EXP_NAME} \
@@ -51,4 +51,5 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
-    --wandb-project-name open_clip6
+    --wandb-project-name open_clip6 \
+    --pinit --cinit

@@ -2,7 +2,7 @@ import glob
 import wandb
 
 # send only new somehow
-files = list(glob.glob("eval_epoch_*.pt"))
+files = list(glob.glob("eval1/eval_epoch_*.pt"))
 metrics = []
 for filename in files:
     if 'latest' in filename:

@@ -8,4 +8,5 @@ torchrun --nproc_per_node 2 -m training.main   \
 cd /fsx-labs/mitchellw/open_clip_fork/src/
 export PYTHONPATH=$PWD
 
+srun --comment laion --gres=gpu:4 --cpus-per-task 12 --partition=g80n54 --time=400:00:00 --pty /bin/bash -l
 srun --gres=gpu:4 --cpus-per-task 6 --partition=scaling_data_pruning --time=1:00:00 --pty /bin/bash -l

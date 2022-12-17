@@ -3,7 +3,7 @@
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 95
 #SBATCH --ntasks-per-node=8
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=12
 #SBATCH --output=%x_%j.out
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
