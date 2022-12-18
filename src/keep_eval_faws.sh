@@ -32,6 +32,10 @@ do
         do
                 bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt5e-4-09-098-amp_bfloat16-v1
         done
+        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-v1/checkpoints/*`
+        do
+                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-v1
+        done
 sleep 300
 done
 
