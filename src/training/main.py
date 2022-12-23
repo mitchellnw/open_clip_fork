@@ -1,8 +1,9 @@
-import logging
+import fakelogger
 import os
 import sys
 import random
 from datetime import datetime
+import fsspec
 
 import numpy as np
 import torch
@@ -27,10 +28,11 @@ except ImportError:
 from open_clip import create_model_and_transforms, trace_model, get_tokenizer
 from training.data import get_data
 from training.distributed import is_master, init_distributed_device, world_info_from_env
-from training.logger import setup_logging
+from training.logger import setup_logging, FakeLogger
 from training.params import parse_args
 from training.scheduler import cosine_lr
 from training.train import train_one_epoch, evaluate
+from training.file_utils import pt_load, pt_save
 
 
 def random_seed(seed=42, rank=0):
@@ -68,21 +70,26 @@ def main(args):
     args.distributed = False
     args.local_rank, args.rank, args.world_size = world_info_from_env()
 
+    fs = fsspec.filesystem(args.fs)
+
     args.log_path = None
     if is_master(args, local=args.log_local):
         log_base_path = os.path.join(args.logs, args.name)
-        os.makedirs(log_base_path, exist_ok=True)
+        if not fs.exists(log_base_path):
+            fs.makedirs(log_base_path)
         log_filename = f'out-{args.rank}' if args.log_local else 'out.log'
         args.log_path = os.path.join(log_base_path, log_filename)
-        if os.path.exists(args.log_path):
+        if fs.exists(args.log_path):
             print(
                 "Error. Experiment already exists. Use --name {} to specify a new experiment."
             )
             return -1
 
     # Set logger
-    args.log_level = logging.DEBUG if args.debug else logging.INFO
-    setup_logging(args.log_path, args.log_level)
+    # depricate logging, for now.
+    #args.log_level = logging.DEBUG if args.debug else logging.INFO
+    #setup_logging(args.log_path, args.log_level)
+    fake_logger = FakeLogger()
 
     # fully initialize distributed device environment
     device = init_distributed_device(args)
@@ -94,7 +101,8 @@ def main(args):
         args.checkpoint_path = os.path.join(args.logs, args.name, "checkpoints")
         for dirname in [args.tensorboard_path, args.checkpoint_path]:
             if dirname:
-                os.makedirs(dirname, exist_ok=True)
+                if not fs.exists(dirname):
+                    os.makedirs(dirname)
     else:
         args.tensorboard_path = ''
         args.checkpoint_path = ''
@@ -103,20 +111,20 @@ def main(args):
         copy_codebase(args)
 
     if args.precision == 'fp16':
-        logging.warning(
+        fakelogger.warning(
             'It is recommended to use AMP mixed-precision instead of FP16. '
             'FP16 support needs further verification and tuning, especially for train.')
 
     if args.horovod:
-        logging.info(
+        fakelogger.info(
             f'Running in horovod mode with multiple processes / nodes. Device: {args.device}.'
             f'Process (global: {args.rank}, local {args.local_rank}), total {args.world_size}.')
     elif args.distributed:
-        logging.info(
+        fakelogger.info(
             f'Running in distributed mode with multiple processes. Device: {args.device}.'
             f'Process (global: {args.rank}, local {args.local_rank}), total {args.world_size}.')
     else:
-        logging.info(f'Running with a single process. Device {args.device}.')
+        fakelogger.info(f'Running with a single process. Device {args.device}.')
 
     random_seed(args.seed, 0)
     model, preprocess_train, preprocess_val = create_model_and_transforms(
@@ -151,14 +159,14 @@ def main(args):
         model.set_grad_checkpointing()
 
     if is_master(args):
-        logging.info("Model:")
-        logging.info(f"{str(model)}")
-        logging.info("Params:")
+        fakelogger.info("Model:")
+        fakelogger.info(f"{str(model)}")
+        fakelogger.info("Params:")
         params_file = os.path.join(args.logs, args.name, "params.txt")
         with open(params_file, "w") as f:
             for name in sorted(vars(args)):
                 val = getattr(args, name)
-                logging.info(f"  {name}: {val}")
+                fakelogger.info(f"  {name}: {val}")
                 f.write(f"{name}: {val}\n")
 
     if args.distributed and not args.horovod:
@@ -203,8 +211,8 @@ def main(args):
     # optionally resume from a checkpoint
     start_epoch = 0
     if args.resume is not None:
-        if os.path.isfile(args.resume):
-            checkpoint = torch.load(args.resume, map_location='cpu')
+        if fs.exists(args.resume):
+            checkpoint = pt_load(args.resume, map_location='cpu')
             if 'epoch' in checkpoint:
                 # resuming a train checkpoint w/ epoch and optimizer state
                 start_epoch = checkpoint["epoch"]
@@ -216,13 +224,13 @@ def main(args):
                     optimizer.load_state_dict(checkpoint["optimizer"])
                 if scaler is not None and 'scaler' in checkpoint:
                     scaler.load_state_dict(checkpoint['scaler'])
-                logging.info(f"=> resuming checkpoint '{args.resume}' (epoch {start_epoch})")
+                fakelogger.info(f"=> resuming checkpoint '{args.resume}' (epoch {start_epoch})")
             else:
                 # loading a bare (model only) checkpoint for fine-tune or evaluation
                 model.load_state_dict(checkpoint)
-                logging.info(f"=> loaded checkpoint '{args.resume}' (epoch {start_epoch})")
+                fakelogger.info(f"=> loaded checkpoint '{args.resume}' (epoch {start_epoch})")
         else:
-            logging.info("=> no checkpoint found at '{}'".format(args.resume))
+            fakelogger.info("=> no checkpoint found at '{}'".format(args.resume))
 
     # initialize datasets
     data = get_data(args, (preprocess_train, preprocess_val), epoch=start_epoch, tokenizer=get_tokenizer(args.model))
@@ -243,7 +251,7 @@ def main(args):
 
     if args.wandb and is_master(args):
         assert wandb is not None, 'Please install wandb.'
-        logging.debug('Starting wandb.')
+        fakelogger.debug('Starting wandb.')
         args.train_sz = data["train"].dataloader.num_samples
         if args.val_data is not None:
             args.val_sz = data["val"].dataloader.num_samples
@@ -258,7 +266,7 @@ def main(args):
         if args.debug:
             wandb.watch(model, log='all')
         wandb.save(params_file)
-        logging.debug('Finished loading wandb.')
+        fakelogger.debug('Finished loading wandb.')
 
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)
@@ -266,7 +274,7 @@ def main(args):
 
     for epoch in range(start_epoch, args.epochs):
         if is_master(args):
-            logging.info(f'Start epoch {epoch}')
+            fakelogger.info(f'Start epoch {epoch}')
 
         train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
         completed_epoch = epoch + 1
@@ -288,12 +296,12 @@ def main(args):
             if completed_epoch == args.epochs or (
                 args.save_frequency > 0 and (completed_epoch % args.save_frequency) == 0
             ):
-                torch.save(
+                pt_save(
                     checkpoint_dict,
                     os.path.join(args.checkpoint_path, f"epoch_{completed_epoch}.pt"),
                 )
             if args.save_most_recent:
-                torch.save(
+                pt_save(
                     checkpoint_dict,
                     os.path.join(args.checkpoint_path, f"epoch_latest.pt"),
                 )

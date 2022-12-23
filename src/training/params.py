@@ -332,7 +332,18 @@ def parse_args(args):
         default=100,
         help="Log every n steps to tensorboard/console/wandb.",
     )
-
+    parser.add_argument(
+        "--fs",
+        default='file',
+        type=str,
+        help="fsspec file system, e.g., s3. default is local."
+    )
+    parser.add_argument(
+        "--fs-cache",
+        default=None,
+        type=str,
+        help="optional fsspec local cache."
+    )
 
     args = parser.parse_args(args)
 

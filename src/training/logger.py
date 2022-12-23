@@ -24,3 +24,15 @@ def setup_logging(log_file, level, include_host=False):
         file_handler.setFormatter(formatter)
         logging.root.addHandler(file_handler)
 
+
+# TODO: make the logger by caching files locally and writing later.
+def FakeLogger:
+    
+    def info(msg):
+        print(msg)
+
+    def warn(msg):
+        print(msg)
+
+    def debug(msg):
+        print(msg)
