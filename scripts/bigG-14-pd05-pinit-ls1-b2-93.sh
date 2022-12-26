@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g80n132
+#SBATCH --partition=g80n140
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 93
 #SBATCH --ntasks-per-node=8
@@ -39,7 +39,7 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --epochs=256 \
     --lr 2e-3 \
     --beta2 0.95 \
-    --workers=2 \
+    --workers=4 \
     --report-to wandb \
     --name ${EXP_NAME} \
     --logs /fsx/home-mitchellw/experimetns/open_clip/ \
