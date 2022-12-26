@@ -8,6 +8,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+import fsspec
+
 try:
     import wandb
 except ImportError:
@@ -19,6 +21,22 @@ from .zero_shot import zero_shot_eval
 from .precision import get_autocast
 from .modules_to_log import modules_to_log
 
+def c_open(path, args):
+    if path.startswith('s3'):
+        return fsspec.open(path, args)
+    else:
+        return open(path, args)
+
+def c_write(of, text):
+    if hasattr(of, 'flush'):
+        of.write(text)
+    else:
+        with of as f:
+            f.write(text)
+
+def c_flush(of):
+    if hasattr(of, 'flush'):
+        of.flush()
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

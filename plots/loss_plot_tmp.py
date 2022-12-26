@@ -12,20 +12,36 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level = 3
+    log_level = 1
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
+    model = 'B-32'
+    k=16
     file_list = []
     file_list = [
         #('clip-bigG14-pd05-pinit-160k-2e-3-amp_bfloat16-v1', 'p-init (blew-up)', 'C0', -1),
         #('clip-bigG14-pd05-160k-2e-3-amp_bfloat16-v1', 'standard (blew-up)', 'C1', 4000),#3900),
         #('clip-bigG14-pd05-ls0-160k-2e-3-amp_bfloat16-v1', 'layer-scale=0', 'C2', -1),
         #('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'p-init + layer-scale=1 + beta2=0.95', 'C4', -1),
-        ('clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1', 'ViT-bigG-14', 'C4', -1),
+
+        
+        # (f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.8-v0', f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.8-v0', 'C0', -1),
+        # (f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.99-v0', f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.99-v0', 'C1', -1),
+        # (f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.9-v0', f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.9-v0', 'C4', -1),
+        (f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.5-v0', f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.5-v0', 'C2', -1),
+        (f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.98-v0', f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.98-v0', 'C3', -1),
+        (f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.999-v0', f'ViT-{model}-pd05-{4096 * 16}-1e-3-0.999-v0', 'C6', -1),
+
+        # (f'ViT-{model}-pd05-{4096 * k}-1e-3-0.99-v0', f'ViT-{model}-pd05-{4096 * k}-1e-3-0.99-v0', 'C0', -1),
+        # (f'ViT-{model}-pd05-{4096 * k}-1e-3-0.95-v0', f'ViT-{model}-pd05-{4096 * k}-1e-3-0.95-v0', 'C1', -1),
+        # (f'ViT-{model}-pd05-{4096 * k}-1e-3-0.8-v0', f'ViT-{model}-pd05-{4096 * k}-1e-3-0.8-v0', 'C4', -1),
     ]
     #file_list = file_list[1:2]
     #file_list = file_list[:2]
+    
+
+    # 5, 8, 99
 
     fig, axlist = plt.subplots(log_level, 1, figsize=(8, 5 * log_level))
     if log_level == 1:
@@ -35,36 +51,38 @@ if __name__ == '__main__':
         if log_level >= 1:
             ax = axlist[0]
             for i in range(1):
-                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/loss.csv', names=list(range(2)))
+                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip_b2/{file}/data/{i}/loss.csv', names=list(range(2)))
                 df = proc(df, lim)
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.5, color=color)
+                #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.5, color=color)
                 
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name)
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name)#, linewidth=0.5)
                 ax.set_ylabel('Loss')
                 #ax.set_yscale('log')
-                #ax.set_ylim([0,1])
+                #ax.set_ylim([0,2])
+                #ax.set_xlim([0, 20000])
+                ax.set_title('B-32')
 
         
         if log_level >= 2:
             ax = axlist[1]
             for i in range(1):
-                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/features-module.visual.transformer.resblocks.40.csv', names=list(range(4)))
+                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip_b2/{file}/data/{i}/features-module.visual.transformer.resblocks.10.csv', names=list(range(4)))
                 df = proc(df, lim)
-                #df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
+                #df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip_b2/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
 
 
                 ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color)
                 #ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, alpha=0.3)
                 ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.6)
                 ax.set_yscale('log')
-                ax.set_ylabel('Feature mean and max (block 40)')
+                ax.set_ylabel('Feature mean and max (block 10)')
 
                 
 
-        #print(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
+        #print(f'/fsx/home-mitchellw/experimetns/open_clip_b2/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
         if log_level >= 3:
             ax = axlist[2]
             for i in range(1):
@@ -72,7 +90,7 @@ if __name__ == '__main__':
                 #layer = 'params-module.positional_embedding.csv' # YES!
                 #layer = 'params-module.text_projection.csv' # NO!
                 layer = 'params-module.token_embedding.weight.csv'
-                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip/{file}/data/{i}/{layer}', names=list(range(13)))
+                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/open_clip_b2/{file}/data/{i}/{layer}', names=list(range(13)))
                 df = proc(df, lim)
                 ax.plot(df.iloc[:, 0], df.iloc[:, 10], color=color)
                 ax.plot(df.iloc[:, 0], df.iloc[:, 11], color=color, alpha=0.6)
@@ -99,7 +117,7 @@ if __name__ == '__main__':
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)
 
-    plt.savefig('plots/loss_plot.png', bbox_inches='tight')
+    plt.savefig('plots/loss_plot_tmp.png', bbox_inches='tight')
 
 
 

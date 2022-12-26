@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=g80n140
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 71
+#SBATCH --nodes 91
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=12
 #SBATCH --output=%x_%j.out
@@ -35,7 +35,7 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 13000 \
-    --batch-size=282 \
+    --batch-size=220 \
     --epochs=256 \
     --lr 2e-3 \
     --beta2 0.95 \

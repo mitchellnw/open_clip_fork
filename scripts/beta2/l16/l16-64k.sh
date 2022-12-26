@@ -1,13 +1,14 @@
 #!/bin/bash
-#SBATCH --partition=g80n140
+#SBATCH --partition=g40423
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 71
+#SBATCH --nodes 32
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=12
 #SBATCH --output=%x_%j.out
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
 #SBATCH --exclusive
+#SBATCH --exclude=ip-26-0-138-235,ip-26-0-138-237,ip-26-0-138-235,ip-26-0-138-237,ip-26-0-138-235,ip-26-0-138-237,ip-26-0-138-235,ip-26-0-138-237,ip-26-0-138-235,ip-26-0-138-237,ip-26-0-138-235,ip-26-0-138-237,ip-26-0-138-235,ip-26-0-138-237,ip-26-0-138-235,ip-26-0-138-237
 
 module load openmpi
 # source /opt/intel/mpi/latest/env/vars.sh
@@ -26,24 +27,29 @@ echo $HOSTNAMES
 cd /fsx/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx/home-mitchellw/forks/open_clip_fork/src"
 
-EXP_NAME="clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1"
+LR=1e-3
+BETA2=0.99
+MODEL=ViT-L-16-pd05
+BS=65536
+
+EXP_NAME="$MODEL-$BS-$LR-$BETA2-v0"
 
 srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
-    --train-data="pipe:aws s3 cp s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar -" \
-    --train-num-samples 135646078 \
+    --train-data="pipe:aws s3 cp s3://deep-floyd-s3/datasets/{laion_cleaned-part1/{00000..79752}.tar,laion_cleaned-part2/{00000..94330}.tar,laion_cleaned-part3/{00000..94336}.tar,laion_cleaned-part4/{00000..94340}.tar,laion_cleaned-part5/{00000..94333}.tar,laion_cleaned-part6/{00000..77178}.tar} -" \
+    --train-num-samples 786432000 \
     --dataset-type webdataset \
     --dataset-resampled \
-    --warmup 13000 \
-    --batch-size=282 \
-    --epochs=256 \
-    --lr 2e-3 \
-    --beta2 0.95 \
-    --workers=4 \
+    --warmup 8000 \
+    --batch-size=256 \
+    --epochs=3 \
+    --lr $LR \
+    --beta2 $BETA2 \
+    --workers=6 \
     --report-to wandb \
     --name ${EXP_NAME} \
-    --logs /fsx/home-mitchellw/experimetns/open_clip/ \
-    --model ViT-bigG-14-pd05-ls1 \
+    --logs /fsx/home-mitchellw/experimetns/open_clip_b2/ \
+    --model $MODEL \
     --seed 0 \
     --ddp-static-graph \
     --local-loss \
@@ -52,5 +58,9 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
-    --wandb-project-name open_clip6 \
-    --pinit
+    --wandb-project-name beta2
+
+# info.
+# 99 - 10164
+# 95 - 10159
+# 8 - 9494
