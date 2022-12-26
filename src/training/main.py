@@ -135,6 +135,21 @@ def main(args):
         image_mean=args.image_mean,
         image_std=args.image_std,
     )
+
+    if args.cinit:
+        def do_cinit(m):
+            if hasattr(m, 'cinit'):
+                m.cinit()
+        model.apply(lambda m: setattr(m, 'rank', args.rank))
+        model.apply(do_cinit)
+
+    if args.pinit:
+        def do_pinit(m):
+            if hasattr(m, 'pinit'):
+                m.pinit()
+        model.apply(lambda m: setattr(m, 'rank', args.rank))
+        model.apply(do_pinit)
+        
     random_seed(args.seed, args.rank)
 
     if args.trace:
@@ -236,6 +251,7 @@ def main(args):
     if 'train' in data and optimizer is not None:
         total_steps = (data["train"].dataloader.num_batches // args.accum_freq) * args.epochs
         scheduler = cosine_lr(optimizer, args.lr, args.warmup, total_steps)
+        args.total_steps = total_steps
 
     # determine if this worker should save logs and checkpoints. only do so if it is rank == 0
     args.save_logs = args.logs and args.logs.lower() != 'none' and is_master(args)
@@ -271,20 +287,6 @@ def main(args):
         model.apply(lambda m: setattr(m, 'data_path', args.data_path))
         model.apply(lambda m: setattr(m, 'logger_file', None))
         model.apply(lambda m: setattr(m, 'iter', None))
-
-    if args.cinit and start_epoch == 0:
-        def do_cinit(m):
-            if hasattr(m, 'cinit'):
-                m.cinit()
-        model.apply(lambda m: setattr(m, 'rank', args.rank))
-        model.apply(do_cinit)
-
-    if args.pinit and start_epoch == 0:
-        def do_pinit(m):
-            if hasattr(m, 'pinit'):
-                m.pinit()
-        model.apply(lambda m: setattr(m, 'rank', args.rank))
-        model.apply(do_pinit)
 
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)

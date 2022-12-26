@@ -1,40 +1,20 @@
 while [ 1 ]
 do
-        # for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-cinit-v1/checkpoints/*`
-        # do
-        #         bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-cinit-v1
-        # done
-        # for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-v1/checkpoints/*`
-        # do
-        #         bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-v1
-        # done
-        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-cinit-v1/checkpoints/*`
+        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-rs-v1/checkpoints/*`
         do
-                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-cinit-v1
+                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-rs-v1
         done
-        # for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-v1/checkpoints/*`
-        # do
-        #         bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-v1
-        # done
-        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt5e-4-09-098-amp_bfloat16-pinit-v1/checkpoints/*`
+        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-fixcinit-rs-v1/checkpoints/*`
         do
-                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt5e-4-09-098-amp_bfloat16-pinit-v1
+                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-fixcinit-rs-v1
         done
-        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-v1/checkpoints/*`
+        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-rs-v1/checkpoints/*`
         do
-                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-v1
+                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-rs-v1
         done
-        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt2e-3-09-098-amp_bfloat16-v1/checkpoints/*`
+        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-fixcinit-rs-v1/checkpoints/*`
         do
-                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt2e-3-09-098-amp_bfloat16-v1
-        done
-        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt5e-4-09-098-amp_bfloat16-v1/checkpoints/*`
-        do
-                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt5e-4-09-098-amp_bfloat16-v1
-        done
-        for i in `ls -t /fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-v1/checkpoints/*`
-        do
-                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-v1
+                bash eval_faws.sh $i clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-fixcinit-rs-v1
         done
 sleep 300
 done

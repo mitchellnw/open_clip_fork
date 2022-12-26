@@ -30,11 +30,7 @@ if __name__ == '__main__':
         # ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-0999-amp_bfloat16-resume0seed0', 'resume0seed0', 'C8', -1),
         # ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-0999-amp_bfloat16-resume0seed1', 'resume0seed1', 'C9', -1),
 
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-fixcinit-v1', 'p-init + c-init (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C4', -1),
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-fixcinit-v1', 'c-init (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C2', -1),
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-v1', 'p-init (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C1', -1),
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-v1', 'standard (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C0', -1),
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-fixcinit-rs-v1', 'fixed p-init + c-init (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C6', -1),
+        ('cat-ViT-H-14-pd05-65536-1e-3-0.95-v0', 'test1', 'C4', -1),
     ]
     #file_list = file_list[1:2]
     #file_list = file_list[:2]
@@ -47,7 +43,7 @@ if __name__ == '__main__':
         if log_level >= 1:
             ax = axlist[0]
             for i in range(1):
-                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/loss.csv', names=list(range(2)))
+                df = pd.read_csv(f'/fsx-scaling/mitchellw/experiments/open_clip_b2/{file}/data/{i}/loss.csv', names=list(range(2)))
                 df = proc(df, lim)
                 #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color, alpha=0.3)#, label=name)# alpha=0.5,
                 
@@ -63,9 +59,9 @@ if __name__ == '__main__':
         if log_level >= 2:
             ax = axlist[1]
             for i in range(1):
-                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4)))
+                df = pd.read_csv(f'/fsx-scaling/mitchellw/experiments/open_clip_b2/{file}/data/{i}/features-module.visual.transformer.resblocks.30.csv', names=list(range(4)))
                 df = proc(df, lim)
-                #df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
+                #df = pd.read_csv(f'/fsx-scaling/mitchellw/experiments/open_clip_b2/{file}/data/{i}/features-module.transformer.resblocks.20.csv', names=list(range(4)))#.drop_duplicates(0, keep='last')
 
 
                 ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color)
@@ -76,7 +72,7 @@ if __name__ == '__main__':
 
                 
 
-        #print(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
+        #print(f'/fsx-scaling/mitchellw/experiments/open_clip_b2/{file}/data/{i}/params-module.transformer.resblocks.30.attn.out_proj.weight.csv')
         if log_level >= 3:
             ax = axlist[2]
             for i in range(1):
@@ -84,7 +80,7 @@ if __name__ == '__main__':
                 #layer = 'params-module.positional_embedding.csv' # YES!
                 #layer = 'params-module.text_projection.csv' # NO!
                 layer = 'params-module.token_embedding.weight.csv'
-                df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/{layer}', names=list(range(13)))
+                df = pd.read_csv(f'/fsx-scaling/mitchellw/experiments/open_clip_b2/{file}/data/{i}/{layer}', names=list(range(13)))
                 df = proc(df, lim)
                 #ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color)
                 ax.plot(df.iloc[:, 0], df.iloc[:, 4], color=color)
@@ -111,7 +107,7 @@ if __name__ == '__main__':
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)
 
-    plt.savefig('plots/loss_plot_faws.png', bbox_inches='tight')
+    plt.savefig('plots/loss_plot_faws_tmp.png', bbox_inches='tight')
 
 
 

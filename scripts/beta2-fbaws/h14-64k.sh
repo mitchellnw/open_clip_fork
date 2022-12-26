@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --partition=learnlab
+#SBATCH --partition=learnlab,scaling_data_pruning
 #SBATCH --job-name=openclip
-#SBATCH --nodes 14
+#SBATCH --nodes 32
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=10
 #SBATCH --gres=gpu:8
@@ -27,28 +27,44 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
-EXP_NAME="clip-H-14-pd05-bs32k-w8k-opt5e-4-09-098-amp_bfloat16-v1"
+LR=1e-3
+BETA2=0.8
+MODEL=ViT-H-14-pd05
+BS=65536
+
+EXP_NAME="cat-$MODEL-$BS-$LR-$BETA2-v0"
 
 srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
     --report-to wandb \
     --train-data "/fsx-w3/akadian/laion2B-cvpr-filtered/shards/laion2B-en-joined{0..127}/{00000..00362}.tar" \
-    --train-num-samples 100000000 \
-    --warmup 8000 \
-    --batch-size 292 \
+    --train-num-samples 393216000 \
     --dataset-type webdataset \
-    --epochs 12 \
-    --workers 4 \
-    --model ViT-H-14-pd05 \
-    --seed 0 \
-    --lr 5e-4 \
+    --dataset-resampled \
+    --warmup 8000 \
+    --batch-size=256 \
+    --epochs=6 \
+    --lr $LR \
+    --beta2 $BETA2 \
+    --workers=6 \
+    --report-to wandb \
     --name ${EXP_NAME} \
+    --logs /fsx-scaling//mitchellw/experiments/open_clip_b2 \
+    --model $MODEL \
+    --seed 0 \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \
     --grad-checkpointing \
     --precision amp_bfloat16 \
     --save-most-recent \
-    --logs "/fsx-labs/mitchellw/experiments/openclip2" \
     --advanced-logging \
-    --wandb-project-name open_clip10
+    --wandb-project-name cat_beta2
+
+# cd /fsx-labs/mitchellw/open_clip_fork
+# conda activate open_clip 
+
+# info.
+# 99 - 404833
+# 95 - 404838
+# 8 - 

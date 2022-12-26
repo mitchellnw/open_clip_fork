@@ -350,6 +350,20 @@ def parse_args(args):
         action='store_true',
         help="Cinit scheme for model initialization.",
     )
+    parser.add_argument(
+        "--palm-scaled-beta2",
+        default=False,
+        action='store_true',
+        help="Use the palm scheduler for beta2.",
+    )
+    parser.add_argument(
+        "--linear-scaled-beta2",
+        default=False,
+        action='store_true',
+        help="Use a linear scheduler for beta2.",
+    )
+    parser.add_argument("--cap-beta2", type=float, default=1., help="Cap for adam beta 2.")
+
     args = parser.parse_args(args)
 
     # If some params are not passed, we use the default values based on model name.
