@@ -109,6 +109,7 @@ def create_model(
         pretrained_image: bool = False,
         pretrained_hf: bool = True,
         cache_dir: Optional[str] = None,
+        sep_attn: bool = False,
 ):
     model_name = model_name.replace('/', '-')  # for callers using old naming with / in ViT names
     if isinstance(device, str):
@@ -138,6 +139,10 @@ def create_model(
         if force_patch_dropout is not None:
             # override the default patch dropout value
             model_cfg["patch_dropout"] = force_patch_dropout
+
+        if sep_attn:
+            model_cfg['vision_cfg']['sep_attn'] = True
+            model_cfg['text_cfg']['sep_attn'] = True
 
         if pretrained_image:
             if 'timm_model_name' in model_cfg.get('vision_cfg', {}):
@@ -203,6 +208,7 @@ def create_model_and_transforms(
         image_mean: Optional[Tuple[float, ...]] = None,
         image_std: Optional[Tuple[float, ...]] = None,
         cache_dir: Optional[str] = None,
+        sep_attn: bool = False,
 ):
     model = create_model(
         model_name,
@@ -216,6 +222,7 @@ def create_model_and_transforms(
         pretrained_image=pretrained_image,
         pretrained_hf=pretrained_hf,
         cache_dir=cache_dir,
+        sep_attn=sep_attn,
     )
 
     image_mean = image_mean or getattr(model.visual, 'image_mean', None)

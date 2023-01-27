@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=learnlab,scaling_data_pruning,learnfair
+#SBATCH --partition=learnlab
 #SBATCH --job-name=openclip
 #SBATCH --nodes 32
 #SBATCH --ntasks-per-node 8
@@ -29,11 +29,12 @@ cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
 LR=1e-3
-BETA2=0.5
-MODEL=ViT-L-16-pd05
+BETA2=0.
+BETA2CAP=0.999
+MODEL=ViT-H-14-pd05
 BS=65536
 
-EXP_NAME="cat-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="cat-$MODEL-$BS-$LR-$BETA2-ls2-cap$BETA2CAP-v0"
 
 srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -61,13 +62,11 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-most-recent \
     --advanced-logging \
     --wandb-project-name cat_beta2 \
+    --linear-scaled-beta2 \
+    --cap-beta2 $BETA2CAP
 
 # cd /fsx-labs/mitchellw/open_clip_fork
 # conda activate open_clip 
 
 # info.
-# 99 - done
-# 98 - 431331 *
-# 95 -done
-# 8 - done
-# 9 - 431332 *
+# 407216

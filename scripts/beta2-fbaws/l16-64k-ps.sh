@@ -29,11 +29,12 @@ cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
 LR=1e-3
-BETA2=0.99
+BETA2=0.4
+BETA2CAP=0.999
 MODEL=ViT-L-16-pd05
 BS=65536
 
-EXP_NAME="cat-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="cat-$MODEL-$BS-$LR-$BETA2-ps-cap$BETA2CAP-v0"
 
 srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -60,12 +61,16 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
-    --wandb-project-name cat_beta2
+    --wandb-project-name cat_beta2 \
+    --palm-scaled-beta2 \
+    --cap-beta2 $BETA2CAP
 
 # cd /fsx-labs/mitchellw/open_clip_fork
 # conda activate open_clip 
 
 # info.
-# 99 - 406222
-# 95 -404860
-# 8 - running
+# 8 - 406642 done
+# 5 - 406643 done
+# 3 - ???
+# 3 - 
+

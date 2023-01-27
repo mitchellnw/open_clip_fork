@@ -36,6 +36,7 @@ class CLIPVisionCfg:
     timm_pool: str = 'avg'  # feature pooling for timm model ('abs_attn', 'rot_attn', 'avg', '')
     timm_proj: str = 'linear'  # linear projection for timm model output ('linear', 'mlp', '')
     timm_proj_bias: bool = False  # enable bias final projection
+    sep_attn : bool = False
 
 
 @dataclass
@@ -51,6 +52,7 @@ class CLIPTextCfg:
     hf_model_pretrained: bool = True
     proj: str = 'mlp'
     pooler_type: str = 'mean_pooler'
+    sep_attn : bool = False
 
 
 def get_cast_dtype(precision: str):
@@ -112,6 +114,7 @@ def _build_vision_tower(
             output_dim=embed_dim,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            sep_attn=vision_cfg.sep_attn,
         )
 
     return visual
@@ -148,6 +151,7 @@ def _build_text_tower(
             output_dim=embed_dim,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            sep_attn=text_cfg.sep_attn,
         )
     return text
 

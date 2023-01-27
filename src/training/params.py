@@ -362,7 +362,25 @@ def parse_args(args):
         action='store_true',
         help="Use a linear scheduler for beta2.",
     )
+    parser.add_argument(
+        "--sep-attn",
+        default=False,
+        action='store_true',
+        help="Seperate K, Q, V.",
+    )
+    parser.add_argument(
+        "--opt",
+        default="adamw",
+        type=str,
+        help="Optimizer to use",
+    )
+    parser.add_argument(
+        "--rms-scale",
+        default=False,
+        action='store_true',
+    )
     parser.add_argument("--cap-beta2", type=float, default=1., help="Cap for adam beta 2.")
+    #parser.add_argument("--err-mult", type=float, default=None, help="Adam beta 1.")
 
     args = parser.parse_args(args)
 

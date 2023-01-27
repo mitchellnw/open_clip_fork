@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=learnlab,scaling_data_pruning,learnfair
+#SBATCH --partition=scaling_data_pruning
 #SBATCH --job-name=openclip
 #SBATCH --nodes 16
 #SBATCH --ntasks-per-node 8
@@ -9,7 +9,7 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-#SBATCH --exclude=a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437
+#SBATCH --exclude=a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437,a100-st-p4d24xlarge-451,a100-st-p4d24xlarge-461
 #SBATCH --requeue
 
 # can get up to 320
@@ -29,11 +29,12 @@ cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
 LR=1e-3
-BETA2=0.8
+BETA2=0.4
+BETA2CAP=0.999
 MODEL=ViT-B-16-pd05
 BS=65536
 
-EXP_NAME="cat-$MODEL-$BS-$LR-$BETA2-ps-v0"
+EXP_NAME="cat-$MODEL-$BS-$LR-$BETA2-ps-cap$BETA2CAP-v0"
 
 srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -61,10 +62,14 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-most-recent \
     --advanced-logging \
     --wandb-project-name cat_beta2 \
-    --palm-scaled-beta2
+    --palm-scaled-beta2 \
+    --cap-beta2 $BETA2CAP
 
 # cd /fsx-labs/mitchellw/open_clip_fork
 # conda activate open_clip 
 
 # info.
-# 8 
+# 8 406650 done
+# 5 406974 done
+# 4 
+# 3 407214

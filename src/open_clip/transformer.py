@@ -9,6 +9,7 @@ from torch.utils.checkpoint import checkpoint
 
 from torch.nn import MultiheadAttention
 from .utils import to_2tuple
+from .sepattn import SepAttn
 
 import wandb
 def log_features(x, training, _iter, logger_file):
@@ -178,11 +179,15 @@ class ResidualAttentionBlock(nn.Module):
             ls_init_value: float = None,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            sep_attn : bool = False,
     ):
         super().__init__()
 
         self.ln_1 = norm_layer(d_model)
-        self.attn = nn.MultiheadAttention(d_model, n_head)
+        if sep_attn:
+            self.attn = SepAttn(d_model, n_head)
+        else:
+            self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ls_1 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
 
         self.ln_2 = norm_layer(d_model)
@@ -297,10 +302,6 @@ class CustomResidualAttentionBlock(nn.Module):
         ]))
         self.ls_2 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
 
-    def pinit(self):
-        print('Not yet implemented.')
-        assert False
-
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.ls_1(self.ln_attn(self.attn(self.ln_1(x), attn_mask=attn_mask)))
         x = x + self.ls_2(self.mlp(self.ln_2(x)))
@@ -317,6 +318,7 @@ class Transformer(nn.Module):
             ls_init_value: float = None,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            sep_attn : bool = False,
     ):
         super().__init__()
         self.width = width
@@ -325,7 +327,7 @@ class Transformer(nn.Module):
 
         self.resblocks = nn.ModuleList([
             ResidualAttentionBlock(
-                width, heads, mlp_ratio, ls_init_value=ls_init_value, act_layer=act_layer, norm_layer=norm_layer)
+                width, heads, mlp_ratio, ls_init_value=ls_init_value, act_layer=act_layer, norm_layer=norm_layer, sep_attn=sep_attn)
             for _ in range(layers)
         ])
 
@@ -356,6 +358,7 @@ class VisionTransformer(nn.Module):
             patch_dropout: float = 0.,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            sep_attn: bool = False,
     ):
         super().__init__()
         self.image_size = to_2tuple(image_size)
@@ -380,6 +383,7 @@ class VisionTransformer(nn.Module):
             ls_init_value=ls_init_value,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            sep_attn=sep_attn,
         )
 
         self.global_average_pool = global_average_pool
@@ -490,6 +494,7 @@ class TextTransformer(nn.Module):
             output_dim: int = 512,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            sep_attn: bool = False,
     ):
         super().__init__()
         self.context_length = context_length
@@ -506,6 +511,7 @@ class TextTransformer(nn.Module):
             ls_init_value=ls_init_value,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            sep_attn=sep_attn,
         )
         self.ln_final = norm_layer(width)
         self.text_projection = nn.Parameter(torch.empty(width, output_dim))
@@ -522,7 +528,12 @@ class TextTransformer(nn.Module):
         attn_std = self.transformer.width ** -0.5
         fc_std = (2 * self.transformer.width) ** -0.5
         for block in self.transformer.resblocks:
-            nn.init.normal_(block.attn.in_proj_weight, std=attn_std)
+            if block.attn.in_proj_weight is None:
+                nn.init.normal_(block.attn.q_proj_weight, std=attn_std)
+                nn.init.normal_(block.attn.k_proj_weight, std=attn_std)
+                nn.init.normal_(block.attn.v_proj_weight, std=attn_std)
+            else:
+                nn.init.normal_(block.attn.in_proj_weight, std=attn_std)
             nn.init.normal_(block.attn.out_proj.weight, std=proj_std)
             nn.init.normal_(block.mlp.c_fc.weight, std=fc_std)
             nn.init.normal_(block.mlp.c_proj.weight, std=proj_std)

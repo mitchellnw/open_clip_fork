@@ -111,6 +111,10 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
             else:
                 setattr(m, 'logger_file', None)
 
+    model.apply(lambda m: setattr(m, 'rank', args.rank))
+    setattr(optimizer, 'rank', args.rank)
+    setattr(optimizer, 'rms_scale', args.rms_scale)
+    #setattr(optimizer, 'err_mult', args.err_mult)
     loss_m = AverageMeter()
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
@@ -127,7 +131,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 param_group["betas"] = (param_group["betas"][0], min(1.0 - (1 + step) ** (- args.beta2), args.cap_beta2))
         elif args.linear_scaled_beta2:
             for param_group in optimizer.param_groups:
-                param_group["betas"] = (param_group["betas"][0], min((1 + args.total_steps) / (1 + step), args.cap_beta2))
+                param_group["betas"] = (param_group["betas"][0], min((1 + step) / (1 + args.warmup), args.cap_beta2))
 
         images, texts = batch
         images = images.to(device=device, dtype=cast_dtype, non_blocking=True)
@@ -228,8 +232,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 "samples_per_scond": args.accum_freq*args.batch_size*args.world_size / batch_time_m.val,
                 "scale":  logit_scale_scalar,
                 "lr": optimizer.param_groups[0]["lr"],
-                "beta1" : optimizer.param_groups[0]["betas"][0],
-                "beta2" : optimizer.param_groups[0]["betas"][1],
+                #"beta1" : optimizer.param_groups[0]["betas"][0],
+                #"beta2" : optimizer.param_groups[0]["betas"][1],
             }
             if args.precision == 'amp':
                 log_data['amp_scaler'] = scaler._scale.item()
@@ -266,15 +270,39 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                             p.grad.abs().std().item(), # 'grad_std'
                             p.grad.abs().max().item(), # 'grad_max'
                         ]
-                        
-                        to_log = to_log + [
-                            optimizer.state[p]['exp_avg'].abs().mean().item(), #'v_means'
-                            optimizer.state[p]['exp_avg'].abs().std().item(), # 'v_std'
-                            optimizer.state[p]['exp_avg'].abs().max().item(), # 'v_max'
-                            optimizer.state[p]['exp_avg_sq'].abs().mean().item(), #'g_means'
-                            optimizer.state[p]['exp_avg_sq'].abs().std().item(), # 'g_std'
-                            optimizer.state[p]['exp_avg_sq'].abs().max().item(), # 'g_max'
-                        ]
+                        if args.opt == 'adamw' or args.opt == 'cadamw' or args.opt == 'sadamw':
+                            to_log = to_log + [
+                                optimizer.state[p]['exp_avg'].abs().mean().item(), #'v_means'
+                                optimizer.state[p]['exp_avg'].abs().std().item(), # 'v_std'
+                                optimizer.state[p]['exp_avg'].abs().max().item(), # 'v_max'
+                                optimizer.state[p]['exp_avg_sq'].mean().item(), #'g_means'
+                                optimizer.state[p]['exp_avg_sq'].std().item(), # 'g_std'
+                                optimizer.state[p]['exp_avg_sq'].max().item(), # 'g_max'
+                            ]
+                        if 'cadamw' in args.opt or 'sadamw' in args.opt:
+                            to_log = to_log + [
+                                optimizer.state[p]['exp_avg_sq'].min().item(),
+                                optimizer.state[p]['g2_mean'],
+                                optimizer.state[p]['g2_std'],
+                                optimizer.state[p]['g2_min'],
+                                optimizer.state[p]['g2_max'],
+                                optimizer.state[p]['rms_mean'],
+                                optimizer.state[p]['rms_std'],
+                                optimizer.state[p]['rms_min'],
+                                optimizer.state[p]['rms_max'],
+                                optimizer.state[p]['rms_sq_d1'],
+                                optimizer.state[p]['rms_d1'],
+                                optimizer.state[p]['numel'],
+                            ]
+                        if 'sadamw' in args.opt:
+                            to_log = to_log + [
+                                optimizer.state[p]['running_k'],
+                                optimizer.state[p]['det_beta2'],
+                                optimizer.state[p]['err'],
+                                optimizer.state[p]['serr'],
+                                optimizer.state[p]['relu'],
+                            ]
+
                         param_n_log[n].write(','.join([str(x) for x in to_log]) + '\n')
                 
                 if (i % 100) == 0:

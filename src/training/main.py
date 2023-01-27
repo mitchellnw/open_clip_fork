@@ -31,7 +31,9 @@ from training.logger import setup_logging
 from training.params import parse_args
 from training.scheduler import cosine_lr
 from training.train import train_one_epoch, evaluate
-
+from training.gadamw import GAdamW
+from training.cadamw import CAdamW
+from training.sadamw import SAdamW
 
 def random_seed(seed=42, rank=0):
     torch.manual_seed(seed + rank)
@@ -134,6 +136,7 @@ def main(args):
         pretrained_image=args.pretrained_image,
         image_mean=args.image_mean,
         image_std=args.image_std,
+        sep_attn=args.sep_attn,
     )
 
     if args.cinit:
@@ -202,15 +205,46 @@ def main(args):
         gain_or_bias_params = [p for n, p in named_parameters if exclude(n, p) and p.requires_grad]
         rest_params = [p for n, p in named_parameters if include(n, p) and p.requires_grad]
 
-        optimizer = optim.AdamW(
-            [
-                {"params": gain_or_bias_params, "weight_decay": 0.},
-                {"params": rest_params, "weight_decay": args.wd},
-            ],
-            lr=args.lr,
-            betas=(args.beta1, args.beta2),
-            eps=args.eps,
-        )
+        if args.opt == 'gadamw':
+            optimizer = GAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt == 'cadamw':
+            optimizer = CAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt == 'sadamw':
+            optimizer = SAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        else:
+            optimizer = optim.AdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
         if args.horovod:
             optimizer = hvd.DistributedOptimizer(optimizer, named_parameters=model.named_parameters())
             hvd.broadcast_parameters(model.state_dict(), root_rank=0)

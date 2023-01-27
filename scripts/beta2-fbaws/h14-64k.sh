@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=learnlab,scaling_data_pruning
+#SBATCH --partition=learnlab,scaling_data_pruning,learnfair
 #SBATCH --job-name=openclip
 #SBATCH --nodes 32
 #SBATCH --ntasks-per-node 8
@@ -28,7 +28,7 @@ cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
 LR=1e-3
-BETA2=0.8
+BETA2=0.5
 MODEL=ViT-H-14-pd05
 BS=65536
 
@@ -65,6 +65,8 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
 # conda activate open_clip 
 
 # info.
-# 99 - 404833
-# 95 - 404838
-# 8 - 
+# 99 - 407751
+# 98 - *
+# 95 - done
+# 8 - done
+# 9 - *

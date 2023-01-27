@@ -1,0 +1,12 @@
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-65536-2e-3-0.95-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamwrscat-ViT-B-16-pd05-16384-2e-3-0.8-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamwrscat-ViT-B-16-pd05-16384-2e-3-0.9-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamwrscat-ViT-B-16-pd05-16384-2e-3-0.95-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-16384-2e-3-0.8-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-4096-2e-3-0.8-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-65536-2e-3-0.8-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-65536-2e-3-0.99-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-4096-2e-3-0.99-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-4096-2e-3-0.98-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-4096-2e-3-0.95-v0/checkpoints/eval.pt
+rm -rf /fsx-scaling/mitchellw/experiments/open_clip_b2/cadamw5cat-ViT-B-16-pd05-4096-2e-3-0.9-v0/checkpoints/eval.pt
