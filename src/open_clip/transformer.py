@@ -9,6 +9,18 @@ from torch.utils.checkpoint import checkpoint
 
 from .utils import to_2tuple
 
+def log_features(x, training, _iter, logger_file):
+    if not training or logger_file is None:
+        return
+    with torch.no_grad():
+        features = x.abs()
+        to_log = [
+            _iter,
+            features.std().item(), # std
+            features.mean().item(), # mean
+            features.max().item(), # max
+        ]
+        logger_file.write(','.join([str(x) for x in to_log]) + '\n')
 
 class LayerNormFp32(nn.LayerNorm):
     """Subclass torch's LayerNorm to handle fp16 (by casting to float32 and back)."""
@@ -191,7 +203,15 @@ class ResidualAttentionBlock(nn.Module):
 
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask))
+
+        if self.advanced_logging:
+            log_features(x, self.training, self.iter, self.logger_file1)
+
         x = x + self.ls_2(self.mlp(self.ln_2(x)))
+
+        if self.advanced_logging:
+            log_features(x, self.training, self.iter, self.logger_file2)
+            
         return x
 
 
@@ -283,15 +303,28 @@ class VisionTransformer(nn.Module):
             global_average_pool: bool = False,
             output_dim: int = 512,
             patch_dropout: float = 0.,
+            dual_patchnorm: bool = False,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
     ):
         super().__init__()
-        self.image_size = to_2tuple(image_size)
-        self.patch_size = to_2tuple(patch_size)
-        self.grid_size = (self.image_size[0] // self.patch_size[0], self.image_size[1] // self.patch_size[1])
+
+        image_height, image_width = self.image_size = to_2tuple(image_size)
+        patch_height, patch_width = self.patch_size = to_2tuple(patch_size)
+        self.grid_size = (image_height // patch_height, image_width // patch_width)
         self.output_dim = output_dim
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
+
+
+        self.dual_patchnorm = dual_patchnorm
+
+        if dual_patchnorm:
+            patch_input_dim = patch_height * patch_width * 3
+            self.patchnorm_pre_ln = LayerNorm(patch_input_dim)
+            self.conv1 = nn.Linear(patch_input_dim, width)
+        else:
+            self.patchnorm_pre_ln = nn.Identity()
+            self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
+
 
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
@@ -375,9 +408,23 @@ class VisionTransformer(nn.Module):
         self.transformer.grad_checkpointing = enable
 
     def forward(self, x: torch.Tensor):
-        x = self.conv1(x)  # shape = [*, width, grid, grid]
-        x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
-        x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+        # x = self.conv1(x)  # shape = [*, width, grid, grid]
+        # x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
+        # x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+
+        # to patches - whether to use dual patchnorm - https://arxiv.org/abs/2302.01327v1
+        if self.dual_patchnorm:
+            # einops - rearrange(x, 'b c (h p1) (w p2) -> b (h w) (c p1 p2)')
+            x = x.reshape(x.shape[0], x.shape[1], self.grid_size[0], self.patch_size[0], self.grid_size[1], self.patch_size[1])
+            x = x.permute(0, 2, 4, 1, 3, 5)
+            x = x.reshape(x.shape[0], self.grid_size[0] * self.grid_size[1], -1)
+            x = self.patchnorm_pre_ln(x)
+            x = self.conv1(x)
+        else:
+            x = self.conv1(x)  # shape = [*, width, grid, grid]
+            x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
+            x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+
         x = torch.cat(
             [self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),
              x], dim=1)  # shape = [*, grid ** 2 + 1, width]

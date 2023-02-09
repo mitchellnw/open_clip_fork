@@ -1,0 +1,24 @@
+
+torchrun --nproc_per_node 4 -m training.main  --batch-size 512 \
+  --workers 12 --model ViT-B-32  --dataset-type webdataset \
+  --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation \
+  --train-num-samples 413000000  --local-loss \
+  --gather-with-grad  --grad-checkpointing --precision amp_bfloat16 --log-every-n-steps 5 \
+  --pretrained /fsx/home-mitchellw/experimetns/open_clip/distill_l14_32b_laion2b_v2/checkpoints/epoch_97.pt
+
+
+
+rm -rf logs && torchrun --nproc_per_node 4 -m training.main  --batch-size 512 \
+  --workers 6 --model ViT-B-16  --dataset-type webdataset \
+  --train-data="pipe:aws s3 cp s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar -" \
+  --train-num-samples 413000000  --local-loss \
+  --gather-with-grad  --grad-checkpointing --precision amp_bfloat16 --log-every-n-steps 5
+
+
+torchrun --nproc_per_node 4 -m training.main  --batch-size 1024   --workers 10 --model ViT-B-32  --dataset-type webdataset   --train-data="pipe:aws s3 cp s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar -"   --train-num-samples 413000000  --local-loss   --gather-with-grad  --grad-checkpointing --precision amp_bfloat16 --log-every-n-steps 5 --advanced-logging --name customadamw2 --opt customadamw --force-patch-dropout 0.5
+
+
+
+srun --exclusive --nodes=1 --partition=g80n140 --comment openclip --time=100:00:00 --pty /bin/bash -l
+
+

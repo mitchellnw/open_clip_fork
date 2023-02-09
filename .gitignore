@@ -149,5 +149,9 @@ src/misc
 src/debug
 core.*
 
+*.out
+*.pdf
+
 # Allow
 !src/evaluation/misc/results_dbs/*
+

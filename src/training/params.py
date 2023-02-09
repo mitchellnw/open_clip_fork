@@ -392,6 +392,21 @@ def parse_args(args):
         action="store_true",
         help="If true, delete previous checkpoint after storing a new one."
     )
+    parser.add_argument(
+        "--opt",
+        default='AdamW',
+        help="Which optimizer to use."
+    )
+    parser.add_argument(
+        "--advanced-logging",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--rms-check",
+        default=False,
+        action="store_true",
+    )
     args = parser.parse_args(args)
 
     # If some params are not passed, we use the default values based on model name.

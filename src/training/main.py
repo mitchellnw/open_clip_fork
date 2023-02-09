@@ -35,7 +35,10 @@ from training.params import parse_args
 from training.scheduler import cosine_lr, const_lr, const_lr_cooldown
 from training.train import train_one_epoch, evaluate
 from training.file_utils import pt_load, check_exists, start_sync_process, remote_sync
-
+from training.optimizers.customadamw import CustomAdamW
+from training.optimizers.clipadamw import ClipAdamW
+from training.optimizers.stableadamw import StableAdamW
+from training.optimizers.momentadamw import MomentAdamW
 
 LATEST_CHECKPOINT_NAME = "epoch_latest.pt"
 
@@ -69,6 +72,9 @@ def get_latest_checkpoint(path: str, remote : bool):
 
 def main(args):
     args = parse_args(args)
+
+    if args.train_data is not None and args.train_data.startswith('s3'):
+        args.train_data = f'pipe:aws s3 cp {args.train_data} -'
 
     if torch.cuda.is_available():
         # This enables tf32 on Ampere GPUs which is only 8% slower than
@@ -163,7 +169,11 @@ def main(args):
 
     if args.copy_codebase:
         copy_codebase(args)
-
+    if args.advanced_logging:
+        args.data_path = os.path.join(args.logs, args.name, "data", str(args.rank))
+        if is_master(args) and not os.path.exists(args.data_path):
+            os.makedirs(args.data_path)
+            
     # start the sync proces if remote-sync is not None
     remote_sync_process = None
     if is_master(args) and args.remote_sync is not None:
@@ -274,21 +284,82 @@ def main(args):
         gain_or_bias_params = [p for n, p in named_parameters if exclude(n, p) and p.requires_grad]
         rest_params = [p for n, p in named_parameters if include(n, p) and p.requires_grad]
 
-        optimizer = optim.AdamW(
-            [
-                {"params": gain_or_bias_params, "weight_decay": 0.},
-                {"params": rest_params, "weight_decay": args.wd},
-            ],
-            lr=args.lr,
-            betas=(args.beta1, args.beta2),
-            eps=args.eps,
-        )
+        if args.opt.lower() == 'customadamw':
+            optimizer = CustomAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'customadamw0.99':
+            exclude = lambda n, p: (p.ndim < 2 or "bn" in n or "ln" in n or "bias" in n or 'logit_scale' in n) and ('conv1' not in n)
+            include = lambda n, p: not exclude(n, p) and 'conv1' not in n
+            named_parameters = list(model.named_parameters())
+            gain_or_bias_params = [p for n, p in named_parameters if exclude(n, p) and p.requires_grad]
+            rest_params = [p for n, p in named_parameters if include(n, p) and p.requires_grad]
+            conv1_params = [p for n, p in named_parameters if 'conv1' in n and p.requires_grad]
+            #torch.distributed.barrier()
+            print('0.99 custom adamw')
+            optimizer = CustomAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0., 'betas': (args.beta1, 0.99)},
+                    {"params": rest_params, "weight_decay": args.wd, 'betas': (args.beta1, 0.99)},
+                    {"params": conv1_params, "weight_decay": args.wd, 'betas': (args.beta1, args.beta2)},
+                ],
+                lr=args.lr,
+                eps=args.eps,
+                individual_betas=True
+            )
+        elif args.opt.lower() == 'clipadamw':
+            optimizer = ClipAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'stableadamw':
+            optimizer = StableAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'momentadamw':
+            optimizer = MomentAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        else:
+            optimizer = optim.AdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
         if args.horovod:
             optimizer = hvd.DistributedOptimizer(optimizer, named_parameters=model.named_parameters())
             hvd.broadcast_parameters(model.state_dict(), root_rank=0)
             hvd.broadcast_optimizer_state(optimizer, root_rank=0)
 
         scaler = GradScaler() if args.precision == "amp" else None
+        optimizer.rank = args.rank
 
     # optionally resume from a checkpoint
     start_epoch = 0
@@ -362,6 +433,17 @@ def main(args):
             wandb.watch(model, log='all')
         wandb.save(params_file)
         logging.debug('Finished loading wandb.')
+
+
+    # FIXME: Only set necessary vars.
+    model.apply(lambda m : setattr(m, 'advanced_logging', args.advanced_logging))
+    if args.advanced_logging:
+        for n, m in model.named_modules():
+            setattr(m, 'module_name', n)
+        model.apply(lambda m: setattr(m, 'data_path', args.data_path))
+        model.apply(lambda m: setattr(m, 'logger_file', None))
+        model.apply(lambda m: setattr(m, 'iter', None))
+        
 
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)
