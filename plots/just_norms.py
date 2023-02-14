@@ -49,19 +49,19 @@ modules = [
 ]
 
 modules = [
-'module.visual.class_embedding',
-'module.visual.transformer.resblocks.0.attn.in_proj_weight',
-#     'module.visual.transformer.resblocks.0.mlp.c_fc.weight',
-#     'module.visual.transformer.resblocks.0.mlp.c_proj.weight',
-#     'module.visual.transformer.resblocks.10.attn.in_proj_weight',
-#     'module.visual.transformer.resblocks.10.attn.in_proj_weight',
-#     'module.visual.transformer.resblocks.10.mlp.c_fc.weight',
-#     'module.visual.transformer.resblocks.20.attn.in_proj_weight',
-#     'module.visual.transformer.resblocks.20.mlp.c_fc.weight',
-#     'module.logit_scale',
-'module.positional_embedding',
-'module.visual.positional_embedding',
-'module.visual.conv1.weight',
+#     'module.visual.class_embedding',
+    #'module.visual.transformer.resblocks.0.attn.in_proj_weight',
+    'module.visual.transformer.resblocks.0.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.10.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.20.mlp.c_fc.weight',
+    'module.visual.transformer.resblocks.30.mlp.c_fc.weight',
+    #'module.visual.transformer.resblocks.10.attn.in_proj_weight',
+    # 'module.visual.transformer.resblocks.10.attn.in_proj_weight',
+    # 'module.visual.transformer.resblocks.10.mlp.c_fc.weight',
+    # 'module.visual.transformer.resblocks.20.attn.in_proj_weight',
+    # 'module.visual.transformer.resblocks.20.mlp.c_fc.weight',
+#     #'module.logit_scale',
+     #'module.visual.conv1.weight',
 ]
 cmap=plt.get_cmap('cool')
 def get_metrics(filename):
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level =3 + len(modules)
+    log_level =3 #+ len(modules)
 
     # NOTE: LOOK AT FEATURE STDDEV!
     alpha = 1
@@ -105,29 +105,7 @@ if __name__ == '__main__':
 
        # (f'clipadamw-amp-ViT-H-14-{16384}-2e-3-0.99-v1', 'clip - batchsize 16k - l/14 0.99', 'C1', -1),
 
-        #(f'clipadamw-amp-ViT-H-14-{16384}-2e-3-0.98-v1', 'clip - batchsize 16k - l/14 0.98', 'C0', -1),
-        #(f'clipadamw-amp-ViT-H-14-{16384}-2e-3-0.98-v1', 'clip - batchsize 16k - l/14 0.99', 'C0', -1),
-        #(f'customadamw-amp-ViT-H-14-{16384}-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C0', -1),
-
-        #(f'clipadamw-amp-ViTls0-H-14-{16384}-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C1', -1),
-        # (f'clipadamw-camp65k-ViTls0-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C2', -1),
-        (f'clipadamw-amp-ViT-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C1', -1),
-        (f'clipadamw-amp-ViTls0-H-14-{16384}-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C4', -1),
-
-        #(f'customadamw-camp65k-ViTls0-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C4', -1),
-        #(f'clipadamw-camp65k-ViTls0-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C9', -1),
-        #(f'clipadamw-camp65k-ViTls0-H-14-16384-2e-3-0.98-dp015-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C6', -1),
-
-        
-        #(f'customadamw-amp-ViT-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C5', -1),
-
-        # (f'customadamw-amp-ViT-H-14-{16384}-2e-3-0.95-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C1', -1),
-        # (f'customadamw-ViT-L-14-{16384}-2e-3-0.95-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C2', -1),
-        #(f'customadamw-amp-ViTDP-B-32-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C3', -1),
-
-        
-        
-        #(f'clipadamw-amp-ViTls0-H-14-16384-2e-3-0.99-v1', 'ls - clip - batchsize 16k - l/14 0.98', 'C4', -1),
+        (f'clipadamw-amp-ViTls0-H-14-{16384}-2e-3-0.98-v1', 'clip - batchsize 16k - h/14 0.98', 'gray', -1),
 
 
         #(f'customadamw-amp-ViT-H-14-{16384}-2e-3-0.98-v1', 'standard - batchsize 16k - l/14', 'C0', -1),
@@ -196,31 +174,29 @@ if __name__ == '__main__':
                 #ax.set_yscale('log')
                 #ax.set_xscale('log')
 
-        if log_level >= 2:
-            ax = axlist[1]
-            for i in range(1):
-                filename = f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/amp.csv'
-                if not os.path.exists(filename):
-                    continue
-                df = pd.read_csv(filename, names=list(range(2)))
-                if len(df) == 0:
-                    continue
-                df = proc(df, lim)
-                #df = df[df[0] > 30000]
-                #ax.set_yscale('log')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+        # if log_level >= 2:
+        #     ax = axlist[1]
+        #     for i in range(1):
+        #         filename = f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/amp.csv'
+        #         if not os.path.exists(filename):
+        #             continue
+        #         df = pd.read_csv(filename, names=list(range(2)))
+        #         if len(df) == 0:
+        #             continue
+        #         df = proc(df, lim)
+        #         #df = df[df[0] > 30000]
+        #         #ax.set_yscale('log')
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
 
-                print(df.iloc[-1, 0])
-                ax.set_ylabel('Amp', fontsize=16)
-                ax.set_yscale('log')
-                #ax.set_xscale('log')
+        #         print(df.iloc[-1, 0])
+        #         ax.set_ylabel('Amp', fontsize=16)
+        #         #ax.set_yscale('log')
+        #         #ax.set_xscale('log')
 
 
         for jj, module in enumerate(modules):
-            if jj + 2 >= log_level - 1:
-                continue
-            ax = axlist[jj+2]
+            ax = axlist[1]
 
             for i in range(1):
                 #layer = 'params-module.logit_scale.csv'
@@ -232,28 +208,20 @@ if __name__ == '__main__':
                 
                 # if j == 1:
                 #     alpha = 0.25
-                #idx = 14
+                idx = 14
                 #idx=1
                 idx = 6
-                #idx = 14
                 #idx = 18
                 #if jj == 0:
-                ax.plot(df.iloc[:, 0], np.sqrt(df.iloc[:, idx]), color=color, alpha=alpha)
-                badness = 0
-                for axv in df[np.isnan(df[6])][0].values:
-                    ax.axvline(axv, color='red')
-                    badness += 1
-                for axv in df[np.isinf(df[6])][0].values:
-                    ax.axvline(axv, color='red', linestyle='--')
-                    badness += 1
-                print('badness',module, badness)
+                ax.plot(df.iloc[:, 0], np.sqrt(df.iloc[:, idx]),label=layer)
+                ax.set_yscale('log')
                 #ax.plot(df.iloc[:, 0], df.iloc[:, idx], color=color, alpha=alpha)
                 #ax.set_ylabel('root(mean(square(g/u)))', fontsize=16)
                 ax.set_ylabel('max gradient magnitude', fontsize=16)
 
                 #ax.plot(df.iloc[:, 0], df.iloc[:, idx], color=color, alpha=alpha)
                 #ax.plot(df.iloc[:, 0], np.sqrt(df.iloc[:, idx]), color=color, alpha=alpha)
-                ax.set_title(module, fontsize=16, y=1.0, pad=-14)
+                #ax.set_title(module, fontsize=16, y=1.0, pad=-14)
                 # else:
                 #     ax.plot(df.iloc[:, 0], np.sqrt(df.iloc[:, 4]), color=color, alpha=alpha)
                     
@@ -263,14 +231,20 @@ if __name__ == '__main__':
 
         ax = axlist[-1]
         for i in range(1):
-            layer = f'features2-module.visual.transformer.resblocks.30.csv'
-            filename = f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/{layer}'
-            if not os.path.exists(filename):
-                continue
-            df = pd.read_csv(filename, names=list(range(17+5+4+2)))
-            df = proc(df, lim)
-            ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
-            ax.set_ylabel('feature max layer 30', fontsize=16)
+            for layer in [
+                f'features2-module.visual.transformer.resblocks.0.csv',
+                f'features2-module.visual.transformer.resblocks.10.csv',
+                f'features2-module.visual.transformer.resblocks.20.csv',
+                f'features2-module.visual.transformer.resblocks.30.csv'
+            ]:
+                filename = f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/{layer}'
+                if not os.path.exists(filename):
+                    continue
+                df = pd.read_csv(filename, names=list(range(17+5+4+2)))
+                df = proc(df, lim)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 3],label=layer)
+                ax.set_ylabel('feature maxs', fontsize=16)
+                ax.set_yscale('log')
 
         # ax = axlist[-1]    
         # for i in range(1):
@@ -305,8 +279,6 @@ if __name__ == '__main__':
         dd = 50
         vv = 9500
         dd = 500
-        vv = 4200
-        dd = 250
         # vv = 1498
         # dd = 30
         
@@ -325,7 +297,7 @@ if __name__ == '__main__':
             ax.axhline(np.sqrt(df[df[0] == vv][4].values[-1]), color='gray', linestyle='--')
         continue
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/loss_plot_amp.png', bbox_inches='tight')
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/just_norms.png', bbox_inches='tight')
 
 
 

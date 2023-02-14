@@ -45,7 +45,16 @@ class ClipAdamW(torch.optim.Optimizer):
                     continue
                 theta=p.data
                 param_state = self.state[p]
-                g = p.grad.data
+
+                if self.precision == 'custom_fp16':
+                    g = p.grad.data / self.custom_scaler
+                    if torch.any(torch.isnan(g) | torch.isinf(g)):
+                        continue
+                else:
+                    g = p.grad.data
+                    
+
+                torch.distributed.barrier()
 
                 if 'exp_avg' not in param_state:
                     v = param_state['exp_avg'] = torch.zeros_like(theta)

@@ -1,0 +1,19 @@
+{
+    "embed_dim": 512,
+    "vision_cfg": {
+        "image_size": 224,
+        "layers": 12,
+        "width": 768,
+        "patch_size": 32,
+        "ls_init_value": 0.0001,
+        "dual_patchnorm": true
+    },
+    "text_cfg": {
+        "context_length": 77,
+        "vocab_size": 49408,
+        "width": 512,
+        "heads": 8,
+        "layers": 12,
+        "ls_init_value": 0.0001
+    }
+}

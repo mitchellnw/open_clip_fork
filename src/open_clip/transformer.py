@@ -7,7 +7,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-from .utils import to_2tuple
+from .utils import to_2tuple, DropPath
 
 def log_features(x, training, _iter, logger_file):
     if not training or logger_file is None:
@@ -172,6 +172,7 @@ class Attention(nn.Module):
         return x
 
 
+
 class ResidualAttentionBlock(nn.Module):
     def __init__(
             self,
@@ -181,13 +182,16 @@ class ResidualAttentionBlock(nn.Module):
             ls_init_value: float = None,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            drop_path: float = 0.,
     ):
         super().__init__()
 
         self.ln_1 = norm_layer(d_model)
         self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ls_1 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
-
+        
+        self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        
         self.ln_2 = norm_layer(d_model)
         mlp_width = int(d_model * mlp_ratio)
         self.mlp = nn.Sequential(OrderedDict([
@@ -197,17 +201,19 @@ class ResidualAttentionBlock(nn.Module):
         ]))
         self.ls_2 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
 
+        self.drop_path2 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
     def attention(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         attn_mask = attn_mask.to(x.dtype) if attn_mask is not None else None
         return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
 
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
-        x = x + self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask))
+        x = x + self.drop_path1(self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask)))
 
         if self.advanced_logging:
             log_features(x, self.training, self.iter, self.logger_file1)
 
-        x = x + self.ls_2(self.mlp(self.ln_2(x)))
+        x = x + self.drop_path2(self.ls_2(self.mlp(self.ln_2(x))))
 
         if self.advanced_logging:
             log_features(x, self.training, self.iter, self.logger_file2)
@@ -266,6 +272,7 @@ class Transformer(nn.Module):
             ls_init_value: float = None,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            drop_path: float = 0.,
     ):
         super().__init__()
         self.width = width
@@ -274,7 +281,7 @@ class Transformer(nn.Module):
 
         self.resblocks = nn.ModuleList([
             ResidualAttentionBlock(
-                width, heads, mlp_ratio, ls_init_value=ls_init_value, act_layer=act_layer, norm_layer=norm_layer)
+                width, heads, mlp_ratio, ls_init_value=ls_init_value, act_layer=act_layer, norm_layer=norm_layer, drop_path=drop_path)
             for _ in range(layers)
         ])
 
@@ -289,6 +296,20 @@ class Transformer(nn.Module):
                 x = r(x, attn_mask=attn_mask)
         return x
 
+class TemporalMixup(nn.Module):
+
+    def __init__(self, decay):
+        super().__init__()
+        self.decay = decay
+
+    def forward(self, x):
+        bname = f'buffer_{self.rank}'
+        if hasattr(self, bname):
+            bout = getattr(self, bname)
+            x = self.decay * bout + (1 - self.decay) * x
+        self.register_buffer(bname, x.clone().detach())
+        return x
+        
 
 class VisionTransformer(nn.Module):
     def __init__(
@@ -306,6 +327,8 @@ class VisionTransformer(nn.Module):
             dual_patchnorm: bool = False,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            drop_path: float = 0.,
+            temporal_mixup : float = 0,
     ):
         super().__init__()
 
@@ -314,6 +337,7 @@ class VisionTransformer(nn.Module):
         self.grid_size = (image_height // patch_height, image_width // patch_width)
         self.output_dim = output_dim
 
+        self.temporal_mixup = TemporalMixup(temporal_mixup) if temporal_mixup > 0 else nn.Identity()
 
         self.dual_patchnorm = dual_patchnorm
 
@@ -342,6 +366,7 @@ class VisionTransformer(nn.Module):
             ls_init_value=ls_init_value,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            drop_path=drop_path,
         )
 
         self.global_average_pool = global_average_pool
@@ -430,6 +455,8 @@ class VisionTransformer(nn.Module):
              x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
 
+        x = self.temporal_mixup(x)
+
         # a patch_dropout of 0. would mean it is disabled and this function would do nothing but return what was passed in
         x = self.patch_dropout(x)
         x = self.ln_pre(x)
@@ -464,12 +491,16 @@ class TextTransformer(nn.Module):
             output_dim: int = 512,
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
+            drop_path: float = 0.,
+            temporal_mixup : float = 0,
     ):
         super().__init__()
         self.context_length = context_length
         self.vocab_size = vocab_size
         self.width = width
         self.output_dim = output_dim
+
+        self.temporal_mixup = TemporalMixup(temporal_mixup) if temporal_mixup > 0 else nn.Identity()
 
         self.token_embedding = nn.Embedding(vocab_size, width)
         self.positional_embedding = nn.Parameter(torch.empty(self.context_length, width))
@@ -480,6 +511,7 @@ class TextTransformer(nn.Module):
             ls_init_value=ls_init_value,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            drop_path=drop_path,
         )
         self.ln_final = norm_layer(width)
         self.text_projection = nn.Parameter(torch.empty(width, output_dim))
@@ -522,6 +554,9 @@ class TextTransformer(nn.Module):
         x = self.token_embedding(text).to(cast_dtype)  # [batch_size, n_ctx, d_model]
 
         x = x + self.positional_embedding.to(cast_dtype)
+
+        x = self.temporal_mixup(x)
+
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x, attn_mask=self.attn_mask)
         x = x.permute(1, 0, 2)  # LND -> NLD

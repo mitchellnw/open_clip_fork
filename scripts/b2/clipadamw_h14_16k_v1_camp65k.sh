@@ -31,11 +31,11 @@ export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
 BETA2=0.98
-MODEL=ViTDP-H-14
+MODEL=ViT-H-14
 BS=16384
-OPT=customadamw
+OPT=clipadamw
 
-EXP_NAME="$OPT-amp-$MODEL-$BS-$LR-$BETA2-gradclip2-v1"
+EXP_NAME="$OPT-camp65k-$MODEL-$BS-$LR-$BETA2-v1"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -64,8 +64,9 @@ EXP_NAME="$OPT-amp-$MODEL-$BS-$LR-$BETA2-gradclip2-v1"
     --advanced-logging \
     --wandb-project-name open_clip_12 \
     --force-patch-dropout 0.5 \
+    --precision custom_fp16 \
+    --custom-scaler 65536. \
     --resume 'latest' \
-    --grad-clip-norm 2. \
     --delete-previous-checkpoint \
     --opt $OPT
 

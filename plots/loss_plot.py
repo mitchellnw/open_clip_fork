@@ -83,11 +83,29 @@ if __name__ == '__main__':
 
         # (f'customadamw-gradclip2-ViT-B-32-16384-2e-3-0.995-v0', 'Dual Patchnorm l/14',cmap(1./3), -1),
         # (f'clipadamw-ViT-B-32-16384-2e-3-0.995-v0', 'Dual Patchnorm l/14',cmap(1.), -1),
-        (f'customadamw-ViT-L-14-16384-2e-3-0.99-v1', 'Dual Patchnorm l/14',cmap(1.), -1),
-        (f'customadamw-ViT-L-14-16384-2e-3-0.98-v1', 'Dual Patchnorm l/14',cmap(.6), -1),
-        (f'customadamw-ViT-L-14-16384-2e-3-0.95-v1', 'Dual Patchnorm l/14',cmap(.3), -1),
-        (f'customadamw-ViT-L-14-16384-2e-3-0.9-v1', 'Dual Patchnorm l/14',cmap(0), -1),
+        #(f'customadamw-ViT-B-32-{16384}-2e-3-0.995-v0', 'b/32 - 99',cmap(0.5), -1),
+        #(f'customadamw-ViT-B-32-{16384}-2e-3-0.95-v0', 'b/32',cmap(0.5), -1),
 
+        #(f'customadamw-ViTDP-L-14-{16384}-2e-3-0.99-v1', 'l/14 - 99',cmap(1.), -1),
+
+        # (f'clipadamw-ViTDP-L-14-{16384}-2e-3-0.98-v1', 'l/14',cmap(0.), -1),
+        # (f'clipadamw-ViTDP-L-14-{16384}-2e-3-0.99-v1', 'l/14',cmap(1.), -1),
+        # (f'customadamw-ViT-L-14-{16384}-2e-3-0.95-v1', 'l/14','gray', -1),
+
+        # (f'customadamw-ViTDP-B-32-16384-2e-3-0.95-v1', 'Dual Patchnorm l/14',cmap(.6), -1),
+        # (f'customadamw-ViTDP-B-32-16384-2e-3-0.95-v1', 'Dual Patchnorm l/14',cmap(.3), -1),
+        # (f'customadamw-ViT-B-32-{16384}-1e-3-0.98-v0', 'Standard',cmap(0.5), -1),
+        
+        # (f'customadamw-ViT-L-14-{16384}-2e-3-0.99-v1', 'Standard',cmap(1.), -1),
+
+        # (f'clipadamw-ViT-L-14-{16384}-2e-3-0.99-v1', 'Standard',cmap(0.), -1),
+        (f'customadamw-ViT-B-32-16384-2e-3-0.95-tm05-v0', 'Standard',cmap(0.), -1),
+        #(f'customadamw-ViT-B-32-16384-2e-3-0.95-v0', 'Standard',cmap(0.), -1),
+
+       #(f'customadamw-ViT-B-32-{16384}-2e-3-0.98-v0', 'standard - batchsize 16k - l/14', 'C0', -1),
+        #(f'customadamw-ViTDP-B-32-{16384}-2e-3-0.98-v0', 'standard - batchsize 16k - l/14 + dpn', 'C1', -1),
+        #(f'clipadamw-ViT-B-32-{16384}-2e-3-0.98-v0', 'clip - batchsize 16k - l/14', 'C2', -1),
+        #(f'clipadamw-ViTDP-B-32-{16384}-2e-3-0.98-v0', 'clip - batchsize 16k - l/14 + dpn', 'C3', -1),
     ]
 
     fig, axlist = plt.subplots(log_level, 1, figsize=(16, 5 * log_level))

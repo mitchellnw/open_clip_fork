@@ -178,7 +178,7 @@ def parse_args(args):
     )
     parser.add_argument(
         "--precision",
-        choices=["amp", "amp_bf16", "amp_bfloat16", "bf16", "fp16", "fp32"],
+        choices=["amp", "amp_bf16", "amp_bfloat16", "bf16", "fp16", "fp32", 'custom_fp16'],
         default="amp",
         help="Floating point precision."
     )
@@ -406,6 +406,26 @@ def parse_args(args):
         "--rms-check",
         default=False,
         action="store_true",
+    )
+    parser.add_argument(
+        "--custom-scaler",
+        type=float,
+        default=-1,
+    )
+    parser.add_argument(
+        "--force-image-drop-path",
+        default=0.,
+        type=float,
+    )
+    parser.add_argument(
+        "--force-text-drop-path",
+        default=0.,
+        type=float,
+    )
+    parser.add_argument(
+        "--temporal-mixup",
+        default=0.,
+        type=float,
     )
     args = parser.parse_args(args)
 

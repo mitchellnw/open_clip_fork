@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=g80n60,g40423
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 8
+#SBATCH --nodes 2
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=12
 #SBATCH --gres=gpu:8
@@ -29,15 +29,15 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
-LR=2e-3
-BETA2=0.98
-MODEL=ViTDP-H-14
+LR=5e-4
+BETA2=0.995
+MODEL=ViT-B-32
 BS=16384
 OPT=customadamw
 
-EXP_NAME="$OPT-amp-$MODEL-$BS-$LR-$BETA2-gradclip2-v1"
+EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
 
-/opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
+srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
     --report-to wandb \
     --train-data="s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar" \
@@ -45,7 +45,7 @@ EXP_NAME="$OPT-amp-$MODEL-$BS-$LR-$BETA2-gradclip2-v1"
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 5000 \
-    --batch-size=256 \
+    --batch-size=1024 \
     --epochs=5 \
     --lr $LR \
     --beta2 $BETA2 \
@@ -54,18 +54,17 @@ EXP_NAME="$OPT-amp-$MODEL-$BS-$LR-$BETA2-gradclip2-v1"
     --name ${EXP_NAME} \
     --logs /fsx/home-mitchellw/experimetns/opt \
     --model $MODEL \
-    --seed 1 \
+    --seed 0 \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \
     --grad-checkpointing \
-    --precision amp \
+    --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
     --wandb-project-name open_clip_12 \
     --force-patch-dropout 0.5 \
     --resume 'latest' \
-    --grad-clip-norm 2. \
     --delete-previous-checkpoint \
     --opt $OPT
 

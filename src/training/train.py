@@ -46,9 +46,11 @@ def unwrap_model(model):
         return model
 
 
-def backward(total_loss, scaler):
+def backward(total_loss, scaler, custom_scaler):
     if scaler is not None:
         scaler.scale(total_loss).backward()
+    elif custom_scaler > 0:
+        (total_loss * custom_scaler).backward()
     else:
         total_loss.backward()
 
@@ -71,6 +73,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
     dataloader = data['train'].dataloader
     num_batches_per_epoch = dataloader.num_batches // args.accum_freq
     sample_digits = math.ceil(math.log(dataloader.num_samples + 1, 10))
+
+    model.apply(lambda m: setattr(m, 'rank', args.rank))
 
     if args.accum_freq > 1:
         accum_images, accum_texts, accum_image_features, accum_text_features = [], [], [], []
@@ -129,7 +133,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 image_features, text_features, logit_scale = model(images, texts)
                 total_loss = loss(image_features, text_features, logit_scale)
 
-            backward(total_loss, scaler)
+            backward(total_loss, scaler, args.custom_scaler)
         else:
             # First, cache the features without any gradient tracking.
             with torch.no_grad():
@@ -244,16 +248,18 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                         if p.grad is None:
                             continue
 
-
+                        cs = 1.
+                        if args.custom_scaler > 0:
+                            cs = args.custom_scaler
 
                         to_log = [
                             step,
                             p.pow(2).mean().item(), #'weight_means'
                             p.pow(2).std().item(), # 'weight_std'
                             p.pow(2).max().item(), # 'weight_max'
-                            p.grad.pow(2).mean().item(), #'grad sq mean'
-                            p.grad.pow(2).std().item(), # 'grad sq std'
-                            p.grad.pow(2).max().item(), # 'grad sq max'
+                            (p.grad / cs).pow(2).mean().item(), #'grad sq mean'
+                            (p.grad / cs).pow(2).std().item(), # 'grad sq std'
+                            (p.grad / cs).pow(2).max().item(), # 'grad sq max'
                         ]
                         if 'adamw' in args.opt:
                             to_log = to_log + [
@@ -300,7 +306,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 for n, p in model.named_parameters():
                     if n == 'module.visual.conv1.weight':
                         saved_p = p
-                if args.rms_check and step > 1500 and optimizer.state[saved_p]['rms_mean'] > 1.7:
+                if args.rms_check and step > 1500 and np.sqrt(optimizer.state[saved_p]['rms_mean']) > 1.7:
                     #if step == 10:
                     spike_dir = os.path.join(args.logs, args.name, "spike")
                     if is_master(args) and not os.path.exists(spike_dir):

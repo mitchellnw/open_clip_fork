@@ -7,6 +7,8 @@ import sys
 import random
 from datetime import datetime
 
+import bitsandbytes as bnb
+
 import numpy as np
 import torch
 from torch import optim
@@ -231,6 +233,9 @@ def main(args):
         image_mean=args.image_mean,
         image_std=args.image_std,
         aug_cfg=args.aug_cfg,
+        force_image_drop_path=args.force_image_drop_path,
+        force_text_drop_path=args.force_text_drop_path,
+        temporal_mixup=args.temporal_mixup,
     )
     random_seed(args.seed, args.rank)
 
@@ -360,6 +365,8 @@ def main(args):
 
         scaler = GradScaler() if args.precision == "amp" else None
         optimizer.rank = args.rank
+        optimizer.precision = args.precision
+        optimizer.custom_scaler = args.custom_scaler
 
     # optionally resume from a checkpoint
     start_epoch = 0

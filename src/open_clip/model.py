@@ -39,6 +39,8 @@ class CLIPVisionCfg:
     timm_proj_bias: bool = False  # enable bias final projection
     timm_drop: float = 0.  # head dropout
     timm_drop_path: Optional[float] = None  # backbone stochastic depth
+    drop_path: float = 0
+    temporal_mixup: float = 0
 
 
 @dataclass
@@ -54,6 +56,8 @@ class CLIPTextCfg:
     hf_model_pretrained: bool = True
     proj: str = 'mlp'
     pooler_type: str = 'mean_pooler'
+    drop_path: float = 0
+    temporal_mixup: float = 0
 
 
 def get_cast_dtype(precision: str):
@@ -118,6 +122,8 @@ def _build_vision_tower(
             output_dim=embed_dim,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            drop_path=vision_cfg.drop_path,
+            temporal_mixup=vision_cfg.temporal_mixup,
         )
 
     return visual
@@ -154,6 +160,8 @@ def _build_text_tower(
             output_dim=embed_dim,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            drop_path=text_cfg.drop_path,
+            temporal_mixup=text_cfg.temporal_mixup,
         )
     return text
 

@@ -95,18 +95,16 @@ if __name__ == '__main__':
 
     for template, name, color in [
 
-        # (f'customadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
-        # (f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
-        # (f'clipadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
-        # (f'clipadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
-        # (f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-gradclip2-v1', 'GC - batchsize 16k - l/14 + dpn', 'C4'),
-        # (f'clipadamw-amp-ViTls0-H-14-16384-2e-3-' + '{}-v1', 'GC - batchsize 16k - l/14 + dpn', 'C5'),
+        (f'customadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
+        (f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
+        (f'clipadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
+        (f'clipadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
+
 
         # (f'customadamw-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
         # (f'customadamw-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
         # (f'clipadamw-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
         # (f'clipadamw-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
-
 
 
         # (f'customadamw-amp-ViT-L-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
@@ -121,10 +119,10 @@ if __name__ == '__main__':
         # (f'clipadamw-ViTDP-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
 
 
-        (f'customadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32', 'C0'),
-        (f'customadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32 + dpn', 'C1'),
-        (f'clipadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32', 'C2'),
-        (f'clipadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32 + dpn', 'C3'),
+        # (f'customadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32', 'C0'),
+        # (f'customadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32 + dpn', 'C1'),
+        # (f'clipadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32', 'C2'),
+        # (f'clipadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32 + dpn', 'C3'),
 
         # (f'customadamw-ViT-B-32-{16384}-1e-3-' + '{}-v0', 'standard - batchsize 16k - lr 1e-3', 'C1'),
         # (f'customadamw-ViT-B-32-{16384}-5e-4-' + '{}-v0', 'standard - batchsize 16k - lr 5e-4', 'C2'),
@@ -138,27 +136,38 @@ if __name__ == '__main__':
         #(f'customadamw-gradclip2-ViT-B-32-16384-2e-3-' + '{}-v0', 'gc - batchsize 16k', 'C1'),
     ]:
             
-        xs, ys = [], []
+        xs, ys, ysmin = [], [], []
         allb2s = [0.5, 0.8, 0.9, 0.95, 0.98, 0.99, 0.995, 0.999]
         for j, beta2 in enumerate(allb2s):
-            fname = f'/fsx/home-mitchellw/experimetns/opt/{template.format(beta2)}/checkpoints/eval.pt'
-            top1 = get_metrics(fname)
-            if top1 > 0.1:
+            fname = f'/fsx/home-mitchellw/experimetns/opt/{template.format(beta2)}/data/0/amp.csv'
+
+            if not os.path.exists(fname):
+                continue
+            df = pd.read_csv(fname, names=list(range(2)))
+            if len(df) == 0:
+                continue
+            top1 = df[1].values[-1]
+            top1min = df[1].min()
+
+            if top1 > 0:
                 xs.append(j)
                 ys.append(top1)
+                ysmin.append(top1min)
         
         # mean_ys = np.mean(ys)
         # ax.plot(xs, [y - mean_ys for y in ys], marker='o', color=color, label=name)
         ax.plot(xs, ys, marker='o', color=color, label=name)
+        #ax.plot(xs, ysmin, marker='o', color=color, label=name, linestyle='--')
+
     ax.set_xticks([j for j, _ in enumerate(allb2s)])
     ax.set_xticklabels(allb2s)
     ax.set_xlabel('Beta2', fontsize=16)
-    ax.set_ylabel('Accuracy', fontsize=16)
+    ax.set_ylabel('AMP Scaler', fontsize=16)
     ax.legend()
     ax.grid()
 
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/just_b2.png', bbox_inches='tight')
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/just_amp.png', bbox_inches='tight')
 
 
 

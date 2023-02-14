@@ -97,6 +97,10 @@ def load_checkpoint(model, checkpoint_path, strict=True):
     if 'positional_embedding' in state_dict and not hasattr(model, 'positional_embedding'):
         state_dict = convert_to_custom_text_state_dict(state_dict)
     resize_pos_embed(state_dict, model)
+    old_keys = list(state_dict.keys())
+    for old_key in old_keys:
+        if 'temporal_mixup' in old_key:
+            del state_dict[old_key]
     incompatible_keys = model.load_state_dict(state_dict, strict=strict)
     return incompatible_keys
 
@@ -114,6 +118,9 @@ def create_model(
         pretrained_image: bool = False,
         pretrained_hf: bool = True,
         cache_dir: Optional[str] = None,
+        force_image_drop_path: float = 0,
+        force_text_drop_path: float = 0,
+        temporal_mixup: float = 0,
 ):
     has_hf_hub_prefix = model_name.startswith(HF_HUB_PREFIX)
     if has_hf_hub_prefix:
@@ -158,6 +165,16 @@ def create_model(
         if force_patch_dropout is not None:
             # override the default patch dropout value
             model_cfg["vision_cfg"]["patch_dropout"] = force_patch_dropout
+
+        if force_image_drop_path > 0:
+            model_cfg["vision_cfg"]["drop_path"] = force_image_drop_path
+
+        if force_text_drop_path > 0:
+            model_cfg["text_cfg"]["drop_path"] = force_text_drop_path
+
+        if temporal_mixup > 0:
+            model_cfg["vision_cfg"]["temporal_mixup"] = temporal_mixup
+            model_cfg["text_cfg"]["temporal_mixup"] = temporal_mixup
 
         if force_image_size is not None:
             # override model config's image size
@@ -232,6 +249,9 @@ def create_model_and_transforms(
         image_std: Optional[Tuple[float, ...]] = None,
         aug_cfg: Optional[Union[Dict[str, Any], AugmentationCfg]] = None,
         cache_dir: Optional[str] = None,
+        force_image_drop_path: float = 0,
+        force_text_drop_path: float = 0,
+        temporal_mixup: float = 0,
 ):
     model = create_model(
         model_name,
@@ -246,6 +266,9 @@ def create_model_and_transforms(
         pretrained_image=pretrained_image,
         pretrained_hf=pretrained_hf,
         cache_dir=cache_dir,
+        force_image_drop_path=force_image_drop_path,
+        force_text_drop_path=force_text_drop_path,
+        temporal_mixup=temporal_mixup,
     )
 
     image_mean = image_mean or getattr(model.visual, 'image_mean', None)
