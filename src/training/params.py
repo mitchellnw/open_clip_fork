@@ -423,9 +423,59 @@ def parse_args(args):
         type=float,
     )
     parser.add_argument(
-        "--temporal-mixup",
-        default=0.,
-        type=float,
+        "--custom-attention",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--fp8",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--fp4",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--fp8global",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--int8",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--int82",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--int8sim",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--int8castsim",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--int8thresh",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--int8mix",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--ema",
+        default=False,
+        action="store_true",
     )
     args = parser.parse_args(args)
 

@@ -30,7 +30,7 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.5
+BETA2=0.95
 MODEL=ViT-B-32
 BS=16384
 OPT=customadamw

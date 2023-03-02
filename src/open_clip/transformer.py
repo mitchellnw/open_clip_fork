@@ -7,7 +7,9 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.checkpoint import checkpoint
 
-from .utils import to_2tuple, DropPath
+from torch.nn import MultiheadAttention
+
+from .utils import to_2tuple, DropPath, ExtraLNAttention
 
 def log_features(x, training, _iter, logger_file):
     if not training or logger_file is None:
@@ -106,7 +108,8 @@ class Attention(nn.Module):
             scale_heads=False,
             logit_scale_max=math.log(1. / 0.01),
             attn_drop=0.,
-            proj_drop=0.
+            proj_drop=0.,
+            extra_ln=False,
     ):
         super().__init__()
         self.scaled_cosine = scaled_cosine
@@ -118,11 +121,17 @@ class Attention(nn.Module):
         self.logit_scale_max = logit_scale_max
 
         # keeping in_proj in this form (instead of nn.Linear) to match weight scheme of original
-        self.in_proj_weight = nn.Parameter(torch.randn((dim * 3, dim)) * self.scale)
-        if qkv_bias:
-            self.in_proj_bias = nn.Parameter(torch.zeros(dim * 3))
-        else:
-            self.in_proj_bias = None
+        # self.in_proj_weight = nn.Parameter(torch.randn((dim * 3, dim)) * self.scale)
+        # if qkv_bias:
+        #     self.in_proj_bias = nn.Parameter(torch.zeros(dim * 3))
+        # else:
+        #     self.in_proj_bias = None
+        self.in_proj_linear = nn.Linear(dim, 3 * dim, bias = qkv_bias)
+
+        self.extra_ln = extra_ln
+        if self.extra_ln:
+            self.ln_k = nn.LayerNorm(dim)
+            self.ln_q = nn.LayerNorm(dim)
 
         if self.scaled_cosine:
             self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))))
@@ -138,7 +147,18 @@ class Attention(nn.Module):
 
     def forward(self, x, attn_mask: Optional[torch.Tensor] = None):
         L, N, C = x.shape
-        q, k, v = F.linear(x, self.in_proj_weight, self.in_proj_bias).chunk(3, dim=-1)
+        #F.linear(x, self.in_proj_weight, self.in_proj_bias)
+
+        if self.advanced_logging:
+            log_features(x[:, 0, :], self.training, self.iter, self.logger_file0)
+
+
+        q, k, v = self.in_proj_linear(x).chunk(3, dim=-1)
+
+        if self.extra_ln:
+            q = self.ln_q(q)
+            k = self.ln_k(k)
+            
         q = q.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
         k = k.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
         v = v.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
@@ -159,7 +179,14 @@ class Attention(nn.Module):
                 attn_mask = new_attn_mask
             attn += attn_mask
 
+        if self.advanced_logging:
+            log_features(attn[0], self.training, self.iter, self.logger_file1)
+        
         attn = attn.softmax(dim=-1)
+        # log attn max.
+        if self.advanced_logging:
+            log_features(attn[0], self.training, self.iter, self.logger_file2)
+
         attn = self.attn_drop(attn)
 
         x = torch.bmm(attn, v)
@@ -167,11 +194,56 @@ class Attention(nn.Module):
             x = x.view(N, self.num_heads, L, C) * self.head_scale
             x = x.view(-1, L, C)
         x = x.transpose(0, 1).reshape(L, N, C)
+
+        if self.advanced_logging:
+            log_features(x[:, 0, :], self.training, self.iter, self.logger_file3)
+
+
         x = self.out_proj(x)
         x = self.out_drop(x)
         return x
 
+class LogLayer(nn.Module):
+    def forward(self, x):
+        if self.advanced_logging:
+            log_features(x[:, 0, :], self.training, self.iter, self.logger_file)
+        return x
 
+class RMSNorm(torch.nn.Module):
+    def __init__(self, dim: int, eps: float = 1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def _norm(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
+
+    def forward(self, x):
+        output = self._norm(x.float()).type_as(x)
+        return output * self.weight
+
+
+class FeedForward(nn.Module):
+    def __init__(
+        self,
+        dim: int,
+        hidden_dim: int,
+    ):
+        super().__init__()
+        hidden_dim = int(2 * hidden_dim / 3)
+
+        self.w1 = nn.Linear(
+            dim, hidden_dim, bias=False,
+        )
+        self.w2 = nn.Linear(
+            hidden_dim, dim, bias=False,
+        )
+        self.w3 = nn.Linear(
+            dim, hidden_dim, bias=False,
+        )
+
+    def forward(self, x):
+        return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
 class ResidualAttentionBlock(nn.Module):
     def __init__(
@@ -183,40 +255,75 @@ class ResidualAttentionBlock(nn.Module):
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
             drop_path: float = 0.,
+            custom_attention: str = None,
     ):
         super().__init__()
 
+        # TODO: this is bad design, fix in update.
+        if custom_attention == 'rms_norm':
+            norm_layer = RMSNorm
+
         self.ln_1 = norm_layer(d_model)
-        self.attn = nn.MultiheadAttention(d_model, n_head)
+        self.custom_attention = custom_attention
+        if custom_attention == 'vanilla' or custom_attention == 'extra_ln' or custom_attention == 'rms_norm' or custom_attention == 'swiglu':
+            old_attn = nn.MultiheadAttention(d_model, n_head)
+            self.attn = Attention(d_model, n_head, extra_ln = custom_attention == 'extra_ln')
+
+            self.attn.in_proj_linear.weight.data.copy_(old_attn.in_proj_weight.data)
+            self.attn.in_proj_linear.bias.data.copy_(old_attn.in_proj_bias)
+            self.attn.out_proj.weight.data.copy_(old_attn.out_proj.weight.data)
+            self.attn.out_proj.bias.data.copy_(old_attn.out_proj.bias.data)
+            # random = torch.randn(2, 10, 768)
+            # old_out = old_attn(random, random, random, need_weights=False)
+            # new_out = self.attn(random)
+            # print(old_out)
+            # print(new_out)
+            # from .utils import ForkedPdb; ForkedPdb().set_trace()
+            del old_attn
+            
+        else:
+            self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ls_1 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
         
         self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         
         self.ln_2 = norm_layer(d_model)
         mlp_width = int(d_model * mlp_ratio)
-        self.mlp = nn.Sequential(OrderedDict([
-            ("c_fc", nn.Linear(d_model, mlp_width)),
-            ("gelu", act_layer()),
-            ("c_proj", nn.Linear(mlp_width, d_model))
-        ]))
+        if self.custom_attention == 'swiglu':
+            self.mlp = nn.Sequential(OrderedDict([
+                ("log_layer1", LogLayer()),
+                ('ff', FeedForward(d_model, mlp_width)),
+                ("log_layer2", LogLayer()),
+            ]))
+        else:
+            self.mlp = nn.Sequential(OrderedDict([
+                ("log_layer1", LogLayer()),
+                ("c_fc", nn.Linear(d_model, mlp_width)),
+                ("gelu", act_layer()),
+                ("log_layer2", LogLayer()),
+                ("c_proj", nn.Linear(mlp_width, d_model))
+            ]))
         self.ls_2 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
 
         self.drop_path2 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def attention(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         attn_mask = attn_mask.to(x.dtype) if attn_mask is not None else None
-        return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
+        if self.custom_attention in ['vanilla', 'extra_ln', 'rms_norm', 'swiglu']:
+            return self.attn(x, attn_mask=attn_mask)
+        else:
+            return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
 
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         x = x + self.drop_path1(self.ls_1(self.attention(self.ln_1(x), attn_mask=attn_mask)))
 
         if self.advanced_logging:
-            log_features(x, self.training, self.iter, self.logger_file1)
+            log_features(x[:, 0, :], self.training, self.iter, self.logger_file1)
 
         x = x + self.drop_path2(self.ls_2(self.mlp(self.ln_2(x))))
 
         if self.advanced_logging:
-            log_features(x, self.training, self.iter, self.logger_file2)
+            log_features(x[:, 0, :], self.training, self.iter, self.logger_file2)
             
         return x
 
@@ -273,6 +380,7 @@ class Transformer(nn.Module):
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
             drop_path: float = 0.,
+            custom_attention: str = None,
     ):
         super().__init__()
         self.width = width
@@ -281,12 +389,15 @@ class Transformer(nn.Module):
 
         self.resblocks = nn.ModuleList([
             ResidualAttentionBlock(
-                width, heads, mlp_ratio, ls_init_value=ls_init_value, act_layer=act_layer, norm_layer=norm_layer, drop_path=drop_path)
+                width, heads, mlp_ratio, ls_init_value=ls_init_value, act_layer=act_layer, norm_layer=norm_layer, drop_path=drop_path, custom_attention=custom_attention)
             for _ in range(layers)
         ])
 
     def get_cast_dtype(self) -> torch.dtype:
-        return self.resblocks[0].mlp.c_fc.weight.dtype
+        if hasattr(self.resblocks[0].mlp, 'c_fc'):
+            return self.resblocks[0].mlp.c_fc.weight.dtype
+        else:
+            return self.resblocks[0].mlp.ff.w1.weight.dtype
 
     def forward(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         for r in self.resblocks:
@@ -296,19 +407,19 @@ class Transformer(nn.Module):
                 x = r(x, attn_mask=attn_mask)
         return x
 
-class TemporalMixup(nn.Module):
+# class TemporalMixup(nn.Module):
 
-    def __init__(self, decay):
-        super().__init__()
-        self.decay = decay
+#     def __init__(self, decay):
+#         super().__init__()
+#         self.decay = decay
 
-    def forward(self, x):
-        bname = f'buffer_{self.rank}'
-        if hasattr(self, bname):
-            bout = getattr(self, bname)
-            x = self.decay * bout + (1 - self.decay) * x
-        self.register_buffer(bname, x.clone().detach())
-        return x
+#     def forward(self, x):
+#         bname = f'buffer_{self.rank}'
+#         if hasattr(self, bname):
+#             bout = getattr(self, bname)
+#             x = self.decay * bout + (1 - self.decay) * x
+#         self.register_buffer(bname, x.clone().detach())
+#         return x
         
 
 class VisionTransformer(nn.Module):
@@ -328,7 +439,7 @@ class VisionTransformer(nn.Module):
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
             drop_path: float = 0.,
-            temporal_mixup : float = 0,
+            custom_attention : str = None,
     ):
         super().__init__()
 
@@ -336,8 +447,6 @@ class VisionTransformer(nn.Module):
         patch_height, patch_width = self.patch_size = to_2tuple(patch_size)
         self.grid_size = (image_height // patch_height, image_width // patch_width)
         self.output_dim = output_dim
-
-        self.temporal_mixup = TemporalMixup(temporal_mixup) if temporal_mixup > 0 else nn.Identity()
 
         self.dual_patchnorm = dual_patchnorm
 
@@ -367,6 +476,7 @@ class VisionTransformer(nn.Module):
             act_layer=act_layer,
             norm_layer=norm_layer,
             drop_path=drop_path,
+            custom_attention=custom_attention,
         )
 
         self.global_average_pool = global_average_pool
@@ -455,8 +565,6 @@ class VisionTransformer(nn.Module):
              x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
 
-        x = self.temporal_mixup(x)
-
         # a patch_dropout of 0. would mean it is disabled and this function would do nothing but return what was passed in
         x = self.patch_dropout(x)
         x = self.ln_pre(x)
@@ -492,15 +600,14 @@ class TextTransformer(nn.Module):
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
             drop_path: float = 0.,
-            temporal_mixup : float = 0,
+            custom_attention : str = None,
     ):
         super().__init__()
         self.context_length = context_length
         self.vocab_size = vocab_size
         self.width = width
         self.output_dim = output_dim
-
-        self.temporal_mixup = TemporalMixup(temporal_mixup) if temporal_mixup > 0 else nn.Identity()
+        self.custom_attention = custom_attention
 
         self.token_embedding = nn.Embedding(vocab_size, width)
         self.positional_embedding = nn.Parameter(torch.empty(self.context_length, width))
@@ -512,6 +619,7 @@ class TextTransformer(nn.Module):
             act_layer=act_layer,
             norm_layer=norm_layer,
             drop_path=drop_path,
+            custom_attention=custom_attention,
         )
         self.ln_final = norm_layer(width)
         self.text_projection = nn.Parameter(torch.empty(width, output_dim))
@@ -528,10 +636,16 @@ class TextTransformer(nn.Module):
         attn_std = self.transformer.width ** -0.5
         fc_std = (2 * self.transformer.width) ** -0.5
         for block in self.transformer.resblocks:
-            nn.init.normal_(block.attn.in_proj_weight, std=attn_std)
+            if self.custom_attention in ['vanilla', 'extra_ln', 'rms_norm', 'swiglu']:
+                nn.init.normal_(block.attn.in_proj_linear.weight, std=attn_std)    
+            else:
+                nn.init.normal_(block.attn.in_proj_weight, std=attn_std)
             nn.init.normal_(block.attn.out_proj.weight, std=proj_std)
-            nn.init.normal_(block.mlp.c_fc.weight, std=fc_std)
-            nn.init.normal_(block.mlp.c_proj.weight, std=proj_std)
+            if self.custom_attention in ['swiglu']:
+                pass
+            else:
+                nn.init.normal_(block.mlp.c_fc.weight, std=fc_std)
+                nn.init.normal_(block.mlp.c_proj.weight, std=proj_std)
 
         if self.text_projection is not None:
             nn.init.normal_(self.text_projection, std=self.transformer.width ** -0.5)
@@ -554,8 +668,6 @@ class TextTransformer(nn.Module):
         x = self.token_embedding(text).to(cast_dtype)  # [batch_size, n_ctx, d_model]
 
         x = x + self.positional_embedding.to(cast_dtype)
-
-        x = self.temporal_mixup(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x, attn_mask=self.attn_mask)

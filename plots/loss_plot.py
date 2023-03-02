@@ -73,7 +73,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level =1 + len(modules)
+    log_level =2 #+ len(modules)
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
@@ -99,7 +99,51 @@ if __name__ == '__main__':
         # (f'customadamw-ViT-L-14-{16384}-2e-3-0.99-v1', 'Standard',cmap(1.), -1),
 
         # (f'clipadamw-ViT-L-14-{16384}-2e-3-0.99-v1', 'Standard',cmap(0.), -1),
-        (f'customadamw-ViT-B-32-16384-2e-3-0.95-tm05-v0', 'Standard',cmap(0.), -1),
+        # ('adamw-ViT-B-32-16384-1e-3-0.98-v0', 'adamw 5e-4','C0', -1),
+        # ('adamw-ViT-B-32-16384-1e-3-0.98-v0', 'adamw 1e-3','C1', -1),
+
+
+        ('customadamw-ViT-B-32-16384-2e-3-0.98-v0', 'bfloat16','C0', -1),
+        ('customadamw-ampint8-ViT-B-32-16384-2e-3-0.98-v1', 'int8 real','C1', -1),
+
+        #('customadamw-ViT-B-32-16384-2e-3-0.98-v0', 'adamw 2e-3','C1', -1),
+
+        #('ladamw-ViT-B-32-16384-2e-3-0.99-v1', 'adamw 2e-3','C1', -1),
+        #('ladamw2-ViT-B-32-16384-2e-3-0.98-v1', 'adamw 2e-3','C2', -1),
+        #('lion-ViT-B-32-16384-2e-4-0.99-v1', 'lion 2e-4','C3', -1),
+        #('lion-ViT-B-32-16384-2e-4-0.99-wd2-v1', 'lion 2e-4 wd 2','C4', -1),
+
+
+        #('clipadamw-ViTDP-B-32-16384-2e-3-0.99-v0', 'adamw 2e-3 + uclip + dual patch norm','C1', -1),
+
+        # (f'lion-ViT-B-32-16384-1e-4-0.99-v1', 'lion 1e-4','C3', -1),
+        # (f'lion-ViT-B-32-16384-2e-4-0.99-v1', 'lion 2e-4', 'C4', -1),
+        # (f'lion-ViT-B-32-16384-5e-4-0.99-v1', 'lion 5e-4','C5', -1),
+        #(f'lion-ViT-B-32-16384-2e-4-0.99-wd01-v1', 'lion 2e-4, wd 0.1','C6', -1),
+        # 
+
+        #(f'lion-ViT-B-32-16384-2e-4-0.99-wd2-v1', 'lion 2e-4', 'gray', -1),
+        #(f'ladamw2-ViT-B-32-16384-2e-3-0.98-v1', 'lion+adamw 2e-3', 'C4', -1),
+        # (f'customadamw-ampint8thresh6-ViT-B-32-16384-2e-3-0.98-v1', 'int8 thresh 6', 'C4', -1),
+        # ('customadamw-ampint8real2-ViT-B-32-16384-2e-3-0.98-v1', 'int8','C6', -1),
+
+        
+
+        #('customadamw-ViT-B-32-16384-2e-3-0.98-extraln-v0', 'extraln 2e-3','C6', -1),
+
+        #('customadamw-ampint8-ViTDP-B-32-16384-2e-3-0.98-v1', 'int8 simulation + dual patch norm','C2', 5000),
+        # ('customadamw-ampint8real2-ViT-B-32-16384-2e-3-0.98-v1', 'int8 real','C6', -1),
+        # #
+        # ('customadamw-ampint8real2-ViT-B-32-16384-2e-3-0.98-v1', 'int8 real','C6', -1),
+        # ('clipadamw-ampint8full-ViTls0-B-32-16384-2e-3-0.98-v1', 'int8 real + uclip + layerscale','C7', -1),
+        # ('customadamw-ampint8real-ViTDP-B-32-16384-2e-3-0.98-v1', 'int8 real + dual patch norm','C8', -1),
+
+
+        # ('customadamw-ampint8break-ViTDP-B-32-16384-2e-3-0.98-v1', 'int8 simulation without blockwise','C9', 5000),
+
+
+        
+
         #(f'customadamw-ViT-B-32-16384-2e-3-0.95-v0', 'Standard',cmap(0.), -1),
 
        #(f'customadamw-ViT-B-32-{16384}-2e-3-0.98-v0', 'standard - batchsize 16k - l/14', 'C0', -1),
@@ -125,12 +169,12 @@ if __name__ == '__main__':
                 df = proc(df, lim)
                 #df = df[df[0] > 30000]
                 #ax.set_yscale('log')
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color, alpha=0.4)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                #ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=1)
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=1)
                 print(file)
                 
                 print(df.iloc[-1, 0])
@@ -183,6 +227,32 @@ if __name__ == '__main__':
         #     top1 = get_metrics(fname)
         #     if top1 > 0:
         #         ax.scatter(j, top1, color='C0')
+
+
+
+        ax = axlist[-1]
+        alpha = 0.25
+        for i in range(1):
+            layer = f'features5-module.visual.transformer.resblocks.10.csv'
+            filename = f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/{layer}'
+            if not os.path.exists(filename):
+                continue
+            df = pd.read_csv(filename, names=list(range(17+5+4+2)))
+            df = proc(df, lim)
+            
+            if not layer.startswith('features3.2'):
+                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=0.5)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
+            else:
+                #ax.plot(df.iloc[:, 0], 1-df.iloc[:, 2], color=color, alpha=0.5)
+                ax.plot(df.iloc[:, 0], 1-df.iloc[:, 3], color=color, alpha=0.5)
+                kernel = np.ones(kernel_size) / kernel_size
+                data_convolved = np.convolve(1-df.iloc[:, 3], kernel, mode='same')
+                data_convolved = data_convolved[kernel_size:-kernel_size]
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+                #ax.set_yscale('log')
+
+            ax.set_ylabel('feature max layer 10', fontsize=16)
 
 
     for j, ax in enumerate(axlist):

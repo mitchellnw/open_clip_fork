@@ -120,7 +120,7 @@ def create_model(
         cache_dir: Optional[str] = None,
         force_image_drop_path: float = 0,
         force_text_drop_path: float = 0,
-        temporal_mixup: float = 0,
+        custom_attention: str = None,
 ):
     has_hf_hub_prefix = model_name.startswith(HF_HUB_PREFIX)
     if has_hf_hub_prefix:
@@ -172,9 +172,9 @@ def create_model(
         if force_text_drop_path > 0:
             model_cfg["text_cfg"]["drop_path"] = force_text_drop_path
 
-        if temporal_mixup > 0:
-            model_cfg["vision_cfg"]["temporal_mixup"] = temporal_mixup
-            model_cfg["text_cfg"]["temporal_mixup"] = temporal_mixup
+        if custom_attention is not None:
+            model_cfg["vision_cfg"]["custom_attention"] = custom_attention
+            model_cfg["text_cfg"]["custom_attention"] = custom_attention
 
         if force_image_size is not None:
             # override model config's image size
@@ -251,7 +251,7 @@ def create_model_and_transforms(
         cache_dir: Optional[str] = None,
         force_image_drop_path: float = 0,
         force_text_drop_path: float = 0,
-        temporal_mixup: float = 0,
+        custom_attention : str = None,
 ):
     model = create_model(
         model_name,
@@ -268,7 +268,7 @@ def create_model_and_transforms(
         cache_dir=cache_dir,
         force_image_drop_path=force_image_drop_path,
         force_text_drop_path=force_text_drop_path,
-        temporal_mixup=temporal_mixup,
+        custom_attention=custom_attention,
     )
 
     image_mean = image_mean or getattr(model.visual, 'image_mean', None)

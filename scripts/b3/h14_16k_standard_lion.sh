@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --partition=g80n60,g40423
+#SBATCH --partition=g40423
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 2
+#SBATCH --nodes 8
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=12
 #SBATCH --gres=gpu:8
@@ -30,14 +30,14 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=5e-4
-BETA2=0.995
-MODEL=ViT-B-32
+BETA2=0.98
+MODEL=ViT-H-14
 BS=16384
-OPT=customadamw
+OPT=lion
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-wd2beta195-v0"
 
-srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
+/opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
     --report-to wandb \
     --train-data="s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar" \
@@ -45,16 +45,16 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 5000 \
-    --batch-size=1024 \
+    --batch-size=256 \
     --epochs=5 \
     --lr $LR \
     --beta2 $BETA2 \
     --workers=10 \
     --report-to wandb \
     --name ${EXP_NAME} \
-    --logs /fsx/home-mitchellw/experimetns/opt \
+    --logs /fsx/home-mitchellw/experimetns/opt3 \
     --model $MODEL \
-    --seed 0 \
+    --seed 1 \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \
@@ -65,6 +65,9 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --wandb-project-name open_clip_12 \
     --force-patch-dropout 0.5 \
     --resume 'latest' \
+    --custom-attention vanilla \
+    --wd 2.0 \
+    --beta1 0.95 \
     --delete-previous-checkpoint \
     --opt $OPT
 

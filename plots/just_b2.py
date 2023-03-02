@@ -95,12 +95,12 @@ if __name__ == '__main__':
 
     for template, name, color in [
 
-        # (f'customadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
-        # (f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
-        # (f'clipadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
-        # (f'clipadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
-        # (f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-gradclip2-v1', 'GC - batchsize 16k - l/14 + dpn', 'C4'),
-        # (f'clipadamw-amp-ViTls0-H-14-16384-2e-3-' + '{}-v1', 'GC - batchsize 16k - l/14 + dpn', 'C5'),
+        #(f'customadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
+        #(f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
+        #(f'clipadamw-amp-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
+        #(f'clipadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
+        (f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-' + '{}-gradclip2-v1', 'GC - batchsize 16k - l/14 + dpn', 'C4'),
+        #(f'clipadamw-amp-ViTls0-H-14-16384-2e-3-' + '{}-v1', 'GC - batchsize 16k - l/14 + dpn', 'C5'),
 
         # (f'customadamw-ViT-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
         # (f'customadamw-ViTDP-H-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
@@ -111,20 +111,20 @@ if __name__ == '__main__':
 
         # (f'customadamw-amp-ViT-L-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
         # (f'customadamw-amp-ViTDP-L-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
-        # (f'clipadamw-amp-ViT-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
-        # (f'clipadamw-amp-ViTDP-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
+        #(f'clipadamw-amp-ViT-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
+        #(f'clipadamw-amp-ViTDP-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'gray'),
 
 
         # (f'customadamw-ViT-L-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14', 'C0'),
         # (f'customadamw-ViTDP-L-14-{16384}-2e-3-' + '{}-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1'),
-        # (f'clipadamw-ViT-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
-        # (f'clipadamw-ViTDP-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
+        #(f'clipadamw-ViT-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14', 'C2'),
+        #(f'clipadamw-ViTDP-L-14-{16384}-2e-3-' + '{}-v1', 'clip - batchsize 16k - l/14 + dpn', 'C3'),
 
 
-        (f'customadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32', 'C0'),
-        (f'customadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32 + dpn', 'C1'),
-        (f'clipadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32', 'C2'),
-        (f'clipadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32 + dpn', 'C3'),
+        # (f'customadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32', 'C0'),
+        # (f'customadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'standard - batchsize 16k - b/32 + dpn', 'C1'),
+        # (f'clipadamw-ViT-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32', 'C2'),
+        # (f'clipadamw-ViTDP-B-32-{16384}-2e-3-' + '{}-v0', 'clip - batchsize 16k - b/32 + dpn', 'C3'),
 
         # (f'customadamw-ViT-B-32-{16384}-1e-3-' + '{}-v0', 'standard - batchsize 16k - lr 1e-3', 'C1'),
         # (f'customadamw-ViT-B-32-{16384}-5e-4-' + '{}-v0', 'standard - batchsize 16k - lr 5e-4', 'C2'),

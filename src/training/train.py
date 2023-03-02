@@ -55,7 +55,8 @@ def backward(total_loss, scaler, custom_scaler):
         total_loss.backward()
 
 
-def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_writer=None):
+def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_writer,
+                    model_ema_0, model_ema_1, model_ema_2, model_ema_3):
     device = torch.device(args.device)
     autocast = get_autocast(args.precision)
     cast_dtype = get_cast_dtype(args.precision)
@@ -92,10 +93,10 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
             amp_log = None
 
         feats_n_log = {}
-        
+        model.apply(lambda m: setattr(m, 'advanced_logging', False))
         for n, m in model.named_modules():
             setattr(m, 'module_name', n)
-            if is_master(args) and (n.endswith('0') or n.endswith('module.visual') or n.endswith('module.transformer')):
+            if is_master(args) and (n.endswith('0')):# or n.endswith('module.visual') or n.endswith('module.transformer')):
                 
                 feats_n_log[n + '1'] = open(os.path.join(args.data_path, f'features1-{n}.csv'), 'a')
                 setattr(m, 'logger_file1', feats_n_log[n + '1'])
@@ -103,11 +104,29 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 feats_n_log[n + '2'] = open(os.path.join(args.data_path, f'features2-{n}.csv'), 'a')
                 setattr(m, 'logger_file2', feats_n_log[n + '2'])
 
+                if args.custom_attention is not None:
+                    feats_n_log[n + '3.0'] = open(os.path.join(args.data_path, f'features3.0-{n}.csv'), 'a')
+                    setattr(m.attn, 'logger_file0', feats_n_log[n + '3.0'])
+
+                    feats_n_log[n + '3.1'] = open(os.path.join(args.data_path, f'features3.1-{n}.csv'), 'a')
+                    setattr(m.attn, 'logger_file1', feats_n_log[n + '3.1'])
+                    
+                    feats_n_log[n + '3.2'] = open(os.path.join(args.data_path, f'features3.2-{n}.csv'), 'a')
+                    setattr(m.attn, 'logger_file2', feats_n_log[n + '3.2'])
+                    
+                    feats_n_log[n + '3.3'] = open(os.path.join(args.data_path, f'features3.3-{n}.csv'), 'a')
+                    setattr(m.attn, 'logger_file3', feats_n_log[n + '3.3'])
+
+                    setattr(m.attn, 'advanced_logging', True)
+
+                feats_n_log[n + '4'] = open(os.path.join(args.data_path, f'features4-{n}.csv'), 'a')
+                setattr(m.mlp.log_layer1, 'logger_file', feats_n_log[n + '4'])
+                setattr(m.mlp.log_layer1, 'advanced_logging', True)
+                feats_n_log[n + '5'] = open(os.path.join(args.data_path, f'features5-{n}.csv'), 'a')
+                setattr(m.mlp.log_layer2, 'logger_file', feats_n_log[n + '5'])
+                setattr(m.mlp.log_layer2, 'advanced_logging', True)
+
                 setattr(m, 'advanced_logging', True)
-            else:
-                setattr(m, 'logger_file1', None)
-                setattr(m, 'logger_file2', None)
-                setattr(m, 'advanced_logging', False)
 
     loss_m = AverageMeter()
     batch_time_m = AverageMeter()
@@ -185,6 +204,11 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip_norm, norm_type=2.0)
             optimizer.step()
 
+        if args.ema:
+            # model_ema_0.update(model)
+            model_ema_1.update(model)
+            #model_ema_2.update(model)
+            # model_ema_3.update(model)
         # reset gradient accum, if enabled
         if args.accum_freq > 1:
             accum_images, accum_texts, accum_image_features, accum_text_features = [], [], [], []
@@ -261,6 +285,12 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                             (p.grad / cs).pow(2).std().item(), # 'grad sq std'
                             (p.grad / cs).pow(2).max().item(), # 'grad sq max'
                         ]
+                        if 'lion' in args.opt:
+                            to_log = to_log + [
+                                optimizer.state[p]['exp_avg'].pow(2).mean().item(), #'v_means'
+                                optimizer.state[p]['exp_avg'].pow(2).std().item(), # 'v_std'
+                                optimizer.state[p]['exp_avg'].pow(2).max().item(), # 'v_max'
+                            ]
                         if 'adamw' in args.opt:
                             to_log = to_log + [
                                 optimizer.state[p]['exp_avg'].pow(2).mean().item(), #'v_means'

@@ -24,14 +24,27 @@ do
     fi
 
     if [ -f "$save_path" ]; then
-        continue
+        rm "$(dirname $i)/epoch_1.pt"
+        rm "$(dirname $i)/epoch_2.pt"
+        rm "$(dirname $i)/epoch_3.pt"
+        rm "$(dirname $i)/epoch_4.pt"
+        rm "$(dirname $i)/epoch_latest.pt"
         echo "$save_path exists."
     else
-        echo "$save_path does not exist."
-        torchrun --nproc_per_node 4 -m training.main \
-        --batch-size 200   --workers 4 --model $model  --train-num-samples 413000000  \
-        --local-loss  --gather-with-grad     --grad-checkpointing       --precision amp_bfloat16  \
-        --save-most-recent --pretrained $i \
-        --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation &> $save_path
+        if [[ $save_path == *"extraln"* ]]; then
+            echo "$save_path does not exist -- extraln."
+            torchrun --nproc_per_node 4 -m training.main \
+            --batch-size 200   --workers 4 --model $model  --train-num-samples 413000000  \
+            --local-loss  --gather-with-grad     --grad-checkpointing       --precision amp_bfloat16  \
+            --save-most-recent --pretrained $i --custom-attention extra_ln \
+            --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation &> $save_path
+        else
+            echo "$save_path does not exist."
+            torchrun --nproc_per_node 4 -m training.main \
+            --batch-size 200   --workers 4 --model $model  --train-num-samples 413000000  \
+            --local-loss  --gather-with-grad     --grad-checkpointing       --precision amp_bfloat16  \
+            --save-most-recent --pretrained $i \
+            --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation &> $save_path
+        fi
     fi
 done

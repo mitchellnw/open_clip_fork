@@ -49,8 +49,8 @@ modules = [
 ]
 
 modules = [
-'module.visual.class_embedding',
-'module.visual.transformer.resblocks.0.attn.in_proj_weight',
+#'module.visual.class_embedding',
+# 'module.visual.transformer.resblocks.0.attn.in_proj_weight',
 #     'module.visual.transformer.resblocks.0.mlp.c_fc.weight',
 #     'module.visual.transformer.resblocks.0.mlp.c_proj.weight',
 #     'module.visual.transformer.resblocks.10.attn.in_proj_weight',
@@ -59,9 +59,10 @@ modules = [
 #     'module.visual.transformer.resblocks.20.attn.in_proj_weight',
 #     'module.visual.transformer.resblocks.20.mlp.c_fc.weight',
 #     'module.logit_scale',
-'module.positional_embedding',
-'module.visual.positional_embedding',
-'module.visual.conv1.weight',
+# 'module.positional_embedding',
+# 'module.visual.positional_embedding',
+# 'module.visual.conv1.weight',
+#'module.visual.patchnorm_pre_ln.weight',
 ]
 cmap=plt.get_cmap('cool')
 def get_metrics(filename):
@@ -111,8 +112,8 @@ if __name__ == '__main__':
 
         #(f'clipadamw-amp-ViTls0-H-14-{16384}-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C1', -1),
         # (f'clipadamw-camp65k-ViTls0-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C2', -1),
-        (f'clipadamw-amp-ViT-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C1', -1),
-        (f'clipadamw-amp-ViTls0-H-14-{16384}-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C4', -1),
+        # (f'clipadamw-amp-ViT-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C1', -1),
+        # (f'clipadamw-amp-ViTls0-H-14-{16384}-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C4', -1),
 
         #(f'customadamw-camp65k-ViTls0-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C4', -1),
         #(f'clipadamw-camp65k-ViTls0-H-14-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C9', -1),
@@ -125,11 +126,42 @@ if __name__ == '__main__':
         # (f'customadamw-ViT-L-14-{16384}-2e-3-0.95-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C2', -1),
         #(f'customadamw-amp-ViTDP-B-32-16384-2e-3-0.98-v1', 'ls0 - batchsize 16k - l/14 0.99', 'C3', -1),
 
+        # (f'clipadamw-camp65k-ViTDPls0-B-32-16384-2e-3-0.99-v1', 'amp fp16', 'C0', -1),
+        # #(f'clipadamw-camp65kcv-ViTDPls0-B-32-16384-2e-3-0.99-v1', 'amp fp16 (repl attn)', 'gray', -1),
+        # #(f'clipadamw-camp65kfp8v2-ViTDPls0-B-32-16384-2e-3-0.99-v1', 'amp fp8 (v2, no grad quant)', 'C1', -1),
+        # (f'clipadamw-camp65kfp8v4-ViTDPls0-B-32-16384-2e-3-0.99-v1', 'amp fp8', 'C2', -1),
         
-        
-        #(f'clipadamw-amp-ViTls0-H-14-16384-2e-3-0.99-v1', 'ls - clip - batchsize 16k - l/14 0.98', 'C4', -1),
+        # (f'customadamw-ViTDP-B-32-16384-2e-3-0.98-v1', 'bfloat', 'C0', -1),
+        # #(f'customadamw-ampfp8-ViTDP-B-32-16384-2e-3-0.98-v1', 'amp fp8', 'C0', -1),
+        # (f'customadamw-ampint8-ViTDP-B-32-16384-2e-3-0.98-v1', 'amp int8', 'C1', -1),
+        # #(f'customadamw-ampfp8b4096-ViTDP-B-32-16384-2e-3-0.98-v1', 'amp fp8 block 4096', 'C2', -1),
+        # (f'customadamw-ampint8break-ViTDP-B-32-16384-2e-3-0.98-v1', 'amp int8 break (no block quant)', 'C3', -1),
+        # (f'customadamw-ampint8half-ViTDP-B-32-16384-2e-3-0.98-v1', 'amp int8 (no block quant for W)', 'C4', -1),
 
 
+        #(f'clipadamw-camp65kfp8-ViTDPls0-H-14-16384-2e-3-0.99-v1', 'amp fp8', 'C1', -1),
+        #(f'clipadamw-camp65kfp8-ViTls0-H-14-16384-2e-3-0.98-v1', 'amp fp8', 'C0', -1),
+        #(f'customadamw-amp-ViT-H-14-16384-2e-3-0.98-v1', 'adamw 2e-3', 'C2', -1),
+        #(f'clipadamw-amp-ViTDP-H-14-16384-2e-3-0.98-v1', 'adamw 2e-3', 'C1', -1),
+
+        # (f'lion-ViT-H-14-16384-2e-4-0.99-v1', 'lion 2e-4','C4', -1),
+        # (f'lion-amp-ViTls0-H-14-16384-2e-4-0.99-v1', 'lion ls0 2e-4','C5', -1),
+        # (f'lion-ViT-H-14-16384-1e-4-0.99-v1', 'lion 1e-4','C6', -1),
+        # (f'lion-ViT-H-14-16384-5e-4-0.99-v1', 'lion 4e-4','C7', -1),
+
+        ('customadamw-amp-ViT-H-14-16384-2e-3-0.98-extraln-v1', 'adamw 2e-3','C2', -1),
+        # ('lion-ViTls0-B-32-16384-2e-4-0.99-v1', 'adamw 2e-3','C4', -1),
+        ('clipadamw-amp-ViT-H-14-16384-2e-3-0.98-extraln-v1', 'adamw 2e-3','C3', -1),
+
+
+        # (f'clipadamw-camp65kfp8-ViTls0-H-14-16384-2e-3-0.98-v1-long', 'ls - clip - batchsize 16k - l/14 0.98', 'C0', -1),
+        # (f'customadamw-ViT-H-14-16384-2e-3-0.98-v1-long', 'ls - clip - batchsize 16k - l/14 0.98', 'C1', -1),
+        # (f'customadamw-ampfp8-ViT-H-14-16384-2e-3-0.98-v1-long', 'ls - clip - batchsize 16k - l/14 0.98', 'C2', -1),
+        
+
+        # (f'lion-ViT-B-32-16384-2e-4-0.99-v1', 'lion 2e-4','C4', -1),
+        # #(f'lion-ViT-B-32-16384-5e-4-0.99-v1', 'lion 5e-4','C5', -1),
+        # (f'lion-ViT-B-32-16384-2e-4-0.99-wd01-v1', 'lion 2e-4, wd 0.1','C6', -1),
         #(f'customadamw-amp-ViT-H-14-{16384}-2e-3-0.98-v1', 'standard - batchsize 16k - l/14', 'C0', -1),
         #(f'customadamw-amp-ViTDP-H-14-{16384}-2e-3-0.98-v1', 'standard - batchsize 16k - l/14 + dpn', 'C1', -1),
         #(f'clipadamw-amp-ViT-H-14-{16384}-2e-3-0.98-v1', 'clip - batchsize 16k - l/14', 'C2', -1),
@@ -183,12 +215,12 @@ if __name__ == '__main__':
                 df = proc(df, lim)
                 #df = df[df[0] > 30000]
                 #ax.set_yscale('log')
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=0.5)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                #ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=1)
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=1)
                 print(file)
                 
                 print(df.iloc[-1, 0])
@@ -234,7 +266,7 @@ if __name__ == '__main__':
                 #     alpha = 0.25
                 #idx = 14
                 #idx=1
-                idx = 6
+                idx = 4
                 #idx = 14
                 #idx = 18
                 #if jj == 0:
@@ -248,12 +280,14 @@ if __name__ == '__main__':
                     badness += 1
                 print('badness',module, badness)
                 #ax.plot(df.iloc[:, 0], df.iloc[:, idx], color=color, alpha=alpha)
-                #ax.set_ylabel('root(mean(square(g/u)))', fontsize=16)
-                ax.set_ylabel('max gradient magnitude', fontsize=16)
+                ax.set_ylabel('root(mean(square(g/u)))', fontsize=16)
+                #ax.set_ylabel('max gradient magnitude', fontsize=16)
+                #ax.set_ylabel('mean gradient magnitude', fontsize=16)
 
                 #ax.plot(df.iloc[:, 0], df.iloc[:, idx], color=color, alpha=alpha)
                 #ax.plot(df.iloc[:, 0], np.sqrt(df.iloc[:, idx]), color=color, alpha=alpha)
                 ax.set_title(module, fontsize=16, y=1.0, pad=-14)
+                #ax.set_yscale('log')
                 # else:
                 #     ax.plot(df.iloc[:, 0], np.sqrt(df.iloc[:, 4]), color=color, alpha=alpha)
                     
@@ -263,14 +297,16 @@ if __name__ == '__main__':
 
         ax = axlist[-1]
         for i in range(1):
-            layer = f'features2-module.visual.transformer.resblocks.30.csv'
+            layer = f'features1-module.visual.transformer.resblocks.30.csv'
             filename = f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/{layer}'
             if not os.path.exists(filename):
                 continue
             df = pd.read_csv(filename, names=list(range(17+5+4+2)))
             df = proc(df, lim)
+            #ax.set_yscale('log')
+            ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=0.5)
             ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
-            ax.set_ylabel('feature max layer 30', fontsize=16)
+            ax.set_ylabel('feature max layer 10', fontsize=16)
 
         # ax = axlist[-1]    
         # for i in range(1):
@@ -307,6 +343,8 @@ if __name__ == '__main__':
         dd = 500
         vv = 4200
         dd = 250
+        vv = 2893
+        dd = 50
         # vv = 1498
         # dd = 30
         

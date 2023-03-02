@@ -29,8 +29,8 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
-LR=2e-3
-BETA2=0.8
+LR=1e-3
+BETA2=0.98
 MODEL=ViT-B-32
 BS=16384
 OPT=adamw

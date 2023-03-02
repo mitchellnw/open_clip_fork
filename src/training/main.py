@@ -41,6 +41,12 @@ from training.optimizers.customadamw import CustomAdamW
 from training.optimizers.clipadamw import ClipAdamW
 from training.optimizers.stableadamw import StableAdamW
 from training.optimizers.momentadamw import MomentAdamW
+from training.optimizers.lion import Lion
+from training.optimizers.ladamw import LAdamW
+from training.optimizers.ladamw2 import LAdamW2
+from training.ema import ModelEmaV2
+from training.optimizers.ulion import ULion
+from training.optimizers.rlion import RLion
 
 LATEST_CHECKPOINT_NAME = "epoch_latest.pt"
 
@@ -235,8 +241,47 @@ def main(args):
         aug_cfg=args.aug_cfg,
         force_image_drop_path=args.force_image_drop_path,
         force_text_drop_path=args.force_text_drop_path,
-        temporal_mixup=args.temporal_mixup,
+        custom_attention=args.custom_attention,
     )
+    # change linear layers to bnb
+    if args.fp8:
+        from .fp8utils import replace_linear
+        replace_linear(model, bnb.nn.LinearFP8)
+    if args.fp4:
+        from .fp8utils import replace_linear
+        replace_linear(model, bnb.nn.LinearFP4)
+    if args.fp8global:
+        from .fp8utils import replace_linear
+        replace_linear(model, bnb.nn.LinearFP8Global)
+    if args.int8:
+        from .fp8utils import replace_linear
+        print('Using real Int8')
+        replace_linear(model, bnb.nn.Linear8bitLt)#
+    if args.int82:
+        from .fp8utils import replace_linear
+        print('Using real Int8')
+        replace_linear(model, bnb.nn.Linear8bitLt2)#
+    if args.int8thresh:
+        from .fp8utils import replace_linear
+        print('Using real Int8 thresh')
+        replace_linear(model, bnb.nn.Linear8bitLtThresh)#
+    if args.int8sim:
+        from .fp8utils import replace_linear
+        replace_linear(model, bnb.nn.LinearInt8)#
+    if args.int8castsim:
+        from .fp8utils import replace_linear
+        replace_linear(model, bnb.nn.LinearInt8Cast)#
+    if args.int8mix:
+        from .fp8utils import replace_linear
+        print('Using real Int8, mixed.')
+        replace_linear(model, bnb.nn.Linear8bitLtMixed)#
+
+    model_ema_0, model_ema_1, model_ema_2, model_ema_3 = None, None, None, None
+    if args.ema:
+        # model_ema_0 = ModelEmaV2(model, 0.99, device=device)
+        model_ema_1 = ModelEmaV2(model, 0.999, device=device)
+        # model_ema_2 = ModelEmaV2(model, 0.9999, device=device)
+        # model_ema_3 = ModelEmaV2(model, 0.99999, device=device)
     random_seed(args.seed, args.rank)
 
     if args.trace:
@@ -273,6 +318,8 @@ def main(args):
         if args.ddp_static_graph:
             # this doesn't exist in older PyTorch, arg only added if enabled
             ddp_args['static_graph'] = True
+        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4:
+            model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
 
     # create optimizer and scaler
@@ -328,6 +375,26 @@ def main(args):
                 betas=(args.beta1, args.beta2),
                 eps=args.eps,
             )
+        elif args.opt.lower() == 'ladamw':
+            optimizer = LAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'ladamw2':
+            optimizer = LAdamW2(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
         elif args.opt.lower() == 'stableadamw':
             optimizer = StableAdamW(
                 [
@@ -347,6 +414,56 @@ def main(args):
                 lr=args.lr,
                 betas=(args.beta1, args.beta2),
                 eps=args.eps,
+            )
+        elif args.opt.lower() == 'lion':
+            optimizer = Lion(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                #eps=args.eps,
+            )
+        elif args.opt.lower() == 'ulion':
+            optimizer = ULion(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                #eps=args.eps,
+            )
+        elif args.opt.lower() == 'rlion':
+            optimizer = RLion(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                #eps=args.eps,
+            )
+        elif args.opt.lower() == 'dog':
+            print('using dog')
+            from dog import DoG
+            optimizer = DoG(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+            )
+        elif args.opt.lower() == 'ldog':
+            print('using ldog')
+            from dog import LDoG
+            optimizer = LDoG(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
             )
         else:
             optimizer = optim.AdamW(
@@ -384,6 +501,17 @@ def main(args):
             if scaler is not None and 'scaler' in checkpoint:
                 scaler.load_state_dict(checkpoint['scaler'])
             logging.info(f"=> resuming checkpoint '{args.resume}' (epoch {start_epoch})")
+
+            if args.ema:
+                print('resuming EMAs')
+                # ema_0_sd = torch.load(args.resume.replace('epoch', f'ema_0'), map_location='cpu')['state_dict']
+                # model_ema_0.module.load_state_dict(ema_0_sd)
+                ema_1_sd = torch.load(args.resume.replace('epoch', f'ema_1'), map_location='cpu')['state_dict']
+                model_ema_1.module.load_state_dict(ema_1_sd)
+                # ema_2_sd = torch.load(args.resume.replace('epoch', f'ema_2'), map_location='cpu')['state_dict']
+                # model_ema_2.module.load_state_dict(ema_2_sd)
+                # ema_3_sd = torch.load(args.resume.replace('epoch', f'ema_3'), map_location='cpu')['state_dict']
+                # model_ema_3.module.load_state_dict(ema_3_sd)
         else:
             # loading a bare (model only) checkpoint for fine-tune or evaluation
             model.load_state_dict(checkpoint)
@@ -400,6 +528,7 @@ def main(args):
         if args.lr_scheduler == "cosine":
             scheduler = cosine_lr(optimizer, args.lr, args.warmup, total_steps)
         elif args.lr_scheduler == "const":
+            print('using const lr')
             scheduler = const_lr(optimizer, args.lr, args.warmup, total_steps)
         elif args.lr_scheduler == "const-cooldown":
             assert args.epochs_cooldown is not None,\
@@ -460,7 +589,8 @@ def main(args):
         if is_master(args):
             logging.info(f'Start epoch {epoch}')
 
-        train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
+        train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer,
+                        model_ema_0, model_ema_1, model_ema_2, model_ema_3)
         completed_epoch = epoch + 1
 
         if any(v in data for v in ('val', 'imagenet-val', 'imagenet-v2')):
@@ -484,6 +614,36 @@ def main(args):
                     checkpoint_dict,
                     os.path.join(args.checkpoint_path, f"epoch_{completed_epoch}.pt"),
                 )
+            
+            if args.ema:
+                count = completed_epoch * data['train'].dataloader.num_batches
+                print('count is', count)
+                # torch.save({k : v.clone().detach() / (1 - (0.99 ** count)) for k, v in model_ema_0.module.state_dict().items()},
+                #            os.path.join(args.checkpoint_path, f"dema_0_{completed_epoch}.pt"))
+                # torch.save({k : v.clone().detach() / (1 - (0.999 ** count)) for k, v in model_ema_1.module.state_dict().items()},
+                #            os.path.join(args.checkpoint_path, f"dema_1_{completed_epoch}.pt"))
+                # torch.save({k : v.clone().detach() / (1 - (0.9999 ** count)) for k, v in model_ema_2.module.state_dict().items()},
+                #            os.path.join(args.checkpoint_path, f"dema_2_{completed_epoch}.pt"))
+                # torch.save({k : v.clone().detach() / (1 - (0.99999 ** count)) for k, v in model_ema_3.module.state_dict().items()},
+                #            os.path.join(args.checkpoint_path, f"dema_3_{completed_epoch}.pt"))
+
+                # torch.save({'state_dict' : model_ema_0.module.state_dict(), 'count' : count, 'decay' : 0.99},
+                #            os.path.join(args.checkpoint_path, f"ema_0_{completed_epoch}.pt"))
+                torch.save({'state_dict' : model_ema_1.module.state_dict(), 'count' : count, 'decay' : 0.999},
+                           os.path.join(args.checkpoint_path, f"ema_1_{completed_epoch}.pt"))
+                # torch.save({'state_dict' : model_ema_2.module.state_dict(), 'count' : count, 'decay' : 0.9999},
+                #            os.path.join(args.checkpoint_path, f"ema_2_{completed_epoch}.pt"))
+                # torch.save({'state_dict' : model_ema_3.module.state_dict(), 'count' : count, 'decay' : 0.99999},
+                #            os.path.join(args.checkpoint_path, f"ema_3_{completed_epoch}.pt"))
+                
+                if args.delete_previous_checkpoint:
+                    previous_checkpoints = [
+                        os.path.join(args.checkpoint_path, f"ema_{ii}_{completed_epoch - 1}.pt") for ii in range(4)
+                    ]
+                    for previous_checkpoint in previous_checkpoints:
+                        if os.path.exists(previous_checkpoint):
+                            os.remove(previous_checkpoint)
+
             if args.delete_previous_checkpoint:
                 previous_checkpoint = os.path.join(args.checkpoint_path, f"epoch_{completed_epoch - 1}.pt")
                 if os.path.exists(previous_checkpoint):

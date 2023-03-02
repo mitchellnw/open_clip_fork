@@ -40,7 +40,7 @@ class CLIPVisionCfg:
     timm_drop: float = 0.  # head dropout
     timm_drop_path: Optional[float] = None  # backbone stochastic depth
     drop_path: float = 0
-    temporal_mixup: float = 0
+    custom_attention: str = None
 
 
 @dataclass
@@ -57,7 +57,7 @@ class CLIPTextCfg:
     proj: str = 'mlp'
     pooler_type: str = 'mean_pooler'
     drop_path: float = 0
-    temporal_mixup: float = 0
+    custom_attention: str = None
 
 
 def get_cast_dtype(precision: str):
@@ -123,7 +123,7 @@ def _build_vision_tower(
             act_layer=act_layer,
             norm_layer=norm_layer,
             drop_path=vision_cfg.drop_path,
-            temporal_mixup=vision_cfg.temporal_mixup,
+            custom_attention=vision_cfg.custom_attention,
         )
 
     return visual
@@ -161,7 +161,7 @@ def _build_text_tower(
             act_layer=act_layer,
             norm_layer=norm_layer,
             drop_path=text_cfg.drop_path,
-            temporal_mixup=text_cfg.temporal_mixup,
+            custom_attention=text_cfg.custom_attention,
         )
     return text
 
