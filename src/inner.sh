@@ -1,0 +1,27 @@
+python -m training.main \
+    --save-frequency 1 \
+    --train-data="pipe:aws s3 cp s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar -" \
+    --train-num-samples 135646078 \
+    --dataset-type webdataset \
+    --dataset-resampled \
+    --warmup 13000 \
+    --batch-size=156 \
+    --epochs=272 \
+    --lr 4e-3 \
+    --beta2 0.95 \
+    --workers=4 \
+    --report-to wandb \
+    --name ${EXP_NAME} \
+    --logs /fsx/home-mitchellw/experimetns/open_clip/ \
+    --model ViT-bigG-14-ls1 \
+    --seed 400000 \
+    --ddp-static-graph \
+    --local-loss \
+    --gather-with-grad \
+    --grad-checkpointing \
+    --precision amp_bfloat16 \
+    --save-most-recent \
+    --advanced-logging \
+    --wandb-project-name open_clip6 \
+    --accum-freq 2 \
+    --resume "/fsx/home-mitchellw/experimetns/open_clip/clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1/checkpoints/epoch_256.pt"

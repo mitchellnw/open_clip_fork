@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --partition=g80n140
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 2
+#SBATCH --nodes 64
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=12
 #SBATCH --output=%x_%j.out
-#SBATCH --comment=laion
+#SBATCH --comment=openclip
 #SBATCH --open-mode=append
 #SBATCH --exclusive
-
+#SBATCH --exclude ip-26-0-166-164,ip-26-0-162-75,ip-26-0-166-61,ip-26-0-162-33
 
 module load openmpi
 # source /opt/intel/mpi/latest/env/vars.sh
@@ -27,25 +27,25 @@ echo $HOSTNAMES
 cd /fsx/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx/home-mitchellw/forks/open_clip_fork/src"
 
-EXP_NAME="tmp-bigG-test"
+EXP_NAME="bigG14-unmasked-tuning-v3"
 
-srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
+/opt/slurm/sbin/srun --comment openclip --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
     --train-data="pipe:aws s3 cp s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar -" \
     --train-num-samples 135646078 \
     --dataset-type webdataset \
     --dataset-resampled \
-    --warmup 13000 \
-    --batch-size=377 \
-    --epochs=256 \
-    --lr 2e-3 \
+    --warmup 1500 \
+    --batch-size=156 \
+    --epochs=288 \
+    --lr 0.000055 \
     --beta2 0.95 \
     --workers=4 \
     --report-to wandb \
     --name ${EXP_NAME} \
     --logs /fsx/home-mitchellw/experimetns/open_clip/ \
-    --model ViT-bigG-14-pd05-ls1 \
-    --seed 0 \
+    --model ViT-bigG-14-ls1 \
+    --seed 100000 \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \
@@ -53,4 +53,6 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
-    --wandb-project-name open_clip6
+    --wandb-project-name open_clip6 \
+    --accum-freq 2 \
+    --resume "/fsx/home-mitchellw/experimetns/open_clip/clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1/checkpoints/epoch_256.pt"

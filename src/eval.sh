@@ -3,7 +3,7 @@
 # export MASTER_PORT=12802
 
 ev=eval_`basename $1`
-if [ -f "eval1/$ev" ]; then
+if [ -f "eval5/$ev" ]; then
   true
 elif [[ "$ev" == *"latest"* ]]; then
   echo "Skipping latest."
@@ -14,7 +14,7 @@ else
    --batch-size 200   --workers 2 --model ViT-bigG-14-ls1  --train-num-samples 413000000  \
    --local-loss  --gather-with-grad     --grad-checkpointing       --precision amp_bfloat16  \
    --save-most-recent --pretrained $1 \
-   --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation &> eval1/$ev
+   --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation &> eval5/$ev
   echo "done eval."
   python eval_to_wandb_simple.py
 fi

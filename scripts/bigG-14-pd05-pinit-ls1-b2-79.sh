@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g80n132
+#SBATCH --partition=g80n140
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 79
 #SBATCH --ntasks-per-node=8
@@ -8,6 +8,7 @@
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
 #SBATCH --exclusive
+#SBATCH --exclude=ip-26-0-160-13
 
 module load openmpi
 # source /opt/intel/mpi/latest/env/vars.sh

@@ -1,8 +1,9 @@
 import glob
 import wandb
+import json
 
 # send only new somehow
-files = list(glob.glob("eval1/eval_epoch_*.pt"))
+files = list(glob.glob("eval5/eval_epoch_*.pt"))
 metrics = []
 for filename in files:
     if 'latest' in filename:
@@ -20,8 +21,10 @@ for filename in files:
 metrics.sort(key=lambda x:x[0])
 print(metrics)
 
-wandb.init(project="open_clip6", name="eval1", id="eval1", resume=True)
+wandb.init(project="open_clip6", name="eval_bigG_unmask_try_3", id="eval_bigG_unmask_try_3", resume=True)
 
+with open('latest_evals.json', 'w') as f:
+    json.dump(metrics, f)
 
 for epoch, top1, top5 in metrics:
     wandb.log({'top1': top1, 'top5': top5, 'step': epoch})

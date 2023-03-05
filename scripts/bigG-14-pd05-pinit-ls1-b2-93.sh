@@ -8,6 +8,8 @@
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
 #SBATCH --exclusive
+#SBATCH --exclude=ip-26-0-160-13
+
 
 module load openmpi
 # source /opt/intel/mpi/latest/env/vars.sh

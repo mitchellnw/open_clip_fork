@@ -1,14 +1,13 @@
 #!/bin/bash
 #SBATCH --partition=g80n140
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 2
+#SBATCH --nodes 69
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=12
 #SBATCH --output=%x_%j.out
 #SBATCH --comment=laion
 #SBATCH --open-mode=append
 #SBATCH --exclusive
-
 
 module load openmpi
 # source /opt/intel/mpi/latest/env/vars.sh
@@ -27,7 +26,7 @@ echo $HOSTNAMES
 cd /fsx/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx/home-mitchellw/forks/open_clip_fork/src"
 
-EXP_NAME="tmp-bigG-test"
+EXP_NAME="clip-bigG14-pd05-ls1-pinit-160k-2e-3-0.95-amp_bfloat16-v1"
 
 srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -36,7 +35,7 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 13000 \
-    --batch-size=377 \
+    --batch-size=290 \
     --epochs=256 \
     --lr 2e-3 \
     --beta2 0.95 \
@@ -53,4 +52,5 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
-    --wandb-project-name open_clip6
+    --wandb-project-name open_clip6 \
+    --pinit

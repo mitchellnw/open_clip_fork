@@ -42,6 +42,10 @@ def random_seed(seed=42, rank=0):
 def main(args):
     args = parse_args(args)
 
+    if args.train_data is not None and args.train_data.startswith('s3'):
+        args.train_data = f"pipe:aws s3 cp {args.train_data} -"
+        print('fixed', args.train_data)
+
     if torch.cuda.is_available():
         # This enables tf32 on Ampere GPUs which is only 8% slower than
         # float16 and almost as accurate as float32
@@ -235,7 +239,7 @@ def main(args):
     scheduler = None
     if 'train' in data and optimizer is not None:
         total_steps = (data["train"].dataloader.num_batches // args.accum_freq) * args.epochs
-        scheduler = cosine_lr(optimizer, args.lr, args.warmup, total_steps)
+        scheduler = cosine_lr(optimizer, args.lr, args.warmup, total_steps)# - 217600)
 
     # determine if this worker should save logs and checkpoints. only do so if it is rank == 0
     args.save_logs = args.logs and args.logs.lower() != 'none' and is_master(args)

@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 def proc(df, lim):
     df.drop(df[df[0] == 0].index[1:], axis=0, inplace=True)
@@ -12,7 +14,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level = 3
+    log_level = 1
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
@@ -30,6 +32,7 @@ if __name__ == '__main__':
     fig, axlist = plt.subplots(log_level, 1, figsize=(8, 5 * log_level))
     if log_level == 1:
         axlist = [axlist]
+    axins2 = zoomed_inset_axes(axlist[0], zoom=3, loc=1)
     for j, (file, name, color, lim) in enumerate(file_list):
 
         if log_level >= 1:
@@ -46,6 +49,10 @@ if __name__ == '__main__':
                 ax.set_ylabel('Loss')
                 #ax.set_yscale('log')
                 #ax.set_ylim([0,1])
+                axins2.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), alpha=0.5, color=color)
+                axins2.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color)
+                axins2.set_xlim(2000, 28000)
+                axins2.set_ylim([0.75, 4.25])
 
         
         if log_level >= 2:
@@ -83,10 +90,10 @@ if __name__ == '__main__':
 
 
     for j, ax in enumerate(axlist):
-        if j == 0:
-            ax.legend()
+        # if j == 0:
+        #     ax.legend()
         ax.grid()
-        ax.set_xlabel('Iterations')
+        ax.set_xlabel('Step')
         vv = 3787
         dd = 1e2
         # vv = 2186
@@ -98,8 +105,12 @@ if __name__ == '__main__':
         continue
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)
+    axins2.set_xticks([])
+    axins2.set_yticks([])
 
-    plt.savefig('plots/loss_plot.png', bbox_inches='tight')
+    axins2.tick_params(labelleft=False, labelbottom=False)
+    mark_inset(ax, axins2, loc1=2, loc2=4, fc="none", ec="0.2")
+    plt.savefig('plots/loss_plot.pdf', bbox_inches='tight')
 
 
 

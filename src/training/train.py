@@ -120,7 +120,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         model.apply(lambda m : setattr(m, 'iter', step))
         
         if not args.skip_scheduler:
-            scheduler(step)
+            scheduler(step)# - 217600)
 
         images, texts = batch
         images = images.to(device=device, dtype=cast_dtype, non_blocking=True)
@@ -195,9 +195,9 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         batch_time_m.update(time.time() - end)
         end = time.time()
         batch_count = (i // args.accum_freq) + 1
-        if is_master(args) and ((i // args.accum_freq) % args.log_every_n_steps == 0 or batch_count == num_batches_per_epoch):
+        if is_master(args) and ((i // args.accum_freq) % 10 == 0 or batch_count == num_batches_per_epoch):
             batch_size = len(images)
-            num_samples = batch_count * batch_size * args.world_size
+            num_samples = batch_count * batch_size * args.world_size * args.accum_freq
             samples_per_epoch = dataloader.num_samples
             percent_complete = 100.0 * batch_count / num_batches_per_epoch
 

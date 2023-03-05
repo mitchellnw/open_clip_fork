@@ -76,8 +76,8 @@ class DataInfo:
 
 
 def get_dataset_size(shards):
-    shards_list = list(braceexpand.braceexpand(shards))
-    dir_path = os.path.dirname(shards)
+    shards_list = wds.shardlists.expand_urls(shards)
+    dir_path = os.path.dirname(shards_list[0])
     sizes_filename = os.path.join(dir_path, 'sizes.json')
     len_filename = os.path.join(dir_path, '__len__')
     if os.path.exists(sizes_filename):
@@ -155,8 +155,8 @@ def count_samples(dataloader):
 
 def filter_no_caption_or_no_image(sample):
     has_caption = ('txt' in sample)
-    has_image = ('png' in sample or 'jpg' in sample or 'jpeg' in sample)
-    return has_caption and has_image 
+    has_image = ('png' in sample or 'jpg' in sample or 'jpeg' in sample or 'webp' in sample)
+    return has_caption and has_image
 
 
 def log_and_continue(exn):
@@ -290,6 +290,7 @@ class ResampledShards2(IterableDataset):
 
 def get_wds_dataset(args, preprocess_img, is_train, epoch=0, floor=False, tokenizer=None):
     input_shards = args.train_data if is_train else args.val_data
+    #input_shards = "pipe:aws s3 cp s3://s-laion/datanet_7B_pool-baselines/clip_threshold/clip_l14_f0.3/seed_0/reshards_n67/4/{00000000..00004456}.tar::s3://s-laion/datanet_7B_pool-baselines/clip_threshold/clip_l14_f0.3/seed_0/reshards_n67/5/{00000000..00004462}.tar -"
     assert input_shards is not None
     resampled = getattr(args, 'dataset_resampled', False) and is_train
 
@@ -341,7 +342,7 @@ def get_wds_dataset(args, preprocess_img, is_train, epoch=0, floor=False, tokeni
     pipeline.extend([
         wds.select(filter_no_caption_or_no_image),
         wds.decode("pilrgb", handler=log_and_continue),
-        wds.rename(image="jpg;png;jpeg", text="txt"),
+        wds.rename(image="jpg;png;jpeg;webp", text="txt"),
         wds.map_dict(image=preprocess_img, text=lambda text: tokenizer(text)[0]),
         wds.to_tuple("image", "text"),
         wds.batched(args.batch_size, partial=not is_train),
