@@ -202,6 +202,7 @@ class ResidualAttentionBlock(nn.Module):
         return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
 
     def cinit(self):
+        from torch.nn import MultiheadAttention
 
         print('Applying cinit')
         S = self.d_model
@@ -216,6 +217,8 @@ class ResidualAttentionBlock(nn.Module):
             
             # V: stddev=sqrt(1.0/S)
             nn.init.uniform_(self.attn.in_proj_weight[2*S:], a=-m*math.sqrt(1.0/S), b=m*math.sqrt(1.0/S))
+            
+            nn.init.zeros_(self.attn.in_proj_bias)
         else:
             # Q: stddev=sqrt(0.5/S)
             nn.init.uniform_(self.attn.q_proj_weight, a=-m*math.sqrt(0.5/S), b=m*math.sqrt(0.5/S))
@@ -225,6 +228,11 @@ class ResidualAttentionBlock(nn.Module):
             
             # V: stddev=sqrt(1.0/S)
             nn.init.uniform_(self.attn.v_proj_weight, a=-m*math.sqrt(1.0/S), b=m*math.sqrt(1.0/S))
+
+            if self.attn.bias_k is not None:
+                nn.init.zeros_(self.attn.bias_k)
+            if self.attn.bias_v is not None:
+                nn.init.zeros_(self.attn.bias_v)
             
         # U: stddev=sqrt(1.0/S)
         nn.init.uniform_(self.attn.out_proj.weight, a=-m*math.sqrt(1.0/S), b=m*math.sqrt(1.0/S))

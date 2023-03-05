@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=scaling_data_pruning
+#SBATCH --partition=scaling_data_pruning,learnlab
 #SBATCH --job-name=openclip
 #SBATCH --nodes 14
 #SBATCH --ntasks-per-node 8
@@ -9,6 +9,7 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
+#SBATCH --requeue
 
 # can get up to 320
 # 16 * 256 is right
@@ -27,7 +28,7 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
-EXP_NAME="clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-cinit-v1"
+EXP_NAME="clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-fixcinit-rs-v1"
 
 srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -37,11 +38,13 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --warmup 8000 \
     --batch-size 292 \
     --dataset-type webdataset \
+    --dataset-resampled \
     --epochs 12 \
     --workers 4 \
     --model ViT-H-14-pd05 \
     --seed 0 \
     --lr 1e-3 \
+    --beta2 0.98 \
     --name ${EXP_NAME} \
     --ddp-static-graph \
     --local-loss \

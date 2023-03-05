@@ -5,6 +5,9 @@ import numpy as np
 import glob
 import wandb
 
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+
 def get_metrics(sname):
     files = list(glob.glob("src/evals-faws/*.pt"))
     metrics = {}
@@ -49,15 +52,22 @@ if __name__ == '__main__':
 
     file_list = []
     file_list = [
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-v1', 'standard (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C0', -1),
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-v1', 'p-init (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C1', 5000),
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-cinit-v1', 'c-init (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C3', -1),#3900),
-        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-cinit-v1', 'c-init + p-init (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C2', -1),#3900),
+        #('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-v1', 'standard (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C0', -1),
+        # ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-v1', 'p-init (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C1', 5000),
+        # ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-cinit-v1', 'c-init (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C3', -1),#3900),
+        # ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-cinit-v1', 'c-init + p-init (lr=1e-3, beta2=0.98, warmup=8k, bs=32k)', 'C2', -1),#3900),
+
+        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-rs-v1', 'standard (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C0', -1),
+        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-rs-v1', 'p-init (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C1', -1),
+        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-fixcinit-rs-v1', 'c-init (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C2', -1),
+        ('clip-H-14-pd05-bs32k-w8k-opt1e-3-09-095-amp_bfloat16-pinit-fixcinit-rs-v1', 'p-init + c-init (lr=1e-3, beta2=0.95, warmup=8k, bs=32k)', 'C4', -1),
+
     ]
     #file_list = file_list[1:2]
     #file_list = file_list[:2]
 
     fig, axlist = plt.subplots(log_level, 1, figsize=(8, 5 * log_level))
+    axins2 = zoomed_inset_axes(axlist[1], zoom=4, loc=4)
     if log_level == 1:
         axlist = [axlist]
     for j, (file, name, color, lim) in enumerate(file_list):
@@ -67,25 +77,29 @@ if __name__ == '__main__':
             for i in range(1):
                 df = pd.read_csv(f'/fsx-labs/mitchellw/experiments/openclip2/{file}/data/{i}/loss.csv', names=list(range(2)))
                 df = proc(df, lim)
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color, alpha=0.5)#, label=name)# alpha=0.5,
+                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color, alpha=0.2)#, label=name)# alpha=0.5,
                 
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name)
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=1)
                 ax.set_ylabel('Loss')
-                ax.set_yscale('log')
+                #ax.set_yscale('log')
                 #ax.set_xscale('log')
 
         
         if log_level >= 2:
             ax = axlist[1]
+            
             for i in range(1):
                 metrics = get_metrics('eval_' + file)
                 print(color)
                 if lim > 0:
                     metrics = metrics[:3]
                 ax.plot([x[0] for x in metrics], [100*x[1] for x in metrics], color=color, marker='o')
+                axins2.plot([x[0] for x in metrics], [100*x[1] for x in metrics], color=color, marker='o')
+                axins2.set_xlim(10.5, 12.1)
+                axins2.set_ylim(66, 67.1)
                 ax.set_ylabel("Zero-shot ImageNet (top-1, %)")
 
 
@@ -106,6 +120,11 @@ if __name__ == '__main__':
         ax.axvline(vv, linestyle='--', color='gray')
         ax.set_xlim(vv-dd, vv+dd)
 
+    axins2.set_xticks([])
+    axins2.set_yticks([])
+
+    axins2.tick_params(labelleft=False, labelbottom=False)
+    mark_inset(ax, axins2, loc1=2, loc2=4, fc="none", ec="0.5")
     plt.savefig('plots/combined_plot_faws.png', bbox_inches='tight')
 
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=learnlab
+#SBATCH --partition=learnlab,scaling_data_pruning
 #SBATCH --job-name=openclip
 #SBATCH --nodes 14
 #SBATCH --ntasks-per-node 8
@@ -9,7 +9,8 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-#SBATCH --exclude=a100-st-p4d24xlarge-816,a100-st-p4d24xlarge-475
+#SBATCH --requeue
+
 # can get up to 320
 # 16 * 256 is right
 # 14 * 292
@@ -27,7 +28,7 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /fsx-labs/mitchellw/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/fsx-labs/mitchellw/open_clip_fork/src"
 
-EXP_NAME="clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-v1-testresume3"
+EXP_NAME="clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-fixcinit-rs-v1"
 
 srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -42,14 +43,16 @@ srun --cpu_bind=v --accel-bind=gn python -m training.main \
     --model ViT-H-14-pd05 \
     --seed 0 \
     --lr 1e-3 \
+    --beta2 0.98 \
     --name ${EXP_NAME} \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \
     --grad-checkpointing \
     --precision amp_bfloat16 \
+    --dataset-resampled \
     --save-most-recent \
     --logs "/fsx-labs/mitchellw/experiments/openclip2" \
     --wandb-project-name open_clip10 \
     --advanced-logging \
-    --resume "/fsx-labs/mitchellw/experiments/openclip2/clip-H-14-pd05-bs32k-w8k-opt1e-3-09-098-amp_bfloat16-pinit-v1/checkpoints/epoch_1.pt"
+    --cinit

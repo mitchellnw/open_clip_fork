@@ -122,6 +122,13 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         if not args.skip_scheduler:
             scheduler(step)# - 217600)
 
+        if args.palm_scaled_beta2:
+            for param_group in optimizer.param_groups:
+                param_group["betas"] = (param_group["betas"][0], min(1.0 - (1 + step) ** (- args.beta2), args.cap_beta2))
+        elif args.linear_scaled_beta2:
+            for param_group in optimizer.param_groups:
+                param_group["betas"] = (param_group["betas"][0], min((1 + args.total_steps) / (1 + step), args.cap_beta2))
+
         images, texts = batch
         images = images.to(device=device, dtype=cast_dtype, non_blocking=True)
         texts = texts.to(device=device, non_blocking=True)
@@ -220,7 +227,9 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 "batch_time": batch_time_m.val,
                 "samples_per_scond": args.accum_freq*args.batch_size*args.world_size / batch_time_m.val,
                 "scale":  logit_scale_scalar,
-                "lr": optimizer.param_groups[0]["lr"]
+                "lr": optimizer.param_groups[0]["lr"],
+                "beta1" : optimizer.param_groups[0]["betas"][0],
+                "beta2" : optimizer.param_groups[0]["betas"][1],
             }
             if args.precision == 'amp':
                 log_data['amp_scaler'] = scaler._scale.item()
