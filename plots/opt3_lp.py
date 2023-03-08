@@ -111,6 +111,8 @@ if __name__ == '__main__':
         (f'clipadamw-camp65kfp8global-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
         (f'clipadamw-ampfp8global-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
 
+        (f'clipadamw-camp2-ViT-B-32-16384-2e-3-0.98-v0', 'badamp','k', ll),
+
         # (f'dog-ViT-B-32-16384-1-0.98-skipcwd1en4-v0', 'DoG (wd 1e-4)','C1', ll),
         #(f'ldog-ViT-B-32-16384-1-0.98-skipcwd1en4-v0', 'LDoG (wd 1e-4)','C2', ll),
         # (f'dog-ViT-B-32-16384-1-0.98-skipcwd1en4v2-v0', 'DoG (wd 1e-4, reps_rel=1e-4)','C3', ll),

@@ -263,9 +263,10 @@ class ResidualAttentionBlock(nn.Module):
         if custom_attention == 'rms_norm':
             norm_layer = RMSNorm
 
+
         self.ln_1 = norm_layer(d_model)
         self.custom_attention = custom_attention
-        if custom_attention == 'vanilla' or custom_attention == 'extra_ln' or custom_attention == 'rms_norm' or custom_attention == 'swiglu':
+        if custom_attention == 'vanilla' or custom_attention == 'extra_ln' or custom_attention == 'rms_norm' or custom_attention == 'swiglu' or custom_attention == 'rms_norm2':
             old_attn = nn.MultiheadAttention(d_model, n_head)
             self.attn = Attention(d_model, n_head, extra_ln = custom_attention == 'extra_ln')
 
@@ -283,7 +284,11 @@ class ResidualAttentionBlock(nn.Module):
             
         else:
             self.attn = nn.MultiheadAttention(d_model, n_head)
-        self.ls_1 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
+
+        if custom_attention == 'rms_norm2':
+            self.ls_1 = RMSNorm(d_model)
+        else:
+            self.ls_1 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
         
         self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         
@@ -303,13 +308,17 @@ class ResidualAttentionBlock(nn.Module):
                 ("log_layer2", LogLayer()),
                 ("c_proj", nn.Linear(mlp_width, d_model))
             ]))
-        self.ls_2 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
+
+        if custom_attention == 'rms_norm2':
+            self.ls_2 = RMSNorm(d_model)
+        else:
+            self.ls_2 = LayerScale(d_model, ls_init_value) if ls_init_value is not None else nn.Identity()
 
         self.drop_path2 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def attention(self, x: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         attn_mask = attn_mask.to(x.dtype) if attn_mask is not None else None
-        if self.custom_attention in ['vanilla', 'extra_ln', 'rms_norm', 'swiglu']:
+        if self.custom_attention in ['vanilla', 'extra_ln', 'rms_norm', 'swiglu', 'rms_norm2']:
             return self.attn(x, attn_mask=attn_mask)
         else:
             return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask)[0]
@@ -636,7 +645,7 @@ class TextTransformer(nn.Module):
         attn_std = self.transformer.width ** -0.5
         fc_std = (2 * self.transformer.width) ** -0.5
         for block in self.transformer.resblocks:
-            if self.custom_attention in ['vanilla', 'extra_ln', 'rms_norm', 'swiglu']:
+            if self.custom_attention in ['vanilla', 'extra_ln', 'rms_norm', 'swiglu', 'rms_norm2']:
                 nn.init.normal_(block.attn.in_proj_linear.weight, std=attn_std)    
             else:
                 nn.init.normal_(block.attn.in_proj_weight, std=attn_std)

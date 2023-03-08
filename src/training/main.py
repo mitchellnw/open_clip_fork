@@ -253,6 +253,9 @@ def main(args):
     if args.fp8global:
         from .fp8utils import replace_linear
         replace_linear(model, bnb.nn.LinearFP8Global)
+    if args.fp8mix:
+        from .fp8utils import replace_linear
+        replace_linear(model, bnb.nn.LinearFP8Mixed)
     if args.int8:
         from .fp8utils import replace_linear
         print('Using real Int8')
@@ -318,7 +321,7 @@ def main(args):
         if args.ddp_static_graph:
             # this doesn't exist in older PyTorch, arg only added if enabled
             ddp_args['static_graph'] = True
-        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4:
+        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix:
             model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
 
@@ -331,6 +334,14 @@ def main(args):
 
         exclude = lambda n, p: p.ndim < 2 or "bn" in n or "ln" in n or "bias" in n or 'logit_scale' in n
         include = lambda n, p: not exclude(n, p)
+
+        # """
+        # torchrun --nproc_per_node 2 -m training.main   \
+        # --batch-size 208   --workers 2 --model ViTls0-B-32     --dataset-type webdataset   \
+        # --train-data="pipe:aws s3 cp s3://s-datasets/laion400m/laion400m-dat-release/{00000..41455}.tar -"  \
+        # --train-num-samples 413000000     --local-loss     --gather-with-grad     --grad-checkpointing \
+        # --precision amp_bfloat16
+        # """
 
         named_parameters = list(model.named_parameters())
         gain_or_bias_params = [p for n, p in named_parameters if exclude(n, p) and p.requires_grad]

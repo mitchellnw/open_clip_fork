@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g40423
+#SBATCH --partition=g40
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 2
 #SBATCH --ntasks-per-node 8

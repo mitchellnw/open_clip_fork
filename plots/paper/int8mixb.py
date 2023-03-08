@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 import os
 
-# from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
-# from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+
 
 modules = [
     'module.positional_embedding',
@@ -50,9 +51,9 @@ modules = [
 
 modules = [
 #'module.visual.class_embedding',
- 'module.visual.transformer.resblocks.0.attn.out_proj.weight',
-    # 'module.visual.transformer.resblocks.0.mlp.c_fc.weight',
-    # 'module.visual.transformer.resblocks.0.mlp.c_proj.weight',
+# 'module.visual.transformer.resblocks.0.attn.in_proj_weight',
+#     'module.visual.transformer.resblocks.0.mlp.c_fc.weight',
+#     'module.visual.transformer.resblocks.0.mlp.c_proj.weight',
 #     'module.visual.transformer.resblocks.10.attn.in_proj_weight',
 #     'module.visual.transformer.resblocks.10.attn.in_proj_weight',
 #     'module.visual.transformer.resblocks.10.mlp.c_fc.weight',
@@ -61,7 +62,7 @@ modules = [
 #     'module.logit_scale',
 #'module.positional_embedding',
 # 'module.visual.positional_embedding',
-#'module.visual.conv1.weight',
+'module.visual.conv1.weight',
 #'module.visual.patchnorm_pre_ln.weight',
 ]
 cmap=plt.get_cmap('cool')
@@ -83,76 +84,39 @@ def proc(df, lim):
     if lim > 0:
         df = df[df[0] < lim]
     return df
+
+# (f'clipadamw-int4sim2-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int4 sim2','C6', 1000),
+# (f'clipadamw-int4sim3-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int4 sim3','k', 1000),
+
+# (f'clipadamw-int4sim6-ViT-B-32-16384-2e-3-0.98-v0', 'sim block backward','C0', 1000),
+# (f'clipadamw-int4sim7-ViT-B-32-16384-2e-3-0.98-v0', 'sim vector backward','C1', 1000),
 if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level =3 + len(modules)
+    log_level =1#3 + len(modules)
 
     # NOTE: LOOK AT FEATURE STDDEV!
     alpha = 1
     file_list = []
     bsz = 4096*4
-    ll=-1
+    ll =-1
     file_list = [        
         # B
-        # (f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'B/32','C0', -1),
-        # (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8','C1', -1),
-        # (f'clipadamw-int8sim-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 sim','C2', -1),
-        # #(f'clipadamw-int8cloneconvert-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 cloneconvert','C3', -1),
-        # (f'clipadamw-int8nohalf-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 no half cast','C4', -1),
-        # (f'clipadamw-int4sim-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int4 sim','C5', -1),
-
-# lion-int8-ViT-B-32-16384-2e-4-0.99-v0
-# clipadamw-int4sim-ViT-B-32-16384-2e-3-0.98-v0
-        
-
-        # (f'lion-ViT-B-32-16384-2e-4-0.99-v0', 'B/32','C5', -1),
-        # (f'lion-int8-ViT-B-32-16384-2e-4-0.99-v0', 'B/32','C6', -1),
-
-        #(f'clipadamw-ViT-B-32-16384-2e-3-0.98-extraln-v0', 'B/32 extraln','C2', -1),
-        #(f'clipadamw-ViT-B-32-16384-2e-3-0.98-extraln-v0', 'B/32 extraln','C1', -1),
-
-
+        (f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 standard','C0', ll),
+        (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 baseline','C1', ll),
+        (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 ours','C2', ll),
         # H
-        (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
-        (f'clipadamw-int8-ViT-L-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
-        (f'clipadamw-int8mix-ViT-L-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
-        (f'clipadamw-camp65kfp8newsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
-        (f'clipadamw-ampfp8global-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
-
-        # (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'fp8 sim just global + gc','k', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global + ls','gray', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'new','k', ll),
-        #(f'clipadamw-camp65kint8sim-ViT-H-14-16384-2e-3-0.98-v0', 'int8 sim','C2', -1),
-        #(f'clipadamw-int8thresh-ViT-H-14-16384-2e-3-0.98-v0', 'int8 thresh','C2', -1),
-
-        #(f'clipadamw-camp65kint8sim1-ViT-H-14-16384-2e-3-0.98-v0', 'int8 sim new','C3', -1),
-
-        #(f'clipadamw-camp65kfp8-ViT-H-14-16384-2e-3-0.98-v0', 'fp8 sim','C3', -1),
-        # (f'clipadamw-ViT-H-14-16384-2e-3-0.98-extraln-v0', 'update clip','C8', -1),
-        # (f'clipadamw-ViTls0-H-14-16384-2e-3-0.98-v0', 'ls0','C9', -1),
-        # (f'clipadamw-ViTDP-H-14-16384-2e-3-0.99-v0', 'dp','C0', -1),
-        # (f'lion-ViT-H-14-16384-2e-4-0.98-wd2beta195-v0', 'lion','C4', -1),
-        # (f'lion-ViT-H-14-16384-2e-4-0.99-wd2-v0', 'lion','C5', -1),
-        # (f'lion-ViT-H-14-16384-5e-4-0.98-wd2beta195-v0', 'lion','C6', -1),
-
-        
-
-# lion-ViT-H-14-16384-2e-4-0.99-wd2-v0
-# lion-ViT-H-14-16384-5e-4-0.98-wd1beta195-v0
-# lion-ViT-H-14-16384-5e-4-0.98-wd2beta195-v0
-
-        #(f'lion-ViT-H-14-16384-2e-4-0.98-wd2beta195-v0', 'lion','C4', -1),
-
+        # (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 standard','C0', ll),
+        # (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 baseline','C1', ll),
+        # (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 ours','C2', ll),
     ]
 
 
-    fig, axlist = plt.subplots(log_level, 1, figsize=(16, 5 * log_level))
+    fig, axlist = plt.subplots(log_level, 1, figsize=(16//2, 5 * log_level))
     if log_level == 1:
         axlist = [axlist]
-
+    axins2 = zoomed_inset_axes(axlist[0], zoom=4, loc=1)
     axlabels = []
 
     #axins2 = zoomed_inset_axes(axlist[0], zoom=3, bbox_to_anchor=(1, 1))
@@ -175,6 +139,9 @@ if __name__ == '__main__':
                 data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
                 ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+                axins2.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, linewidth=2)
+                axins2.set_xlim(18000, 20000)
+                axins2.set_ylim([1.5, 2.1])
                 print(file)
                 
                 print(df.iloc[-1, 0])
@@ -220,7 +187,7 @@ if __name__ == '__main__':
                 #     alpha = 0.25
                 #idx = 14
                 #idx=1
-                idx = 6
+                idx = 14
                 #idx = 14
                 #idx = 18
                 #if jj == 0:
@@ -249,26 +216,26 @@ if __name__ == '__main__':
                 #     ax.set_title(module, fontsize=16, y=1.0, pad=-14)
 
 
-        ax = axlist[-1]
-        for i in range(1):
-            layer = f'features2-module.visual.transformer.resblocks.0.csv'
-            filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}'
-            if not os.path.exists(filename):
-                continue
-            df = pd.read_csv(filename, names=list(range(17+5+4+2)))
-            df = proc(df, lim)
+        # ax = axlist[-1]
+        # for i in range(1):
+        #     layer = f'features3.2-module.visual.transformer.resblocks.0.csv'
+        #     filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}'
+        #     if not os.path.exists(filename):
+        #         continue
+        #     df = pd.read_csv(filename, names=list(range(17+5+4+2)))
+        #     df = proc(df, lim)
             
-            if not layer.startswith('features3.2'):
-                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=0.5)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
-            else:
-                #ax.plot(df.iloc[:, 0], 1-df.iloc[:, 2], color=color, alpha=0.5)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.5)
-                kernel = np.ones(kernel_size) / kernel_size
-                data_convolved = np.convolve(df.iloc[:, 3], kernel, mode='same')
-                data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
-                #ax.set_yscale('log')
+        #     if not layer.startswith('features3.2'):
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=0.5)
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
+        #     else:
+        #         #ax.plot(df.iloc[:, 0], 1-df.iloc[:, 2], color=color, alpha=0.5)
+        #         ax.plot(df.iloc[:, 0], 1-df.iloc[:, 3], color=color, alpha=0.5)
+        #         kernel = np.ones(kernel_size) / kernel_size
+        #         data_convolved = np.convolve(1-df.iloc[:, 3], kernel, mode='same')
+        #         data_convolved = data_convolved[kernel_size:-kernel_size]
+        #         ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+        #         #ax.set_yscale('log')
 
         #     ax.set_ylabel('feature max to inproj, layer10', fontsize=16)
 
@@ -284,7 +251,7 @@ if __name__ == '__main__':
 
     for j, ax in enumerate(axlist):
 
-        ax.legend()
+        ax.legend(fontsize=13, bbox_to_anchor=(1.025, -0.15), ncol=3)
         #ax.set_xlim([22000, 35000])
         ax.grid()
         ax.set_xlabel('Iterations', fontsize=16)
@@ -327,7 +294,13 @@ if __name__ == '__main__':
             ax.axhline(np.sqrt(df[df[0] == vv][4].values[-1]), color='gray', linestyle='--')
         continue
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/opt3_lp_l.png', bbox_inches='tight')
+    axins2.set_xticks([])
+    axins2.set_yticks([])
+
+    axins2.tick_params(labelleft=False, labelbottom=False)
+    mark_inset(ax, axins2, loc1=3, loc2=4, fc="none", ec="0.2")
+
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper/int8mixb.png', bbox_inches='tight')
 
 
 
@@ -357,3 +330,5 @@ if __name__ == '__main__':
 21    optimizer.state[p]['relu'],
 22    optimizer.state[p]['beta2hat'],
 """
+
+

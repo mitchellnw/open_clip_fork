@@ -29,13 +29,13 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
-LR=2e-4
-BETA2=0.99
-MODEL=ViT-B-32
+LR=2e-3
+BETA2=0.98
+MODEL=ViTls0-B-32
 BS=16384
-OPT=lion
+OPT=clipadamw
 
-EXP_NAME="$OPT-int8-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-ampfp8global-$MODEL-$BS-$LR-$BETA2-v0"
 
 srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -59,17 +59,15 @@ srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --local-loss \
     --gather-with-grad \
     --grad-checkpointing \
-    --precision amp_bfloat16 \
+    --ema \
     --custom-attention vanilla \
     --save-most-recent \
     --advanced-logging \
     --wandb-project-name open_clip_12 \
     --force-patch-dropout 0.5 \
     --resume 'latest' \
-    --wd 2.0 \
-    --int8 \
-    --precision custom_fp16 \
-    --custom-scaler 65536 \
+    --fp8global \
+    --precision amp \
     --delete-previous-checkpoint \
     --opt $OPT
 

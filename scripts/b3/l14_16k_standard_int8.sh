@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --partition=g40423
-#SBATCH --job-name=sopenclip
+#SBATCH --partition=g40
+#SBATCH --job-name=gopenclip
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=12
@@ -9,7 +9,6 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-#SBATCH --exclude=ip-26-0-138-237,ip-26-0-143-249,ip-26-0-130-73,ip-26-0-128-24
 #SBATCH --requeue
 #SBATCH --comment laion
 

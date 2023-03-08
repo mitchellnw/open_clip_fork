@@ -473,6 +473,11 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "--fp8mix",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--ema",
         default=False,
         action="store_true",

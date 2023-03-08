@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g40423
+#SBATCH --partition=g40
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 8
@@ -9,7 +9,6 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-#SBATCH --exclude=ip-26-0-138-237,ip-26-0-143-249,ip-26-0-130-73
 #SBATCH --requeue
 #SBATCH --comment laion
 
