@@ -408,6 +408,10 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "--rms-load",
+        default=None,
+    )
+    parser.add_argument(
         "--custom-scaler",
         type=float,
         default=-1,

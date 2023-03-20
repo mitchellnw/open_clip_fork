@@ -103,11 +103,16 @@ if __name__ == '__main__':
     ll =-1
     file_list = [        
         # B
-        (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 standard','C0', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 all global','C5', 9800),
+        # (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 standard','C0', ll),
+        # (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 all global','C5', 9800),
         # (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'L/14 all global + Grad clip','C6', 6900),
         # (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'L/14 all global + KQ Layernorm','C8', ll),
         # (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0',  'L/14 all global + Layerscale 0','gray', ll),
+        (f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'ViT-B/32','C2', ll),
+        (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'ViT-L/14','C0', ll),
+        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'ViT-H/14','C1', ll),
+        (f'clipadamw-ViTls0-B-32-16384-2e-3-0.98-v0', 'ViT-L/14 zero-init layerscale','C4', ll),
+        (f'clipadamw-ViTls0-H-14-16384-2e-3-0.98-v0', 'ViT-H/14 zero-init layerscale','C5', ll),
 
     ]
 
@@ -217,7 +222,16 @@ if __name__ == '__main__':
 
         ax = axlist[-1]
         for i in range(1):
-            layer = f'features1-module.visual.transformer.resblocks.0.csv'
+            d = 0
+            if 'B-32' in file:
+                d = 1
+            elif 'L-14' in file:
+                d = 2
+            else:
+                d = 3
+            d = ''
+            layer = f'features2-module.visual.transformer.resblocks.{d}0.csv'
+            layer = f'features2-module.visual.transformer.resblocks.{d}0.csv'
             filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}'
             if not os.path.exists(filename):
                 continue
@@ -226,7 +240,7 @@ if __name__ == '__main__':
             
             if not layer.startswith('features3.2'):
                 #ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=0.5)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
+                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=alpha)
             else:
                 #ax.plot(df.iloc[:, 0], 1-df.iloc[:, 2], color=color, alpha=0.5)
                 #ax.plot(df.iloc[:, 0], 1-df.iloc[:, 3], color=color, alpha=0.5)

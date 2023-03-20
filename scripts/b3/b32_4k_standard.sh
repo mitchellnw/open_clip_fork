@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g40423
+#SBATCH --partition=g40
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node 8
@@ -35,13 +35,13 @@ MODEL=ViT-B-32
 BS=4096
 OPT=clipadamw
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v1"
 
 srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
     --report-to wandb \
     --train-data="s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar" \
-    --train-num-samples 65536000 \
+    --train-num-samples 16384000 \
     --dataset-type webdataset \
     --dataset-resampled \
     --warmup 5000 \

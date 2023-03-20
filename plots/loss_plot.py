@@ -73,7 +73,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level =2 #+ len(modules)
+    log_level =3#+ len(modules)
 
     # NOTE: LOOK AT FEATURE STDDEV!
 
@@ -103,8 +103,10 @@ if __name__ == '__main__':
         # ('adamw-ViT-B-32-16384-1e-3-0.98-v0', 'adamw 1e-3','C1', -1),
 
 
-        ('customadamw-ViT-B-32-16384-2e-3-0.98-v0', 'bfloat16','C0', -1),
-        ('customadamw-ampint8-ViT-B-32-16384-2e-3-0.98-v1', 'int8 real','C1', -1),
+        #('customadamw-ViT-B-32-8192-2e-3-0.99-rmscheck-v0', 'bfloat16','C0', -1),
+        ('customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v0', 'bfloat16','C1', -1),
+
+        #('customadamw-ampint8-ViT-B-32-16384-2e-3-0.98-v1', 'int8 real','C1', -1),
 
         #('customadamw-ViT-B-32-16384-2e-3-0.98-v0', 'adamw 2e-3','C1', -1),
 
@@ -165,7 +167,7 @@ if __name__ == '__main__':
         if log_level >= 1:
             ax = axlist[0]
             for i in range(1):
-                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/loss.csv', names=list(range(2)))
+                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/loss.csv', names=list(range(2)))
                 df = proc(df, lim)
                 #df = df[df[0] > 30000]
                 #ax.set_yscale('log')
@@ -193,7 +195,7 @@ if __name__ == '__main__':
                 #layer = 'params-module.positional_embedding.csv' # YES!
                 #layer = 'params-module.text_projection.csv' # NO!
                 layer = f'params-{module}.csv'
-                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/{layer}', names=list(range(17+5+4+2)))
+                df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}', names=list(range(17+5+4+2)))
                 df = proc(df, lim)
                 alpha = 1
                 # if j == 1:
@@ -221,7 +223,7 @@ if __name__ == '__main__':
 
         # ax = axlist[-1]    
         # for i in range(1):
-        #     fname = f'/fsx/home-mitchellw/experimetns/opt/{file}/checkpoints/eval.pt'
+        #     fname = f'/fsx/home-mitchellw/experimetns/opt3/{file}/checkpoints/eval.pt'
         #     #beta2 = float(fname.split('-')[-2])
         #     axlabels.append(name)
         #     top1 = get_metrics(fname)
@@ -234,7 +236,7 @@ if __name__ == '__main__':
         alpha = 0.25
         for i in range(1):
             layer = f'features5-module.visual.transformer.resblocks.10.csv'
-            filename = f'/fsx/home-mitchellw/experimetns/opt/{file}/data/{i}/{layer}'
+            filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}'
             if not os.path.exists(filename):
                 continue
             df = pd.read_csv(filename, names=list(range(17+5+4+2)))

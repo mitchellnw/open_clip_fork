@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g40423
+#SBATCH --partition=g40
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 8
@@ -35,7 +35,7 @@ MODEL=ViT-H-14
 BS=16384
 OPT=clipadamw
 
-EXP_NAME="$OPT-int8mixsanity-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-int8mix-$MODEL-$BS-$LR-$BETA2-v2"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -54,7 +54,7 @@ EXP_NAME="$OPT-int8mixsanity-$MODEL-$BS-$LR-$BETA2-v0"
     --name ${EXP_NAME} \
     --logs /fsx/home-mitchellw/experimetns/opt3 \
     --model $MODEL \
-    --seed 1 \
+    --seed 2 \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \

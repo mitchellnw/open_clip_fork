@@ -93,7 +93,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level =1#3 + len(modules)
+    log_level =3 + len(modules)
 
     # NOTE: LOOK AT FEATURE STDDEV!
     alpha = 1
@@ -102,16 +102,18 @@ if __name__ == '__main__':
     ll =-1
     file_list = [        
         # B
-        (f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'adamw','C0', ll),
+        #(f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v0', 'adamw','C0', ll),
+        (f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v1', 'adamw','C0', ll),
+        #(f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'adamw','C0', ll),
 
-        (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real','C1', ll),
-        (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real mix','C2', ll),
+        # (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real','C1', ll),
+        # (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real mix','C2', ll),
 
-        (f'clipadamw-camp65kfp8newsim-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
-        (f'clipadamw-camp65kfp8global-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
-        (f'clipadamw-ampfp8global-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
+        # (f'clipadamw-camp65kfp8newsim-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
+        # (f'clipadamw-camp65kfp8global-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
+        # (f'clipadamw-ampfp8global-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
 
-        (f'clipadamw-camp2-ViT-B-32-16384-2e-3-0.98-v0', 'badamp','k', ll),
+        # (f'clipadamw-camp2-ViT-B-32-16384-2e-3-0.98-v0', 'badamp','k', ll),
 
         # (f'dog-ViT-B-32-16384-1-0.98-skipcwd1en4-v0', 'DoG (wd 1e-4)','C1', ll),
         #(f'ldog-ViT-B-32-16384-1-0.98-skipcwd1en4-v0', 'LDoG (wd 1e-4)','C2', ll),
@@ -185,44 +187,45 @@ if __name__ == '__main__':
                 df = proc(df, lim)
                 #df = df[df[0] > 30000]
                 #ax.set_yscale('log')
-                #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
-                kernel = np.ones(kernel_size) / kernel_size
-                data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
-                data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
-                print(file)
+                # kernel = np.ones(kernel_size) / kernel_size
+                # data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
+                # data_convolved = data_convolved[kernel_size:-kernel_size]
+                # ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+                # print(file)
                 
                 print(df.iloc[-1, 0])
                 ax.set_ylabel('Loss', fontsize=16)
                 #ax.set_yscale('log')
                 #ax.set_xscale('log')
 
-        if log_level >= 2:
-            ax = axlist[1]
-            for i in range(1):
-                filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/amp.csv'
-                if not os.path.exists(filename):
-                    continue
-                df = pd.read_csv(filename, names=list(range(2)))
-                if len(df) == 0:
-                    continue
-                df = proc(df, lim)
-                #df = df[df[0] > 30000]
-                #ax.set_yscale('log')
-                ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+        # if log_level >= 1:
+        #     ax = axlist[1]
+        #     for i in range(1):
+        #         filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/amp.csv'
+        #         if not os.path.exists(filename):
+        #             continue
+        #         df = pd.read_csv(filename, names=list(range(2)))
+        #         if len(df) == 0:
+        #             continue
+        #         df = proc(df, lim)
+        #         #df = df[df[0] > 30000]
+        #         #ax.set_yscale('log')
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 1], color=color, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
 
-                print(df.iloc[-1, 0])
-                ax.set_ylabel('Amp', fontsize=16)
-                ax.set_yscale('log')
-                #ax.set_xscale('log')
+        #         print(df.iloc[-1, 0])
+        #         ax.set_ylabel('Amp', fontsize=16)
+        #         ax.set_yscale('log')
+        #         #ax.set_xscale('log')
 
 
         for jj, module in enumerate(modules):
-            if jj + 2 >= log_level - 1:
+            if jj >= log_level :
+                print(jj)
                 continue
-            ax = axlist[jj+2]
+            ax = axlist[jj+1]
 
             for i in range(1):
                 #layer = 'params-module.logit_scale.csv'
@@ -231,11 +234,13 @@ if __name__ == '__main__':
                 layer = f'params-{module}.csv'
                 df = pd.read_csv(f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}', names=list(range(17+5+4+2)))
                 df = proc(df, lim)
+                print(df)
                 
                 # if j == 1:
                 #     alpha = 0.25
                 #idx = 14
                 #idx=1
+                idx = 17
                 idx = 14
                 #idx = 14
                 #idx = 18
@@ -304,7 +309,7 @@ if __name__ == '__main__':
         #ax.set_xlim([22000, 35000])
         ax.grid()
         ax.set_xlabel('Iterations', fontsize=16)
-        continue
+        #continue
         vv = 3180
         dd = 50
         vv = 3337
@@ -325,10 +330,27 @@ if __name__ == '__main__':
         dd = 250
         vv = 2893
         dd = 50
-        vv = 2600
+        vv = 3146
         dd = 50
-        
+        vv = 2470
+        dd = 50
+        vv = 4659
+        dd = 50
+        vv = 4443
+        dd = 50
+        dd = 500
+
         ax.axvline(vv, linestyle='--', color='gray')
+        
+        # ax.axvline(2452, linestyle='--', color='gray')
+        # ax.axvline(2453, linestyle='--', color='gray')
+
+        # ax.axvline(2471, linestyle='--', color='gray')
+        # ax.axvline(2472, linestyle='--', color='gray')
+        # ax.axvline(2474, linestyle='--', color='gray')
+        # ax.axvline(2476, linestyle='--', color='gray')
+
+
         ax.set_xlim(vv-dd, vv+dd)
         #ax.axvline(vv + 5, linestyle='--', color='gray')
         continue

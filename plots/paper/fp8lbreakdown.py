@@ -101,18 +101,20 @@ if __name__ == '__main__':
     file_list = []
     bsz = 4096*4
     ll =-1
+
+    
     file_list = [        
         # B
-        (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 standard','C0', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 all global','C5', 9800),
-        (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'L/14 all global + Grad clip','C6', 6900),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'L/14 all global + KQ Layernorm','C8', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0',  'L/14 all global + Layerscale 0','gray', ll),
+        (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'bfloat16 baseline','C0', ll),
+        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 global','C5', 9800),
+        (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'fp8 global + grad clip','C9', 6900),
+        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'fp8 global + KQ Layernorm','C8', ll),
+        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0',  'fp8 global + zero-init layerscale','gray', ll),
 
     ]
 
 
-    fig, axlist = plt.subplots(log_level, 1, figsize=(16//2, 5 * log_level))
+    fig, axlist = plt.subplots(log_level, 1, figsize=(6, 3))
     if log_level == 1:
         axlist = [axlist]
     axins2 = zoomed_inset_axes(axlist[0], zoom=4, loc=1)
@@ -250,7 +252,11 @@ if __name__ == '__main__':
 
     for j, ax in enumerate(axlist):
 
-        ax.legend(fontsize=13, bbox_to_anchor=(1.05, -0.15), ncol=2)
+        leg = ax.legend(bbox_to_anchor=(1.05, -0.25), ncol=2)
+        ax.set_title("ViT-Large model", fontsize=12)
+        leg.get_texts()[-1].set_fontweight('bold')
+        ax.tick_params(axis='x', labelsize=11)
+        ax.tick_params(axis='y', labelsize=11)
         #ax.set_xlim([22000, 35000])
         ax.grid()
         ax.set_xlabel('Iterations', fontsize=16)
@@ -299,7 +305,7 @@ if __name__ == '__main__':
     axins2.tick_params(labelleft=False, labelbottom=False)
     mark_inset(ax, axins2, loc1=3, loc2=4, fc="none", ec="0.2")
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper/fp8lbreakdown.png', bbox_inches='tight')
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper/fp8lbreakdown.pdf', bbox_inches='tight')
 
 
 

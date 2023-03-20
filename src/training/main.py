@@ -44,6 +44,9 @@ from training.optimizers.momentadamw import MomentAdamW
 from training.optimizers.lion import Lion
 from training.optimizers.ladamw import LAdamW
 from training.optimizers.ladamw2 import LAdamW2
+from training.optimizers.skipadamw import SkipAdamW
+from training.optimizers.monitoradamw import MonitorAdamW
+
 from training.ema import ModelEmaV2
 from training.optimizers.ulion import ULion
 from training.optimizers.rlion import RLion
@@ -77,6 +80,13 @@ def get_latest_checkpoint(path: str, remote : bool):
         return checkpoints[-1]
     return None
 
+def backward(total_loss, scaler, custom_scaler):
+    if scaler is not None:
+        scaler.scale(total_loss).backward()
+    elif custom_scaler > 0:
+        (total_loss * custom_scaler).backward()
+    else:
+        total_loss.backward()
 
 def main(args):
     args = parse_args(args)
@@ -323,7 +333,15 @@ def main(args):
             ddp_args['static_graph'] = True
         if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix:
             model = model.to(device)
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
+
+        if args.rms_load is not None:
+            # from .legacy_ddp import LegacyDistributedDataParallel
+            # import torch.distributed as dist
+            # groups = [dist.new_group([j]) for j in range(args.world_size)]
+            # model = LegacyDistributedDataParallel(model, process_group=groups[args.rank])
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
+        else:
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
 
     # create optimizer and scaler
     optimizer = None
@@ -378,6 +396,26 @@ def main(args):
             )
         elif args.opt.lower() == 'clipadamw':
             optimizer = ClipAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'skipadamw':
+            optimizer = SkipAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'monitoradamw':
+            optimizer = MonitorAdamW(
                 [
                     {"params": gain_or_bias_params, "weight_decay": 0.},
                     {"params": rest_params, "weight_decay": args.wd},
@@ -595,6 +633,59 @@ def main(args):
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)
         return
+
+    if args.rms_load is not None:
+        from open_clip import ClipLoss, get_cast_dtype
+        from .precision import get_autocast
+        model.train()
+        loss = ClipLoss(
+            local_loss=args.local_loss,
+            gather_with_grad=args.gather_with_grad,
+            cache_labels=True,
+            rank=args.rank,
+            world_size=args.world_size,
+            use_horovod=args.horovod)
+        
+        rank = args.rank
+        rank = 7
+        images = torch.load(os.path.join(args.rms_load, f'images_{rank}.pt'))
+        texts = torch.load(os.path.join(args.rms_load, f'texts_{rank}.pt'))
+        data['train'].set_epoch(5)
+        #for batch in data['train'].dataloader:
+        optimizer.zero_grad()
+        images, texts = next(iter(data['train'].dataloader))
+
+        # rank0 : 1.8
+        
+        d = images.size(0)
+        if args.rank == 0:
+            texts = texts[:d//2]            
+            images = images[:d//2]
+        else:
+            texts = texts[d//2:]            
+            images = images[d//2:]
+
+        autocast = get_autocast(args.precision)
+        cast_dtype = get_cast_dtype(args.precision)
+        images = images.to(device=device, dtype=cast_dtype, non_blocking=True)
+        texts = texts.to(device=device, non_blocking=True)
+        with autocast():
+            image_features, text_features, logit_scale = model(images, texts)
+            total_loss = loss(image_features, text_features, logit_scale)
+
+        backward(total_loss, scaler, args.custom_scaler)
+        optimizer.step()
+
+        #print(f'Loss {args.rank} : {total_loss}')
+
+        for n, p in model.named_parameters():
+            if n == 'module.visual.conv1.weight':
+                saved_p = p
+                out = np.sqrt(optimizer.state[saved_p]['rms_mean'])
+        print(f'Results {args.rank} : {out}')
+
+        exit()
+
 
     for epoch in range(start_epoch, args.epochs):
         if is_master(args):

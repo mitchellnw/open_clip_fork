@@ -97,45 +97,24 @@ if __name__ == '__main__':
     ll = -1
     file_list = [        
         # B
-        # (f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'B/32','C0', ll),
-        # (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8','C1', ll),
-        # (f'clipadamw-int8sim-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 sim','C2', ll),
-        # #(f'clipadamw-int8cloneconvert-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 cloneconvert','C3', ll),
-        # (f'clipadamw-int8nohalf-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 no half cast','C4', ll),
-        # (f'clipadamw-int4sim-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int4 sim','C5', ll),
-
-# lion-int8-ViT-B-32-16384-2e-4-0.99-v0
-# clipadamw-int4sim-ViT-B-32-16384-2e-3-0.98-v0
-        
-
-        # (f'lion-ViT-B-32-16384-2e-4-0.99-v0', 'B/32','C5', ll),
-        # (f'lion-int8-ViT-B-32-16384-2e-4-0.99-v0', 'B/32','C6', ll),
-
-        #(f'clipadamw-ViT-B-32-16384-2e-3-0.98-extraln-v0', 'B/32 extraln','C2', ll),
-        #(f'clipadamw-ViT-B-32-16384-2e-3-0.98-extraln-v0', 'B/32 extraln','C1', ll),
-
 
         # H
         (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
-        (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
-        (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
-        #(f'clipadamw-int8mixsanity-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix sanity','k', 600),
+        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v1', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C1', ll), # 0.5757
+        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v2', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C2', ll), # 0.5757
 
-        #(f'clipadamw-camp65kint8sim-ViT-H-14-16384-2e-3-0.98-v0', 'int8 sim','C2', ll),
-        #(f'clipadamw-int8thresh-ViT-H-14-16384-2e-3-0.98-v0', 'int8 thresh','C2', ll),
+        #(f'customadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C1', ll), # 0.5757
 
-        # (f'clipadamw-camp65kint8sim1-ViT-H-14-16384-2e-3-0.98-v0', 'int8 sim new','C3', ll),
-        (f'clipadamw-camp65kfp8newsim-ViT-H-14-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
-        # (f'clipadamw-ViT-H-14-16384-2e-3-0.98-swiglu-v0', 'swiglu','k', ll),
-        # (f'clipadamw-ViT-H-14-16384-2e-3-0.98-rmsnorm-v0', 'rmsnorm','C9', ll),
+        # (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
+        # (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
+        # (f'clipadamw-camp65kfp8newsim-ViT-H-14-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
+        # (f'clipadamw-camp65kfp8global-ViT-H-14-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
+        # (f'clipadamw-ampfp8global-ViT-H-14-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
+        # (f'customadamw-ampfp8global-ViT-H-14-16384-2e-3-0.98-gc1-v0', 'fp8 sim just global + gc','k', ll),
+        # (f'clipadamw-camp65kfp8global-ViTls0-H-14-16384-2e-3-0.98-v0', 'fp8 sim just global + ls','gray', ll),
 
-        #(f'customadamw-ViT-H-14-16384-2e-3-0.98-gc-v0', 'H/14','C1', ll),
-        (f'clipadamw-camp65kfp8global-ViT-H-14-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
-        (f'clipadamw-ampfp8global-ViT-H-14-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
-        (f'customadamw-ampfp8global-ViT-H-14-16384-2e-3-0.98-gc1-v0', 'fp8 sim just global + gc','k', ll),
-        (f'clipadamw-camp65kfp8global-ViTls0-H-14-16384-2e-3-0.98-v0', 'fp8 sim just global + ls','gray', ll),
-
-        # (f'clipadamw-camp65kfp4sim-ViT-H-14-16384-2e-3-0.98-v0', 'fp4 sim1','C6', ll),
+        #(f'skipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'skip v0','C4', ll),
+        #(f'skipadamw-ViT-H-14-16384-2e-3-0.98-v4', 'skip v2','C6', ll),
         # (f'clipadamw-camp65kfp4sim2-ViT-H-14-16384-2e-3-0.98-v0', 'fp4 sim2','C7', ll),
 
         #(f'clipadamw-camp65kfp4sim4-ViT-H-14-16384-2e-3-0.98-v0', 'fp4 sim4','C7', ll),
@@ -194,13 +173,13 @@ if __name__ == '__main__':
                 df = proc(df, lim)
                 #df = df[df[0] > 30000]
                 #ax.set_yscale('log')
-                #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
-                kernel = np.ones(kernel_size) / kernel_size
-                data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
-                data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
-                print(file)
+                # kernel = np.ones(kernel_size) / kernel_size
+                # data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
+                # data_convolved = data_convolved[kernel_size:-kernel_size]
+                # ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+                # print(file)
                 
                 print(df.iloc[-1, 0])
                 ax.set_ylabel('Loss', fontsize=16)
@@ -245,7 +224,7 @@ if __name__ == '__main__':
                 #     alpha = 0.25
                 #idx = 14
                 #idx=1
-                idx = 6
+                idx = 14
                 #idx = 14
                 #idx = 18
                 #if jj == 0:
@@ -335,6 +314,8 @@ if __name__ == '__main__':
         vv = 2893
         dd = 50
         vv = 2600
+        dd = 50
+        vv = 524
         dd = 50
         
         ax.axvline(vv, linestyle='--', color='gray')

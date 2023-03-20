@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import time
+import copy
 
 import numpy as np
 import torch
@@ -147,7 +148,15 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         data_time_m.update(time.time() - end)
         optimizer.zero_grad()
 
+        if args.rms_check:
+            model_clone = copy.deepcopy(model.state_dict())
+            optimizer_clone = copy.deepcopy(optimizer.state_dict())
+
         if args.accum_freq == 1:
+            
+            # total_loss = torch.tensor(0.)
+            # logit_scale = torch.tensor(0.)
+            # pass
             with autocast():
                 image_features, text_features, logit_scale = model(images, texts)
                 total_loss = loss(image_features, text_features, logit_scale)
@@ -301,7 +310,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                                 optimizer.state[p]['exp_avg_sq'].max().item(), # 'u_max'
                                 optimizer.state[p]['exp_avg_sq'].min().item(), # 'u_min
                             ]
-                        if 'customadamw' in args.opt or 'clipadamw' in args.opt or 'stableadamw' in args.opt or 'momentadamw' in args.opt:
+                        if 'customadamw' in args.opt or 'clipadamw' in args.opt or 'stableadamw' in args.opt or 'momentadamw' in args.opt or 'skipadamw' in args.opt or 'monitoradamw' in args.opt:
                             to_log = to_log + [
                                 optimizer.state[p]['rms_mean'],
                                 optimizer.state[p]['rms_std'],
@@ -317,6 +326,25 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                             to_log = to_log + [
                                 optimizer.state[p]['k'],
                                 optimizer.state[p]['err'],
+                            ]
+
+                        if 'monitoradamw' in args.opt:
+                            to_log = to_log + [
+                                optimizer.state[p]['overflow_1'],
+                                optimizer.state[p]['overflow_2'],
+                                optimizer.state[p]['overflow_4'],
+                                optimizer.state[p]['overflow_8'],
+                                optimizer.state[p]['overflow_16'],
+                                optimizer.state[p]['underflow_1'],
+                                optimizer.state[p]['underflow_2'],
+                                optimizer.state[p]['underflow_4'],
+                                optimizer.state[p]['underflow_8'],
+                                optimizer.state[p]['underflow_16'],
+                                optimizer.state[p]['underflow2_1'],
+                                optimizer.state[p]['underflow2_2'],
+                                optimizer.state[p]['underflow2_4'],
+                                optimizer.state[p]['underflow2_8'],
+                                optimizer.state[p]['underflow2_16'],
                             ]
 
                         param_n_log[n].write(','.join([str(x) for x in to_log]) + '\n')
@@ -336,7 +364,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 for n, p in model.named_parameters():
                     if n == 'module.visual.conv1.weight':
                         saved_p = p
-                if args.rms_check and step > 1500 and np.sqrt(optimizer.state[saved_p]['rms_mean']) > 1.7:
+                if args.rms_check and step > 1000 and np.sqrt(optimizer.state[saved_p]['rms_mean']) > 1.8:
                     #if step == 10:
                     spike_dir = os.path.join(args.logs, args.name, "spike")
                     if is_master(args) and not os.path.exists(spike_dir):
@@ -350,8 +378,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                             checkpoint_dict = {
                                 "epoch": epoch,
                                 "name": args.name,
-                                "state_dict": model.state_dict(),
-                                "optimizer": optimizer.state_dict(),
+                                "state_dict": model_clone,
+                                "optimizer": optimizer_clone,
                             }
                             if scaler is not None:
                                 checkpoint_dict["scaler"] = scaler.state_dict()
