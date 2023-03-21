@@ -18,9 +18,6 @@ def _transpose_triton(A, B, stride_am, stride_an, stride_bn, stride_bm, M, N,
                       BLOCK_N : tl.constexpr, 
                       GROUP_M : tl.constexpr):
     pid = tl.program_id(0)
-    # BLOCK_M = META['BLOCK_M']
-    # BLOCK_N = META['BLOCK_N']
-    # GROUP_M = META['GROUP_M']
     grid_m = (M + BLOCK_M - 1) // BLOCK_M
     grid_n = (N + BLOCK_N - 1) // BLOCK_N
     

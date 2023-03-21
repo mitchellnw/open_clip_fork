@@ -5,6 +5,11 @@ import triton
 import triton.language as tl
 from triton.ops.matmul_perf_model import early_config_prune, estimate_matmul_time
 
+######################## CAUTION: NOT TESTED ####################################
+######################## CAUTION: NOT TESTED ####################################
+######################## CAUTION: NOT TESTED ####################################
+
+
 # TODO: autotune this better.
 @triton.autotune(
         configs=[
@@ -36,7 +41,7 @@ def _quantize_rowwise(
     mask = (offsets < (block_start + (N * tl.arange(1, BLOCK_SIZE_M + 1))[None, :])) and offsets < n_elements
     x = tl.load(x_ptr + offsets, mask=offsets < n_elements)
     maxs = tl.max(tl.where(mask, tl.abs(x), 0), axis=0)
-    scaled_x =127 * x / maxs[None, :]
+    scaled_x =tl.libdevice.llrint(127 * (x / maxs[None, :]))
     int8_x = scaled_x.to(tl.int8)
     tl.store(output_ptr + offsets, int8_x, mask=mask)
     tl.store(output_maxs + pid * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M), maxs)

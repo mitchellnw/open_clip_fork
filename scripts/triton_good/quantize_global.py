@@ -9,7 +9,7 @@ from triton.ops.matmul_perf_model import early_config_prune, estimate_matmul_tim
 @triton.autotune(
         configs=[
             triton.Config({'BLOCK_SIZE': 1024,}, num_warps=4),
-            
+
         ],
         key=['n_elements']
 )
@@ -27,36 +27,39 @@ def _quantize_global(
     mask = offsets < n_elements
     x = tl.load(x_ptr + offsets, mask=mask)
     absmax = tl.load(absmax_ptr)
-    out = 127 * x / absmax
-    output = out.to(tl.int8)
+    output = tl.libdevice.llrint(127. * (x / absmax))
     tl.store(output_ptr + offsets, output, mask=mask)
 
-def quantize_global(x: torch.Tensor, transpose=True):
+def quantize_global(x: torch.Tensor):
     absmax = x.abs().max().unsqueeze(0)
     output = torch.empty(*x.shape, device='cuda', dtype=torch.int8)
     assert x.is_cuda and output.is_cuda
     n_elements = output.numel()
     grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
     _quantize_global[grid](x, absmax, output, n_elements)
-    if transpose:
-        output = output.t()
     return output, absmax
 
 
 if __name__ == '__main__':
 
 
-    w = torch.randn(2048, 2048).cuda()
-    out = quantize_global(w, transpose=False)
+    w = torch.randn(768, 1280).cuda().to(torch.float16)
+    W_int8, state_w = quantize_global(w)
+    r_state_w = w.abs().max()
+    r_W_int8 = ((127 * w.float()) / state_w).round().to(torch.int8)
+    print((r_W_int8 == W_int8).float().mean())
 
+    # print(r_W_int8)
+    # print(W_int8)
+    exit()
     repeat = 16
 
     for _ in range(8):
-        out = quantize_global(w, transpose=False)
+        out = quantize_global(w)
 
     triton_graph = torch.cuda.CUDAGraph()
     with torch.cuda.graph(triton_graph):
-        out = quantize_global(w, transpose=False)
+        out = quantize_global(w)
 
     triton_graph.replay()
 

@@ -1,6 +1,5 @@
-import math
 import torch
-import time
+
 import triton
 import triton.language as tl
 from triton.ops.matmul_perf_model import early_config_prune, estimate_matmul_time
@@ -61,7 +60,7 @@ def get_configs_io_bound():
     'EVEN_K': lambda args: args['K'] % (args['BLOCK_K'] * args['SPLIT_K']) == 0,
 })
 @triton.jit
-def _int8_matmul_mixed_dequanitze(A, B, C, maxptr1, maxptr2, M, N, K,
+def _kernel(A, B, C, state_x_ptr, state_w_ptr, M, N, K, divfactor: tl.constexpr,
             stride_am, stride_ak,
             stride_bk, stride_bn,
             stride_cm, stride_cn,
@@ -89,7 +88,16 @@ def _int8_matmul_mixed_dequanitze(A, B, C, maxptr1, maxptr2, M, N, K,
     # pointers
     A = A + (ram[:, None] * stride_am + rk[None, :] * stride_ak)
     B = B + (rk[:, None] * stride_bk + rbn[None, :] * stride_bn)
-    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=ACC_TYPE)
+
+    # rematerialize rm and rn to save registers
+    rm = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    rn = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+
+    w_factor = tl.load(state_w_ptr)
+    x_factor = tl.load(state_x_ptr + ram)[:, None]
+
+    # acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=ACC_TYPE)
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.int32)
     for k in range(0, tl.cdiv(K, BLOCK_K * SPLIT_K)):
         if EVEN_K:
             a = tl.load(A)
@@ -101,18 +109,12 @@ def _int8_matmul_mixed_dequanitze(A, B, C, maxptr1, maxptr2, M, N, K,
         acc += tl.dot(a, b)
         A += BLOCK_K * SPLIT_K * stride_ak
         B += BLOCK_K * SPLIT_K * stride_bk
+    
+    acc = (w_factor * (x_factor * (acc * divfactor)))
+    acc = acc.to(C.dtype.element_ty)
 
-
-    # rematerialize rm and rn to save registers
-    rm = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
-    rn = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
     C = C + (rm[:, None] * stride_cm + rn[None, :] * stride_cn)
     mask = (rm < M)[:, None] & (rn < N)[None, :]
-
-    w_factor = tl.load(maxptr2)
-    x_factor = tl.load(maxptr1 + rn)[None, :]
-    acc = (w_factor * x_factor * acc.to(tl.float32) / (127 * 127)).to(tl.float16)
-
     # handles write-back with reduction-splitting
     if SPLIT_K == 1:
         tl.store(C, acc, mask=mask)
@@ -120,8 +122,9 @@ def _int8_matmul_mixed_dequanitze(A, B, C, maxptr1, maxptr2, M, N, K,
         tl.atomic_add(C, acc, mask=mask)
 
 
-def int8_matmul_mixed_dequanitze(a, b, max1, max2):
+def int8_matmul_mixed_dequanitze_stable(a, b, state_x, state_w):
     device = a.device
+    divfactor = 1. / (127. * 127.)
     # handle non-contiguous inputs if necessary
     if a.stride(0) > 1 and a.stride(1) > 1:
         a = a.contiguous()
@@ -134,42 +137,12 @@ def int8_matmul_mixed_dequanitze(a, b, max1, max2):
     # allocates output
     c = torch.empty((M, N), device=device, dtype=torch.float16)
     # accumulator types
-    ACC_TYPE = tl.int32
+    ACC_TYPE = tl.float32 #if a.dtype in [torch.float16, torch.bfloat16, torch.float32] else tl.int32
     # launch kernel
     grid = lambda META: (triton.cdiv(M, META['BLOCK_M']) * triton.cdiv(N, META['BLOCK_N']), META['SPLIT_K'])
-    _int8_matmul_mixed_dequanitze[grid](a, b, c, max1, max2, M, N, K,
+    _kernel[grid](a, b, c, state_x, state_w, M, N, K, divfactor,
                     a.stride(0), a.stride(1),
                     b.stride(0), b.stride(1),
                     c.stride(0), c.stride(1),
                     GROUP_M=8, ACC_TYPE=ACC_TYPE)
     return c
-
-
-if __name__ == '__main__':
-
-    x = torch.randn(256 * 256, 1024).cuda().to(torch.int8)
-    w = torch.randn(1024, 1024).t().cuda().to(torch.int8)
-    max1 = torch.randn(1024).cuda()
-    max2 = torch.randn(1).cuda()
-
-    out = int8_matmul_mixed_dequanitze(x, w, max1, max2)
-
-    repeat = 16
-
-    for _ in range(8):
-        out = int8_matmul_mixed_dequanitze(x, w, max1, max2)
-
-    triton_matmul_int8_graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(triton_matmul_int8_graph):
-        out = int8_matmul_mixed_dequanitze(x, w, max1, max2)
-
-    triton_matmul_int8_graph.replay()
-
-    torch.cuda.synchronize()
-    start = time.time()
-    for _ in range(repeat):
-        triton_matmul_int8_graph.replay()
-    torch.cuda.synchronize()
-    end = time.time()
-
-    print(f"time: {(end - start) / repeat * 1000:.3f} ms")
