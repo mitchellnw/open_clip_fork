@@ -4,11 +4,13 @@ import torch.nn as nn
 
 import bitsandbytes as bnb
 
-from int8_matmul_mixed_dequanitze_stable import int8_matmul_mixed_dequanitze_stable
-from quantize_global import quantize_global
-from quantize_rowwise_nogroup import quantize_rowwise_nogroup
+from int8_matmul_mixed_dequanitze_stable import int8_matmul_mixed_dequanitze_stable, int8_matmul_mixed_dequanitze_bias
+from quantize_global import quantize_global, quantize_global_transpose
+from quantize_rowwise_nogroup import quantize_rowwise_nogroup, experimental_quantize_rowwise_nogroup
 from int8_matmul_rowwise_dequantize import int8_matmul_rowwise_dequantize
 from quantize_columnwise_nogroup_transpose import quantize_columnwise_nogroup_transpose
+from int8_matmul_rowwise_dequantize_experimental import int8_matmul_rowwise_dequantize_experimental
+
 from transpose import transpose_triton
 
 import triton.ops.matmul as triton_matmul
@@ -16,172 +18,84 @@ import triton.ops.matmul as triton_matmul
 class _switchback_global(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, X, W):
+    def forward(ctx, X, W, bias):
         X_int8, state_X = quantize_rowwise_nogroup(X)
         W_int8, state_W = quantize_global(W)
-        ctx.save_for_backward = X, W, W_int8, state_W
-        return int8_matmul_mixed_dequanitze_stable(X_int8, W_int8.t(), state_X, state_W)
+        ctx.save_for_backward = X, W#, W_int8, state_W
+        return int8_matmul_mixed_dequanitze_bias(X_int8, W_int8.t(), state_X, state_W, bias)
 
     @staticmethod
     def backward(ctx, G):
-        X, W, W_int8, state_W = ctx.save_for_backward
-        G_int8, state_G = quantize_rowwise_nogroup(G)
-        W_int8 = torch.transpose(W_int8, 0, 1).contiguous()
+        #X, W, W_int8, state_W = ctx.save_for_backward
+        X, W = ctx.save_for_backward
+        G_int8, state_G, grad_bias = experimental_quantize_rowwise_nogroup(G)
+        #W_int8 = torch.transpose(W_int8, 0, 1).contiguous()
+        W_int8, state_W = quantize_global_transpose(W)
         grad_X = int8_matmul_mixed_dequanitze_stable(G_int8, W_int8.t(), state_G, state_W).to(X.dtype)
         grad_W = torch.matmul(G.t(), X.to(G.dtype)).to(W.dtype)
-        return grad_X, grad_W
+        return grad_X, grad_W, grad_bias
     
 class _switchback(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, X, W):
+    def forward(ctx, X, W, bias):
         ctx.save_for_backward = X, W
         X_int8, state_X = quantize_rowwise_nogroup(X)
         W_int8, state_W = quantize_rowwise_nogroup(W)
-        return int8_matmul_rowwise_dequantize(X_int8, W_int8.t(), state_X, state_W)
+        return int8_matmul_rowwise_dequantize_experimental(X_int8, W_int8.t(), state_X, state_W, bias)
     
     @staticmethod
     def backward(ctx, G):
         X, W = ctx.save_for_backward
-        G_int8, state_G = quantize_rowwise_nogroup(G)
+        G_int8, state_G, grad_bias = experimental_quantize_rowwise_nogroup(G)
         W_int8, state_W = quantize_columnwise_nogroup_transpose(W)
         grad_X = int8_matmul_rowwise_dequantize(G_int8, W_int8.t(), state_G, state_W).to(X.dtype)
         grad_W = torch.matmul(G.t(), X.to(G.dtype)).to(W.dtype)
-        return grad_X, grad_W
+        return grad_X, grad_W, grad_bias
     
 class SwitchBackLinearGlobal(nn.Linear):
     def forward(self, x):
-        return _switchback_global.apply(x, self.weight) + self.bias
+        return _switchback_global.apply(x, self.weight, self.bias)
     
 class SwitchBackLinear(nn.Linear):
     def forward(self, x):
-        return _switchback.apply(x, self.weight) + self.bias
+        return _switchback.apply(x, self.weight, self.bias)
     
+
 
 import time
 if __name__ == '__main__':
     torch.manual_seed(0)
     repeat = 16
-    dim=1024
-
-    # X = torch.randn(256 * 64, 1024, device='cuda', dtype=torch.float16)
-    # W = torch.randn(1024, 1024, device='cuda', dtype=torch.float16)
-
-    # out = torch.matmul(X, W)
-    # start = time.time()
-    # out = torch.matmul(X, W)
-    # end = time.time() - start
-
-    # print('fp16 time', end)
-
-    # ####################
-    # for _ in range(8):
-    #     th_c = torch.matmul(X, W)
-
-    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
-    # with torch.cuda.graph(torch_matmul_fp16_graph):
-    #     th_c = torch.matmul(X, W)
-
-    # torch_matmul_fp16_graph.replay()
-    # torch.cuda.synchronize()
-    # start = time.time()
-    # for _ in range(repeat):
-    #     torch_matmul_fp16_graph.replay()
-    # torch.cuda.synchronize()
-    # end = time.time()
-    # print(f"torch fp16 matmul: {(end - start) / repeat * 1000:.3f} ms")
-    # fp16_time = (end - start) / repeat
-    # ####################
-
-    # X_int8, state_X = quantize_rowwise_nogroup(X)
-    # W_int8, state_W = quantize_columnwise_nogroup_transpose(W)
-    # W_int8 = W_int8.t()
-    # ####################
-    # for _ in range(8):
-    #     th_c = int8_matmul_mixed_dequanitze_stable(X_int8, W_int8, state_X, state_W)
-
-    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
-    # with torch.cuda.graph(torch_matmul_fp16_graph):
-    #     th_c = int8_matmul_mixed_dequanitze_stable(X_int8, W_int8, state_X, state_W)
-
-    # torch_matmul_fp16_graph.replay()
-    # torch.cuda.synchronize()
-    # start = time.time()
-    # for _ in range(repeat):
-    #     torch_matmul_fp16_graph.replay()
-    # torch.cuda.synchronize()
-    # end = time.time()
-    # print(f"triton matmul: {(end - start) / repeat * 1000:.3f} ms")
-    # matmul_time = (end - start) / repeat
-    # ####################
+    dim=2048
 
 
-    fp16_linear = nn.Sequential(nn.Linear(dim, 4*dim), nn.GELU(), nn.Linear(4*dim, dim)).cuda()
+    fp16_linear = nn.Linear(dim, 4*dim, bias=None).cuda()
 
-    rowwise_linear = nn.Sequential(SwitchBackLinear(dim, 4*dim), nn.GELU(), SwitchBackLinear(4*dim, dim)).cuda()
-    rowwise_linear[0].weight.data = fp16_linear[0].weight.data
-    rowwise_linear[0].bias.data = fp16_linear[0].bias.data
-    rowwise_linear[2].weight.data = fp16_linear[2].weight.data
-    rowwise_linear[2].bias.data = fp16_linear[2].bias.data
+    rowwise_linear = SwitchBackLinear(dim, 4*dim, bias=None).cuda()
+    rowwise_linear.weight.data = fp16_linear.weight.data.clone()
+    #rowwise_linear.bias.data = fp16_linear.bias.data.clone()
 
-    global_linear = nn.Sequential(SwitchBackLinearGlobal(dim, 4*dim), nn.GELU(), SwitchBackLinearGlobal(4*dim, dim)).cuda()
-    global_linear[0].weight.data = fp16_linear[0].weight.data
-    global_linear[0].bias.data = fp16_linear[0].bias.data
-    global_linear[2].weight.data = fp16_linear[2].weight.data
-    global_linear[2].bias.data = fp16_linear[2].bias.data
+    global_linear = SwitchBackLinearGlobal(dim, 4*dim).cuda()
+    global_linear.weight.data = fp16_linear.weight.data.clone()
+    #global_linear.bias.data = fp16_linear.bias.data.clone()
 
-    bnb_linear = nn.Sequential(bnb.nn.Linear8bitLtMixed(dim, 4*dim), nn.GELU(), bnb.nn.Linear8bitLtMixed(4*dim, dim)).cuda()
-    bnb_linear[0].weight.data = fp16_linear[0].weight.data
-    bnb_linear[0].bias.data = fp16_linear[0].bias.data
-    bnb_linear[2].weight.data = fp16_linear[2].weight.data
-    bnb_linear[2].bias.data = fp16_linear[2].bias.data
+    x1 = torch.randn(256*256, dim, dtype=torch.float16).cuda()
+    x2 = x1.clone().detach()
+    x3 = x1.clone().detach()
 
-    x1 = torch.randn(256*256, dim, dtype=torch.float16).cuda().requires_grad_(True)
-    x2 = x1.clone().detach().requires_grad_(True)
-    x3 = x1.clone().detach().requires_grad_(True)
-    w_new = torch.randn(dim, 1, dtype=torch.float16).cuda()
-
-    #with torch.cuda.amp.autocast(dtype=torch.float16):
-    out_fp16 = fp16_linear(x1.float())
-    out_rowwise = rowwise_linear(x2)
-    out_global = global_linear(x2)
-    out_bnb = bnb_linear(x3)
-
-    #import pdb; pdb.set_trace()
-
-    err_rowwise = (out_rowwise.float() - out_fp16.float()).abs().mean()
-    err_global = (out_global.float() - out_fp16.float()).abs().mean()
-    err_bnb = (out_bnb.float() - out_fp16.float()).abs().mean()
-
-    print(err_rowwise, err_global, err_bnb)
-
-    out_fp16.mean().backward()
-    out_rowwise.mean().backward()
-    out_global.mean().backward()
-    out_bnb.mean().backward()
-
-    err_rowwise = (rowwise_linear[0].weight.grad - fp16_linear[0].weight.grad).abs().mean()
-    err_global = (global_linear[0].weight.grad - fp16_linear[0].weight.grad).abs().mean()
-    err_bnb = (bnb_linear[0].weight.grad - fp16_linear[0].weight.grad).abs().mean()
-
-
-
-    # err_rowwise = (out_rowwise - out_fp16).abs().mean()
-    # err_global = (out_global - out_fp16).abs().mean()
-    # err_bnb = (out_bnb - out_fp16).abs().mean()
-    
-    print(err_rowwise, err_global, err_bnb)
+    X = torch.randn(256*256, dim, dtype=torch.float16).cuda()
+    G = torch.randn(256*256, dim*4, dtype=torch.float16).cuda()
+    W = torch.randn(4 * dim, dim, dtype=torch.float16).cuda()
 
 
     ##################
     for _ in range(8):
-        with torch.cuda.amp.autocast():
-            out = fp16_linear(x1)
+        out = torch.matmul(G.t(), X)
 
     torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
     with torch.cuda.graph(torch_matmul_fp16_graph):
-        with torch.cuda.amp.autocast():
-            out = fp16_linear(x1)
+        out = torch.matmul(G.t(), X)
 
     torch_matmul_fp16_graph.replay()
     torch.cuda.synchronize()
@@ -190,49 +104,152 @@ if __name__ == '__main__':
         torch_matmul_fp16_graph.replay()
     torch.cuda.synchronize()
     end = time.time()
-    print(f"fp16 matmul: {(end - start) / repeat * 1000:.3f} ms")
+    print(f"fp16 matmul 1: {(end - start) / repeat * 1000:.3f} ms")
     matmul_time = (end - start) / repeat
     ##################
 
 
     ##################
     for _ in range(8):
-        out = global_linear(x1)
+        out = torch.matmul(X, W.t())
+
+    torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(torch_matmul_fp16_graph):
+        out = torch.matmul(X, W.t())
+
+    torch_matmul_fp16_graph.replay()
+    torch.cuda.synchronize()
+    start = time.time()
+    for _ in range(repeat):
+        torch_matmul_fp16_graph.replay()
+    torch.cuda.synchronize()
+    end = time.time()
+    print(f"fp16 matmul 2: {(end - start) / repeat * 1000:.3f} ms")
+    matmul_time = (end - start) / repeat
+    ##################
+    
+    # ##################
+    # for _ in range(8):
+    #     X_int8, statex = quantize_rowwise_nogroup(X)
+
+    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
+    # with torch.cuda.graph(torch_matmul_fp16_graph):
+    #     X_int8, statex = quantize_rowwise_nogroup(X)
+
+    # torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # start = time.time()
+    # for _ in range(repeat):
+    #     torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # end = time.time()
+    # print(f"quantize x time: {(end - start) / repeat * 1000:.3f} ms")
+    # matmul_time = (end - start) / repeat
+    # ##################
+
+    # ##################
+    # for _ in range(8):
+    #     W_int8, statew = quantize_rowwise_nogroup(W)
+
+    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
+    # with torch.cuda.graph(torch_matmul_fp16_graph):
+    #     W_int8, statew = quantize_rowwise_nogroup(W)
+
+    # torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # start = time.time()
+    # for _ in range(repeat):
+    #     torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # end = time.time()
+    # print(f"quantize w time: {(end - start) / repeat * 1000:.3f} ms")
+    # matmul_time = (end - start) / repeat
+    # ##################
+
+    # ##################
+    # for _ in range(8):
+    #     out = int8_matmul_rowwise_dequantize(X_int8, W_int8.t(), statex, statew)
+
+    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
+    # with torch.cuda.graph(torch_matmul_fp16_graph):
+    #     out = int8_matmul_rowwise_dequantize(X_int8, W_int8.t(), statex, statew)
+
+    # torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # start = time.time()
+    # for _ in range(repeat):
+    #     torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # end = time.time()
+    # print(f"int8 matmul: {(end - start) / repeat * 1000:.3f} ms")
+    # matmul_time = (end - start) / repeat
+    # ##################
+
+
+    ##################
+    # for _ in range(8):
+    #     with torch.cuda.amp.autocast():
+    #         out = fp16_linear(x1)
+
+    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
+    # with torch.cuda.graph(torch_matmul_fp16_graph):
+    #     with torch.cuda.amp.autocast():
+    #         out = fp16_linear(x1)
+
+    # torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # start = time.time()
+    # for _ in range(repeat):
+    #     torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # end = time.time()
+    # print(f"fp16 matmul: {(end - start) / repeat * 1000:.3f} ms")
+    # matmul_time = (end - start) / repeat
+    ##################
+
+
+    # ##################
+    # for _ in range(8):
+    #     with torch.cuda.amp.autocast():
+    #         out = global_linear(x1)
         
 
-    torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(torch_matmul_fp16_graph):
-        out = global_linear(x1)
+    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
+    # with torch.cuda.graph(torch_matmul_fp16_graph):
+    #     with torch.cuda.amp.autocast():
+    #         out = global_linear(x1)
 
-    torch_matmul_fp16_graph.replay()
-    torch.cuda.synchronize()
-    start = time.time()
-    for _ in range(repeat):
-        torch_matmul_fp16_graph.replay()
-    torch.cuda.synchronize()
-    end = time.time()
-    print(f"global matmul: {(end - start) / repeat * 1000:.3f} ms")
-    matmul_time = (end - start) / repeat
+    # torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # start = time.time()
+    # for _ in range(repeat):
+    #     torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # end = time.time()
+    # print(f"global matmul: {(end - start) / repeat * 1000:.3f} ms")
+    # matmul_time = (end - start) / repeat
+    # ##################
+
+    ##################
+    # for _ in range(8):
+    #     out_rowwise = rowwise_linear(x1)
+
+    # torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
+    # with torch.cuda.graph(torch_matmul_fp16_graph):
+    #     out_rowwise = rowwise_linear(x1)
+
+    # torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # start = time.time()
+    # for _ in range(repeat):
+    #     torch_matmul_fp16_graph.replay()
+    # torch.cuda.synchronize()
+    # end = time.time()
+    # print(f"rowwise matmul: {(end - start) / repeat * 1000:.3f} ms")
+    # matmul_time = (end - start) / repeat
     ##################
 
-    ##################
-    for _ in range(8):
-        out = rowwise_linear(x1)
-
-    torch_matmul_fp16_graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(torch_matmul_fp16_graph):
-        out = rowwise_linear(x1)
-
-    torch_matmul_fp16_graph.replay()
-    torch.cuda.synchronize()
-    start = time.time()
-    for _ in range(repeat):
-        torch_matmul_fp16_graph.replay()
-    torch.cuda.synchronize()
-    end = time.time()
-    print(f"rowwise matmul: {(end - start) / repeat * 1000:.3f} ms")
-    matmul_time = (end - start) / repeat
-    ##################
+    #print((out_rowwise - out).abs().mean())
 
 
     # torch.cuda.synchronize()

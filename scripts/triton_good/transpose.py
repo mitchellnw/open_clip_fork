@@ -52,3 +52,6 @@ def transpose_triton(input, out=None):
     grid = lambda META: (triton.cdiv(M, META['BLOCK_M']) * triton.cdiv(N, META['BLOCK_N']),)
     _transpose_triton[grid](input, out, input.stride(0), input.stride(1), out.stride(0), out.stride(1), M, N)
     return out
+
+
+
