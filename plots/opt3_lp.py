@@ -99,15 +99,17 @@ if __name__ == '__main__':
     alpha = 1
     file_list = []
     bsz = 4096*4
-    ll =-1
+    ll = -1
     file_list = [        
         # B
         #(f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v0', 'adamw','C0', ll),
-        (f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v1', 'adamw','C0', ll),
-        #(f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'adamw','C0', ll),
+        #(f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v1', 'adamw','C0', ll),
+        (f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'adamw','C0', ll),
 
-        # (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real','C1', ll),
-        # (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real mix','C2', ll),
+        (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real','C1', ll),
+        (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real mix','C2', ll),
+        (f'clipadamw-slint8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 triton','C3', ll),
+
 
         # (f'clipadamw-camp65kfp8newsim-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
         # (f'clipadamw-camp65kfp8global-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
@@ -187,13 +189,13 @@ if __name__ == '__main__':
                 df = proc(df, lim)
                 #df = df[df[0] > 30000]
                 #ax.set_yscale('log')
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
-                # kernel = np.ones(kernel_size) / kernel_size
-                # data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
-                # data_convolved = data_convolved[kernel_size:-kernel_size]
-                # ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
-                # print(file)
+                kernel = np.ones(kernel_size) / kernel_size
+                data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
+                data_convolved = data_convolved[kernel_size:-kernel_size]
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+                print(file)
                 
                 print(df.iloc[-1, 0])
                 ax.set_ylabel('Loss', fontsize=16)
@@ -309,7 +311,7 @@ if __name__ == '__main__':
         #ax.set_xlim([22000, 35000])
         ax.grid()
         ax.set_xlabel('Iterations', fontsize=16)
-        #continue
+        continue
         vv = 3180
         dd = 50
         vv = 3337

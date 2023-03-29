@@ -2,16 +2,22 @@ import math
 import torch
 import torch.nn as nn
 
-import torch.profiler
+import bitsandbytes as bnb
 
-# import bitsandbytes as bnb
+# from int8_matmul_mixed_dequanitze_stable import int8_matmul_mixed_dequanitze_stable, int8_matmul_mixed_dequanitze_bias
+# from quantize_global import quantize_global, quantize_global_transpose
+# from quantize_rowwise_nogroup import quantize_rowwise_nogroup, experimental_quantize_rowwise_nogroup
+# from int8_matmul_rowwise_dequantize import int8_matmul_rowwise_dequantize
+# from quantize_columnwise_nogroup_transpose import quantize_columnwise_nogroup_transpose
+# from int8_matmul_rowwise_dequantize_experimental import int8_matmul_rowwise_dequantize_experimental
 
-from int8_matmul_mixed_dequanitze_stable import int8_matmul_mixed_dequanitze_stable, int8_matmul_mixed_dequanitze_bias
-from quantize_global import quantize_global, quantize_global_transpose
-from quantize_rowwise_nogroup import quantize_rowwise_nogroup, experimental_quantize_rowwise_nogroup
-from int8_matmul_rowwise_dequantize import int8_matmul_rowwise_dequantize
-from quantize_columnwise_nogroup_transpose import quantize_columnwise_nogroup_transpose
-from int8_matmul_rowwise_dequantize_experimental import int8_matmul_rowwise_dequantize_experimental
+from tkernels.quantize_rowwise_nogroup import quantize_rowwise_nogroup, experimental_quantize_rowwise_nogroup
+from tkernels.int8_matmul_rowwise_dequantize import int8_matmul_rowwise_dequantize
+from tkernels.quantize_columnwise_nogroup_transpose import quantize_columnwise_nogroup_transpose
+from tkernels.int8_matmul_rowwise_dequantize_bias import int8_matmul_rowwise_dequantize_bias
+
+from tkernels.quantize_global import quantize_global, quantize_global_transpose
+from tkernels.int8_matmul_mixed_dequanitze import int8_matmul_mixed_dequanitze, int8_matmul_mixed_dequanitze_bias
 
 from transpose import transpose_triton
 
@@ -20,22 +26,37 @@ import triton.ops.matmul as triton_matmul
 class _switchback_global(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, X, W, bias):
+    def forward(ctx, X_3D, W, bias):
+
+        X = X_3D.view(-1, X_3D.size(-1))
+
         X_int8, state_X = quantize_rowwise_nogroup(X)
         W_int8, state_W = quantize_global(W)
-        ctx.save_for_backward = X, W#, W_int8, state_W
-        return int8_matmul_mixed_dequanitze_bias(X_int8, W_int8.t(), state_X, state_W, bias)
+        ctx.save_for_backward = X, W
+        return int8_matmul_mixed_dequanitze_bias(
+            X_int8, W_int8.t(), state_X, state_W, bias
+        ).view(*X_3D.size()[:-1], -1)
 
     @staticmethod
-    def backward(ctx, G):
-        #X, W, W_int8, state_W = ctx.save_for_backward
+    def backward(ctx, G_3D):
+
+        G = G_3D.reshape(-1, G_3D.size(-1))
+
+        grad_X = grad_W = grad_bias = None
+
         X, W = ctx.save_for_backward
-        G_int8, state_G, grad_bias = quantize_rowwise_nogroup(X)
-        #W_int8 = torch.transpose(W_int8, 0, 1).contiguous()
-        W_int8, state_W = quantize_global_transpose(W)
-        grad_X = int8_matmul_mixed_dequanitze_stable(G_int8, W_int8.t(), state_G, state_W).to(X.dtype)
-        grad_W = torch.matmul(G.t(), X.to(G.dtype)).to(W.dtype)
-        return grad_X, grad_W, G.sum(dim=0)
+        if ctx.needs_input_grad[0]:
+            G_int8, state_G = quantize_rowwise_nogroup(G)
+            W_int8, state_W = quantize_global_transpose(W)
+            grad_X = int8_matmul_mixed_dequanitze(G_int8, W_int8.t(), state_G, state_W).view(
+                *G_3D.size()[:-1], -1
+            )
+        if ctx.needs_input_grad[1]:
+            grad_W = torch.matmul(G.t(), X.to(G.dtype))
+        if ctx.needs_input_grad[2]:
+            grad_bias = G.sum(dim=0)
+
+        return grad_X, grad_W, grad_bias
     
 class _switchback(torch.autograd.Function):
 
@@ -47,7 +68,7 @@ class _switchback(torch.autograd.Function):
         ctx.save_for_backward = X, W
         X_int8, state_X = quantize_rowwise_nogroup(X)
         W_int8, state_W = quantize_rowwise_nogroup(W)
-        return int8_matmul_rowwise_dequantize_experimental(
+        return int8_matmul_rowwise_dequantize_bias(
             X_int8, W_int8.t(), state_X, state_W, bias
         ).view(*X_3D.size()[:-1], -1)
     
@@ -55,7 +76,7 @@ class _switchback(torch.autograd.Function):
     def backward(ctx, G_3D):
         X, W = ctx.save_for_backward
 
-        G = G_3D.view(-1, G_3D.size(-1))
+        G = G_3D.reshape(-1, G_3D.size(-1))
 
         grad_X = grad_W = grad_bias = None
 
@@ -66,37 +87,12 @@ class _switchback(torch.autograd.Function):
                 *G_3D.size()[:-1], -1
             )
         if ctx.needs_input_grad[1]:
-            grad_W = torch.matmul(G.t(), X)
+            grad_W = torch.matmul(G.t(), X.to(G.dtype))
         if ctx.needs_input_grad[2]:
             grad_bias = G.sum(dim=0)
 
         return grad_X, grad_W, grad_bias
     
-
-class LinearFunction(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input, weight, bias=None):
-        ctx.save_for_backward(input, weight, bias)
-        output = input.matmul(weight.t())
-        if bias is not None:
-            output += bias.unsqueeze(0).expand_as(output)
-        return output
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        input, weight, bias = ctx.saved_tensors
-        grad_input = grad_weight = grad_bias = None
-
-        if ctx.needs_input_grad[0]:
-            grad_input = grad_output.mm(weight)
-        if ctx.needs_input_grad[1]:
-            grad_weight = grad_output.t().mm(input)
-        if bias is not None and ctx.needs_input_grad[2]:
-            grad_bias = grad_output.sum(0)
-
-        return grad_input, grad_weight, grad_bias
-
-        
 class SwitchBackLinearGlobal(nn.Linear):
     def forward(self, x):
         return _switchback_global.apply(x, self.weight, self.bias)
@@ -104,21 +100,9 @@ class SwitchBackLinearGlobal(nn.Linear):
 class SwitchBackLinear(nn.Linear):
     def forward(self, x):
         return _switchback.apply(x, self.weight, self.bias)
-    
-
-def backward(G, X, W):
-    G_int8, state_G = quantize_rowwise_nogroup(G)
-    W_int8, state_W = quantize_columnwise_nogroup_transpose(W)
-    grad_X = int8_matmul_rowwise_dequantize(G_int8, W_int8.t(), state_G, state_W).to(X.dtype)
-    grad_W = torch.matmul(G.t().to(X.dtype), X).to(W.dtype)
-    return grad_X, grad_W, None#G.sum(dim=0)
-
-# def backward(G, X, W):
-#     grad_X = torch.matmul(G.to(W.dtype), W.t().contiguous().t()).to(X.dtype)
-#     grad_W = torch.matmul(G.t().to(X.dtype), X).to(W.dtype)
-#     return grad_X, grad_W, G.sum(dim=0)
 
 import time
+
 if __name__ == '__main__':
     torch.manual_seed(0)
     repeat = 16
@@ -143,7 +127,7 @@ if __name__ == '__main__':
     # standard_linear = nn.Sequential(*[ nn.Linear(dim, 4*dim), nn.GELU(), nn.Linear(4*dim, dim) for _ in range(10)]).cuda().train()
     # rowwise_linear = nn.Sequential(*[ SwitchBackLinear(dim, 4*dim), nn.GELU(), SwitchBackLinear(4*dim, dim) for _ in range(10)]).cuda().train()
 
-    x1 = torch.randn(256, 256, dim, dtype=torch.float16).cuda()
+    x1 = torch.randn(256*256, dim, dtype=torch.float32).cuda()
 
     # standard forward 2.97
     # rowwise forward 1.68

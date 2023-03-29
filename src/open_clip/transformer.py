@@ -9,6 +9,7 @@ from torch.utils.checkpoint import checkpoint
 
 from torch.nn import MultiheadAttention
 
+from tkernels.modules import SwitchBackLinear
 from .utils import to_2tuple, DropPath, ExtraLNAttention
 
 def log_features(x, training, _iter, logger_file):
@@ -274,12 +275,7 @@ class ResidualAttentionBlock(nn.Module):
             self.attn.in_proj_linear.bias.data.copy_(old_attn.in_proj_bias)
             self.attn.out_proj.weight.data.copy_(old_attn.out_proj.weight.data)
             self.attn.out_proj.bias.data.copy_(old_attn.out_proj.bias.data)
-            # random = torch.randn(2, 10, 768)
-            # old_out = old_attn(random, random, random, need_weights=False)
-            # new_out = self.attn(random)
-            # print(old_out)
-            # print(new_out)
-            # from .utils import ForkedPdb; ForkedPdb().set_trace()
+
             del old_attn
             
         else:
@@ -404,7 +400,10 @@ class Transformer(nn.Module):
 
     def get_cast_dtype(self) -> torch.dtype:
         if hasattr(self.resblocks[0].mlp, 'c_fc'):
-            return self.resblocks[0].mlp.c_fc.weight.dtype
+            if hasattr(self.resblocks[0].mlp.c_fc, 'weight'):
+                return self.resblocks[0].mlp.c_fc.weight.dtype
+            else:
+                return self.resblocks[0].mlp.c_fc.bias.dtype
         else:
             return self.resblocks[0].mlp.ff.w1.weight.dtype
 

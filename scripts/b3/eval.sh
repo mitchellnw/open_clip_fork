@@ -37,7 +37,21 @@ do
         # fi
         echo "$save_path exists."
     else
-        if [[ $save_path == *"int8"* ]]; then
+        if [[ $save_path == *"sglint8"* ]]; then
+            echo "$save_path does not exist -- sglint8."
+            torchrun --nproc_per_node 2 -m training.main \
+            --batch-size 200   --workers 4 --model $model  --train-num-samples 413000000  \
+            --local-loss  --gather-with-grad     --grad-checkpointing       --precision custom_fp16  \
+            --save-most-recent --pretrained $i --custom-attention vanilla --sglint8 \
+            --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation &> $save_path
+        elif [[ $save_path == *"slint8"* ]]; then
+            echo "$save_path does not exist -- slint8."
+            torchrun --nproc_per_node 2 -m training.main \
+            --batch-size 200   --workers 4 --model $model  --train-num-samples 413000000  \
+            --local-loss  --gather-with-grad     --grad-checkpointing       --precision custom_fp16  \
+            --save-most-recent --pretrained $i --custom-attention vanilla --slint8 \
+            --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation &> $save_path
+        elif [[ $save_path == *"int8"* ]]; then
             echo "$save_path does not exist -- int8."
             torchrun --nproc_per_node 2 -m training.main \
             --batch-size 200   --workers 4 --model $model  --train-num-samples 413000000  \

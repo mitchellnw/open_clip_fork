@@ -47,8 +47,8 @@ def _quantize_columnwise_nogroup(
 
 def quantize_columnwise_nogroup(x: torch.Tensor):
     M, N = x.shape
-    output = torch.empty(*x.shape, device='cuda', dtype=torch.int8)
-    output_maxs = torch.empty(x.shape[1], device='cuda', dtype=torch.float16)
+    output = torch.empty(*x.shape, device=x.device, dtype=torch.int8)
+    output_maxs = torch.empty(x.shape[1], device=x.device, dtype=torch.float16)
 
     P2 = int(2 ** (math.ceil(math.log2(x.shape[0]))))
 

@@ -482,6 +482,21 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "--slint8",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--sglint8",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--snew8",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--ema",
         default=False,
         action="store_true",

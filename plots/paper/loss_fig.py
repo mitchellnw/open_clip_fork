@@ -62,7 +62,7 @@ if __name__ == '__main__':
         for template, name, color, marker in [
             ('clipadamw-ViT-{}-16384-2e-3-0.98-v0', 'bfloat16 baseline','C0', 's'),
             ('clipadamw-int8-ViT-{}-16384-2e-3-0.98-v0', 'LLM.int8() baseline','C1', '^'),
-            ('clipadamw-int8mix-ViT-{}-16384-2e-3-0.98-v0', 'SwitchBack int8','C4', 'o'),
+            ('clipadamw-sglint8v2-ViT-{}-16384-2e-3-0.98-v0', 'SwitchBack int8','C4', 'o'),
         ]:
             newtemp = template.format(model)
             fname = f'/fsx/home-mitchellw/experimetns/opt3/{newtemp}/data/0/loss.csv'

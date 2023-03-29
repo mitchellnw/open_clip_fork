@@ -116,15 +116,21 @@ if __name__ == '__main__':
 
         # H
         (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
-        (f'clipadamw-int8-ViT-L-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
-        (f'clipadamw-int8mix-ViT-L-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
-        (f'clipadamw-camp65kfp8newsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
-        (f'clipadamw-ampfp8global-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
+        (f'clipadamw-int8-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 int8 real','C1', ll),
+        (f'clipadamw-int8mix-ViT-L-14-16384-2e-3-0.98-v0', 'L/14 int8 real mix','C2', ll),
+        (f'clipadamw-slint8-ViT-L-14-16384-2e-3-0.98-v0', '...','C3', ll), # 0.5757
 
-        # (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'fp8 sim just global + gc','k', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global + ls','gray', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'new','k', ll),
+        (f'clipadamw-snew8-ViT-L-14-16384-2e-3-0.98-v0', 'snew8','C4', ll), # 0.5757
+
+        
+
+        # (f'clipadamw-camp65kfp8newsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
+        # (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global','C5', ll),
+        # (f'clipadamw-ampfp8global-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global v2','C6', ll),
+
+        # # (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'fp8 sim just global + gc','k', ll),
+        # (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0', 'fp8 sim just global + ls','gray', ll),
+        # (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'new','k', ll),
         #(f'clipadamw-camp65kint8sim-ViT-H-14-16384-2e-3-0.98-v0', 'int8 sim','C2', -1),
         #(f'clipadamw-int8thresh-ViT-H-14-16384-2e-3-0.98-v0', 'int8 thresh','C2', -1),
 

@@ -43,8 +43,8 @@ def _quantize_columnwise_nogroup_transpose(
 
 def quantize_columnwise_nogroup_transpose(x: torch.Tensor):
     M, N = x.shape
-    output = torch.empty(N, M, device='cuda', dtype=torch.int8)
-    output_maxs = torch.empty(x.shape[1], device='cuda', dtype=torch.float16)
+    output = torch.empty(N, M, device=x.device, dtype=torch.int8)
+    output_maxs = torch.empty(x.shape[1], device=x.device, dtype=torch.float16)
 
     P2 = int(2 ** (math.ceil(math.log2(M))))
 

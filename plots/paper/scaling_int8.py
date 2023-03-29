@@ -58,9 +58,11 @@ if __name__ == '__main__':
 
     for template, name, color, marker in [
         ('clipadamw-ViT-{}-16384-2e-3-0.98-v0', 'bfloat16 baseline','C0', 's'),
+        #('clipadamw-py2v2-ViT-{}-16384-2e-3-0.98-v0', 'bfloat16 baseline','gray', 's'),
         ('clipadamw-int8-ViT-{}-16384-2e-3-0.98-v0', 'LLM.int8() baseline','C1', '^'),
-        ('clipadamw-int8mix-ViT-{}-16384-2e-3-0.98-v0', 'SwitchBack int8','C4', 'o'),
+        ('clipadamw-sglint8v2-ViT-{}-16384-2e-3-0.98-v0', 'SwitchBack int8','C4', 'o'),
     ]:
+        
             
         xs, ys = [], []
         sizes = ['B-32', 'L-14', 'H-14']
@@ -72,6 +74,7 @@ if __name__ == '__main__':
             #if top1 > 0.1:
             xs.append(j)
             ys.append(top1)
+        print(ys)
         ax.plot(xs, ys, color=color, label=name, marker=marker, markersize=9 if marker=='s' else 8)
     ax.set_xticks([j for j, _ in enumerate(sizes)])
     ax.set_xticklabels(convert.values())

@@ -99,9 +99,13 @@ if __name__ == '__main__':
         # B
 
         # H
+        # H
         (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
-        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v1', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C1', ll), # 0.5757
-        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v2', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C2', ll), # 0.5757
+        (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
+        (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
+        (f'clipadamw-slint8-ViT-H-14-16384-2e-3-0.98-v0', 'slint','k', ll), # 0.5757
+        (f'clipadamw-sglint8-ViT-H-14-16384-2e-3-0.98-v0', 'sglint','C3', ll), # 0.5757
+        (f'clipadamw-slint8v2-ViT-H-14-16384-2e-3-0.98-v0', 'slintv2','C4', ll), # 0.5757
 
         #(f'customadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C1', ll), # 0.5757
 
@@ -173,13 +177,13 @@ if __name__ == '__main__':
                 df = proc(df, lim)
                 #df = df[df[0] > 30000]
                 #ax.set_yscale('log')
-                ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
                 
-                # kernel = np.ones(kernel_size) / kernel_size
-                # data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
-                # data_convolved = data_convolved[kernel_size:-kernel_size]
-                # ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
-                # print(file)
+                kernel = np.ones(kernel_size) / kernel_size
+                data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
+                data_convolved = data_convolved[kernel_size:-kernel_size]
+                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+                print(file)
                 
                 print(df.iloc[-1, 0])
                 ax.set_ylabel('Loss', fontsize=16)

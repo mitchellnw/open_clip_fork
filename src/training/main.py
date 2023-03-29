@@ -288,6 +288,21 @@ def main(args):
         from .fp8utils import replace_linear
         print('Using real Int8, mixed.')
         replace_linear(model, bnb.nn.Linear8bitLtMixed)#
+    if args.slint8:
+        print('using switchback linear')
+        from .fp8utils import replace_linear
+        from tkernels.modules import SwitchBackLinear
+        replace_linear(model, SwitchBackLinear)#
+    if args.sglint8:
+        print('using switchback global linear')
+        from .fp8utils import replace_linear
+        from tkernels.modules import SwitchBackGlobalLinear
+        replace_linear(model, SwitchBackGlobalLinear)#
+    if args.snew8:
+        print('using switchback new linear')
+        from .fp8utils import replace_linear
+        from tkernels.modules import SwitchBackNewLinear
+        replace_linear(model, SwitchBackNewLinear)#
 
     model_ema_0, model_ema_1, model_ema_2, model_ema_3 = None, None, None, None
     if args.ema:
@@ -331,7 +346,7 @@ def main(args):
         if args.ddp_static_graph:
             # this doesn't exist in older PyTorch, arg only added if enabled
             ddp_args['static_graph'] = True
-        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix:
+        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix or args.slint8 or args.sglint8 or args.snew8:
             model = model.to(device)
 
         if args.rms_load is not None:

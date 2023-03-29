@@ -8,10 +8,18 @@ from triton.ops.matmul_perf_model import early_config_prune, estimate_matmul_tim
 # TODO: autotune this better.
 @triton.autotune(
         configs=[
-            # triton.Config({}, num_warps=1),
+            triton.Config({}, num_stages=1, num_warps=8),
+            triton.Config({}, num_stages=2, num_warps=8),
+            triton.Config({}, num_stages=4, num_warps=8),
+            triton.Config({}, num_stages=8, num_warps=8),
+            triton.Config({}, num_stages=1),
+            triton.Config({}, num_stages=2),
+            triton.Config({}, num_stages=4),
+            triton.Config({}, num_stages=8),
+            triton.Config({}, num_warps=1),
             triton.Config({}, num_warps=2),
-            # triton.Config({}, num_warps=4),
-            # triton.Config({}, num_warps=8),
+            triton.Config({}, num_warps=4),
+            triton.Config({}, num_warps=8),
         ],
         key=['n_elements']
 )
@@ -38,8 +46,8 @@ def _quantize_rowwise_nogroup(
     tl.store(output_maxs + pid, max_val)
 
 def quantize_rowwise_nogroup(x: torch.Tensor):
-    output = torch.empty(*x.shape, device='cuda', dtype=torch.int8)
-    output_maxs = torch.empty(x.shape[0], device='cuda', dtype=torch.float16)
+    output = torch.empty(*x.shape, device=x.device, dtype=torch.int8)
+    output_maxs = torch.empty(x.shape[0], device=x.device, dtype=torch.float16)
 
     P2 = int(2 ** (math.ceil(math.log2(x.shape[1]))))
 
@@ -95,9 +103,9 @@ def _experimental_quantize_rowwise_nogroup(
 
 def experimental_quantize_rowwise_nogroup(x: torch.Tensor):
     M, N = x.shape
-    output = torch.empty(*x.shape, device='cuda', dtype=torch.int8)
-    output_maxs = torch.empty(x.shape[0], device='cuda', dtype=torch.float16)
-    bias_grad = torch.empty(x.shape[1], device='cuda', dtype=torch.float16)
+    output = torch.empty(*x.shape, device=x.device, dtype=torch.int8)
+    output_maxs = torch.empty(x.shape[0], device=x.device, dtype=torch.float16)
+    bias_grad = torch.empty(x.shape[1], device=x.device, dtype=torch.float16)
 
     P2 = int(2 ** (math.ceil(math.log2(x.shape[1]))))
     P2M = int(2 ** (math.ceil(math.log2(x.shape[0]))))
@@ -113,7 +121,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     x = torch.randn(1280, 768).cuda().to(torch.float16)
-    out = experimental_quantize_rowwise_nogroup(x)
+    out = quantize_rowwise_nogroup(x)
 
     x_real = (127 * x.float() / x.abs().max(dim=1, keepdim=True)[0]).round().to(torch.int8)
     max2 = x.abs().max(1)[0]
@@ -131,7 +139,9 @@ if __name__ == '__main__':
     # print(out[2][:10])
     sums = x.sum(dim=0)
     #print(sums[:10])
-    print( (sums == out[2]).float().mean() )
+    #print( (sums == out[2]).float().mean() )
+
+    import pdb; pdb.set_trace()
     # import pdb; pdb.set_trace()
     # exit()
 
