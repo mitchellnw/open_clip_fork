@@ -93,13 +93,13 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 14
     max_scaler = 1
-    log_level =3 + len(modules)
+    log_level =2#3 + len(modules)
 
     # NOTE: LOOK AT FEATURE STDDEV!
     alpha = 1
     file_list = []
     bsz = 4096*4
-    ll = -1
+    ll = 500
     file_list = [        
         # B
         #(f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v0', 'adamw','C0', ll),
@@ -109,6 +109,7 @@ if __name__ == '__main__':
         (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real','C1', ll),
         (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real mix','C2', ll),
         (f'clipadamw-slint8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 triton','C3', ll),
+        (f'clipadamw-sanity2-ViT-B-32-16384-2e-3-0.98-v0', 'adamw','k', ll),
 
 
         # (f'clipadamw-camp65kfp8newsim-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),

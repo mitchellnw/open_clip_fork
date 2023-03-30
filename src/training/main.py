@@ -651,7 +651,6 @@ def main(args):
         model.apply(lambda m: setattr(m, 'logger_file', None))
         model.apply(lambda m: setattr(m, 'iter', None))
         
-
     if 'train' not in data:
         evaluate(model, data, start_epoch, args, writer)
         return

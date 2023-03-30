@@ -30,17 +30,21 @@ torchrun --nproc_per_node 2 -m training.main \
 # 55.11
 
 rm -rf logs && torchrun --nproc_per_node 4 -m training.main   \
-      --batch-size 256   --workers 8 --model ViT-L-14     --dataset-type webdataset   \
+      --batch-size 256   --workers 8 --model ViT-H-14     --dataset-type webdataset   \
       --train-data="pipe:aws s3 cp s3://s-datasets/laion400m/laion400m-dat-release/{00000..41455}.tar -"  \
       --train-num-samples 413000000     --local-loss     --gather-with-grad     --grad-checkpointing \
       --precision amp --custom-attention vanilla  \
-      --sglint8 --log-every-n-steps 1
+      --log-every-n-steps 1 --ddp-static-graph \
 
 
 
 
 
-### BATCH 512
+### BATCH 128
+
+# H
+# 363.4
+# 325.5
 
 ### BATCH 256
 
