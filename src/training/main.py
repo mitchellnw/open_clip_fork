@@ -296,8 +296,15 @@ def main(args):
     if args.sglint8:
         print('using switchback global linear')
         from .fp8utils import replace_linear
-        from tkernels.modules import SwitchBackGlobalLinear
-        replace_linear(model, SwitchBackGlobalLinear)#
+        #from tkernels.modules import SwitchBackGlobalLinear
+        #rom import SwitchbackGlobalLinear
+        replace_linear(model,  bnb.nn.triton_based_modules.SwitchBackGlobalLinear)#
+    if args.autogradlinear:
+        print('using switchback global linear')
+        from .fp8utils import replace_linear
+        #from tkernels.modules import SwitchBackGlobalLinear
+        #rom import SwitchbackGlobalLinear
+        replace_linear(model,  bnb.nn.triton_based_modules.MyLinear)#
     if args.snew8:
         print('using switchback new linear')
         from .fp8utils import replace_linear
@@ -346,7 +353,7 @@ def main(args):
         if args.ddp_static_graph:
             # this doesn't exist in older PyTorch, arg only added if enabled
             ddp_args['static_graph'] = True
-        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix or args.slint8 or args.sglint8 or args.snew8:
+        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix or args.slint8 or args.sglint8 or args.snew8 or args.autogradlinear:
             model = model.to(device)
 
         if args.rms_load is not None:

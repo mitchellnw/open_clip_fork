@@ -482,6 +482,11 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "--autogradlinear",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--slint8",
         default=False,
         action="store_true",

@@ -99,7 +99,7 @@ class PatchDropout(nn.Module):
         return x
 
 
-class Attention(nn.Module):
+class AttentionOld(nn.Module):
     def __init__(
             self,
             dim,
@@ -204,6 +204,46 @@ class Attention(nn.Module):
         x = self.out_drop(x)
         return x
 
+
+class Attention(torch.nn.Module):
+    def __init__(
+            self,
+            dim,
+            num_heads=8,
+            qkv_bias=True,
+            scaled_cosine=False,
+            scale_heads=False,
+            attn_drop=0.,
+            proj_drop=0.,
+            linear_module=torch.nn.Linear,
+    ):
+        super().__init__()
+        self.scaled_cosine = scaled_cosine
+        self.scale_heads = scale_heads
+        assert dim % num_heads == 0, 'dim should be divisible by num_heads'
+        self.num_heads = num_heads
+        self.head_dim = dim // num_heads
+        self.scale = self.head_dim ** -0.5
+
+        self.in_proj_linear = linear_module(dim, 3 * dim, bias = qkv_bias)
+
+        self.attn_drop = torch.nn.Dropout(attn_drop)
+        if self.scale_heads:
+            self.head_scale = torch.nn.Parameter(torch.ones((num_heads, 1, 1)))
+        else:
+            self.head_scale = None
+        self.out_proj = linear_module(dim, dim)
+        self.out_drop = torch.nn.Dropout(proj_drop)
+
+    def forward(self, x, attn_mask = None):
+        #print(x.shape)
+        q, k, v = self.in_proj_linear(x).chunk(3, dim=-1)
+        #print(q.shape, k.shape)
+        x = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask)
+        x = self.out_proj(x)
+        return x
+    
+
 class LogLayer(nn.Module):
     def forward(self, x):
         if self.advanced_logging:
@@ -268,8 +308,8 @@ class ResidualAttentionBlock(nn.Module):
         self.ln_1 = norm_layer(d_model)
         self.custom_attention = custom_attention
         if custom_attention == 'vanilla' or custom_attention == 'extra_ln' or custom_attention == 'rms_norm' or custom_attention == 'swiglu' or custom_attention == 'rms_norm2':
-            old_attn = nn.MultiheadAttention(d_model, n_head)
-            self.attn = Attention(d_model, n_head, extra_ln = custom_attention == 'extra_ln')
+            old_attn = nn.MultiheadAttention(d_model, n_head, batch_first=True)
+            self.attn = Attention(d_model, n_head)#, extra_ln = custom_attention == 'extra_ln')
 
             self.attn.in_proj_linear.weight.data.copy_(old_attn.in_proj_weight.data)
             self.attn.in_proj_linear.bias.data.copy_(old_attn.in_proj_bias)
@@ -279,7 +319,7 @@ class ResidualAttentionBlock(nn.Module):
             del old_attn
             
         else:
-            self.attn = nn.MultiheadAttention(d_model, n_head)
+            self.attn = nn.MultiheadAttention(d_model, n_head, batch_first=True)
 
         if custom_attention == 'rms_norm2':
             self.ls_1 = RMSNorm(d_model)
@@ -577,9 +617,9 @@ class VisionTransformer(nn.Module):
         x = self.patch_dropout(x)
         x = self.ln_pre(x)
 
-        x = x.permute(1, 0, 2)  # NLD -> LND
+        #x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
-        x = x.permute(1, 0, 2)  # LND -> NLD
+        #x = x.permute(1, 0, 2)  # LND -> NLD
 
         if self.global_average_pool:
             x = x.mean(dim=1)
@@ -677,9 +717,10 @@ class TextTransformer(nn.Module):
 
         x = x + self.positional_embedding.to(cast_dtype)
 
-        x = x.permute(1, 0, 2)  # NLD -> LND
+        #x = x.permute(1, 0, 2)  # NLD -> LND
+        #print('HERE!!!!')
         x = self.transformer(x, attn_mask=self.attn_mask)
-        x = x.permute(1, 0, 2)  # LND -> NLD
+        #x = x.permute(1, 0, 2)  # LND -> NLD
         x = self.ln_final(x)
 
         # x.shape = [batch_size, n_ctx, transformer.width]
