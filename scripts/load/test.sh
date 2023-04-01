@@ -34,7 +34,7 @@ rm -rf logs && torchrun --nproc_per_node 4 -m training.main   \
       --train-data="pipe:aws s3 cp s3://s-datasets/laion400m/laion400m-dat-release/{00000..41455}.tar -"  \
       --train-num-samples 413000000     --local-loss     --gather-with-grad     --grad-checkpointing \
       --precision amp --custom-attention vanilla  \
-      --log-every-n-steps 1 --ddp-static-graph \
+      --log-every-n-steps 1 --sglint8 \
 
 
 
@@ -50,7 +50,7 @@ rm -rf logs && torchrun --nproc_per_node 4 -m training.main   \
 
 
 # H
-# 392.4 samples/s sglint8
+# 392.4 samples/s sglint8 # 390.5
 # 294.3 samples/s autogradlinear
 # 339.8 samples/s nnlinear
 

@@ -291,20 +291,19 @@ def main(args):
     if args.slint8:
         print('using switchback linear')
         from .fp8utils import replace_linear
-        from tkernels.modules import SwitchBackLinear
-        replace_linear(model, SwitchBackLinear)#
+        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearVectorized)#
     if args.sglint8:
         print('using switchback global linear')
         from .fp8utils import replace_linear
         #from tkernels.modules import SwitchBackGlobalLinear
         #rom import SwitchbackGlobalLinear
-        replace_linear(model,  bnb.nn.triton_based_modules.SwitchBackGlobalLinear)#
+        replace_linear(model,  bnb.nn.triton_based_modules.SwitchBackLinearGlobal)#
     if args.autogradlinear:
         print('using switchback global linear')
         from .fp8utils import replace_linear
         #from tkernels.modules import SwitchBackGlobalLinear
         #rom import SwitchbackGlobalLinear
-        replace_linear(model,  bnb.nn.triton_based_modules.MyLinear)#
+        replace_linear(model,  bnb.nn.triton_based_modules.StandardLinear)#
     if args.snew8:
         print('using switchback new linear')
         from .fp8utils import replace_linear
@@ -652,6 +651,10 @@ def main(args):
         model.apply(lambda m: setattr(m, 'iter', None))
         
     if 'train' not in data:
+        def cond_apply_prepare_for_eval(m):
+            if hasattr(m, 'prepare_for_eval'):
+                m.prepare_for_eval()
+        model.apply(cond_apply_prepare_for_eval)
         evaluate(model, data, start_epoch, args, writer)
         return
 

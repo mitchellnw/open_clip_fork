@@ -31,7 +31,7 @@ export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
 BETA2=0.8
-MODEL=ViT-L-14
+MODEL=ViT-H-14
 BS=16384
 OPT=customadamw
 
