@@ -64,8 +64,7 @@ if __name__ == '__main__':
             ('customadamw-ViT-{}-16384-2e-3-0.98-v0', 'beta2 = 0.98',cmap(3./4), -1),
             ('customadamw-ViT-{}-16384-2e-3-0.95-v0', 'beta2 = 0.95',cmap(2./4), -1),
             ('customadamw-ViT-{}-16384-2e-3-0.9-v0', 'beta2 = 0.9',cmap(1./4), -1),
-            ('customadamw-ViT-{}-16384-2e-3-0.8-v0', 'beta2 = 0.8','k', -1),
-
+            #('customadamw-ViT-{}-16384-2e-3-0.8-v0', 'beta2 = 0.8','k', -1),
             ('customadamw-ViT-{}-16384-2e-3-0.5-v0', 'beta2 = 0.5',cmap(0./4), -1),
         ]:
             newtemp = template.format(model)
@@ -80,7 +79,7 @@ if __name__ == '__main__':
             #df = df[df[0] > 30000]
             #ax.set_yscale('log')
             #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
-            
+            #print(fname, df)
             kernel = np.ones(kernel_size) / kernel_size
             data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
             data_convolved = data_convolved[kernel_size:-kernel_size]
@@ -94,6 +93,7 @@ if __name__ == '__main__':
                 axins2.set_ylim([0.4, 0.6])
             else:
                 axins2.set_ylim([1.6, 1.95])
+            ax.set_ylim([0, 10])
 
         ax.set_xlabel('Iteration', fontsize=12)
         ax.set_ylabel('Loss', fontsize=12)
