@@ -11,7 +11,7 @@
 #SBATCH --time=4320
 # #SBATCH --exclude=a100-st-p4d24xlarge-825,a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437,a100-st-p4d24xlarge-451,a100-st-p4d24xlarge-461
 #SBATCH --requeue
-#SBATCH --comment laion
+#SBATCH --comment openclip
 
 module load openmpi
 module load cuda/11.8
@@ -46,9 +46,9 @@ MODEL=ViT-B-32
 BS=16384
 OPT=clipadamw
 
-EXP_NAME="$OPT-sglint8v2-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-sglint8v5-$MODEL-$BS-$LR-$BETA2-v0"
 
-srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
+srun --comment openclip --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
     --train-data="s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar" \
     --train-num-samples 65536000 \

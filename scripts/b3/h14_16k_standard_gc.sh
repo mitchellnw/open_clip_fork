@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g40423
+#SBATCH --partition=g40
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 8
@@ -9,7 +9,7 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-# #SBATCH --exclude=a100-st-p4d24xlarge-825,a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437,a100-st-p4d24xlarge-451,a100-st-p4d24xlarge-461
+#SBATCH --exclude=ip-26-0-140-150,ip-26-0-134-43
 #SBATCH --requeue
 #SBATCH --comment laion
 
@@ -30,7 +30,7 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.98
+BETA2=0.99
 MODEL=ViT-H-14
 BS=16384
 OPT=customadamw
@@ -39,7 +39,6 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-gc-v0"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
-    --report-to wandb \
     --train-data="s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar" \
     --train-num-samples 65536000 \
     --dataset-type webdataset \
@@ -50,7 +49,6 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-gc-v0"
     --lr $LR \
     --beta2 $BETA2 \
     --workers=10 \
-    --report-to wandb \
     --name ${EXP_NAME} \
     --logs /fsx/home-mitchellw/experimetns/opt3 \
     --model $MODEL \

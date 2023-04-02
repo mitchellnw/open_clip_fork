@@ -289,19 +289,19 @@ def main(args):
         print('Using real Int8, mixed.')
         replace_linear(model, bnb.nn.Linear8bitLtMixed)#
     if args.slint8:
-        print('using switchback linear')
+        print('using switchback vector linear v5')
         from .fp8utils import replace_linear
-        from tkernels.modules import SwitchBackLinear
-        replace_linear(model, SwitchBackLinear)#
+        #from tkernels.modules import SwitchBackGlobalLinear
+        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearVectorized)#
     if args.sglint8:
-        print('using switchback global linear')
+        print('using switchback global linear v5')
         from .fp8utils import replace_linear
-        from tkernels.modules import SwitchBackGlobalLinear
-        replace_linear(model, SwitchBackGlobalLinear)#
+        #from tkernels.modules import SwitchBackGlobalLinear
+        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearGlobal)#
     if args.snew8:
         print('using switchback new linear')
         from .fp8utils import replace_linear
-        from tkernels.modules import SwitchBackNewLinear
+        #from tkernels.modules import SwitchBackNewLinear
         replace_linear(model, SwitchBackNewLinear)#
 
     model_ema_0, model_ema_1, model_ema_2, model_ema_3 = None, None, None, None
