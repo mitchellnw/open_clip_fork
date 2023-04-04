@@ -92,7 +92,7 @@ if __name__ == '__main__':
             data_convolved = data_convolved[kernel_size:-kernel_size]
             ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
             axins2.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, linewidth=2)
-            axins2.set_xlim(17500, 20000)
+            axins2.set_xlim(17750, 20000)
             # if k == 1:
             #     axins2.set_ylim([0.4, 1.])
             # else:
