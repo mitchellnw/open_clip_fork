@@ -48,9 +48,9 @@ if __name__ == '__main__':
     axlabels = []
 
     convert = {
-        'B-32' : 'Base',
-        'L-14' : 'Large',
-        'H-14' : 'Huge',
+        'B-32' : 'ViT-Base',
+        'L-14' : 'ViT-Large',
+        'H-14' : 'ViT-Huge',
     }
 
     #axins2 = zoomed_inset_axes(axlist[0], zoom=3, bbox_to_anchor=(1, 1))
