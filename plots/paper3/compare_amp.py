@@ -42,8 +42,8 @@ if __name__ == '__main__':
     # NOTE: LOOK AT FEATURE STDDEV!
 
     #fig, axlist = plt.subplots(log_level, 2, figsize=(16, 5 * log_level))
-    fig = plt.figure(figsize=(14, 3 * 3))#, layout='tight')
-    gs = gridspec.GridSpec(3, 3)
+    fig = plt.figure(figsize=(14, 3 * 2))#, layout='tight')
+    gs = gridspec.GridSpec(3, 1)
     # if log_level == 1:
     #     axlist = [axlist]
 
@@ -57,52 +57,30 @@ if __name__ == '__main__':
 
     #axins2 = zoomed_inset_axes(axlist[0], zoom=3, bbox_to_anchor=(1, 1))
     for k, (model, d) in enumerate([
-        # 'params-module.visual.class_embedding',
-        # 'params-module.visual.patch_embedding',
-
-        #'params-module.visual.class_embedding',
-        #'params-module.visual.conv1.weight',
-        #params-module.transformer.resblocks.0..csv
-        #'params-module.positional_embedding',
-
-        # 'params-module.visual.conv1.weight',
-        # 'params-module.visual.class_embedding',
-        # 'params-module.visual.positional_embedding',
 
         ('loss', 1),
-        ('amp', 1),
-        #'params-module.visual.ln_pre.weight',
-        # 'params-module.visual.ln_pre.bias',
-
-        ('features2-module.visual.transformer.resblocks.20', 3),
-        ('params-module.visual.conv1.weight', 14),
         #('params-module.visual.transformer.resblocks.0.attn.in_proj_weight', 14),
-        
 
-        ('params-module.visual.class_embedding', 6),
-        # 'params-module.visual.positional_embedding',
-        #'params-module.visual.transformer.resblocks.0.mlp.c_proj.weight',
-        ('params-module.visual.transformer.resblocks.0.attn.in_proj_weight', 6),
-
-
-        # 'params-module.visual.transformer.resblocks.0.ln_1.weight',
-        # 'params-module.visual.transformer.resblocks.10.ln_1.weight',
-
-        # 'params-module.visual.transformer.resblocks.0.mlp.c_fc.weight',
-        # 'params-module.visual.transformer.resblocks.10.mlp.c_fc.weight',
+        ('params-module.visual.conv1.weight', 14),
+        #('params-module.visual.conv1.weight', 6),
 
     ]):
-        ax = fig.add_subplot(gs[k // 3, k % 3])
+        ax = fig.add_subplot(gs[k // 1, k % 1])
         #axins2 = zoomed_inset_axes(ax, zoom=4 if k ==2 else 8, loc=1)
         #params-module.transformer.resblocks.0.attn.in_proj_weight.csv
         for template, name, color, marker in [
             # ('opt3/clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'gc', 'C3', -1),
             # ('opt3/clipadamw-camp65k-ViT-H-14-16384-2e-3-0.98-v0', 'gc', 'C4', -1),
             #('opt3/clipadamw-amp-ViT-H-14-16384-2e-3-0.99-v0', 'gc', 'C5', -1),
-            #('opt/customadamw-ViT-H-14-16384-2e-3-0.98-v4', 'gc', 'C6', -1),
-            #('opt/customadamw-ViT-H-14-16384-2e-3-0.99-v4', 'gc', 'C5', -1),
+            ('opt/customadamw-ViT-H-14-16384-2e-3-0.9-v1', 'gc', 'gray', -1),
+            #('opt3/customadamw-ViTDP-H-14-16384-2e-3-0.98-v0', 'clip = 0.99','C2', -1),
+            #('opt3/customadamw-ViTls0-H-14-16384-2e-3-0.99-v0', 'clip = 0.99','C8', -1),
+
+            
+            ('opt/customadamw-ViT-H-14-16384-2e-3-0.98-v1', 'gc', 'C6', -1),
+    
             #('opt/customadamw-amp-ViT-H-14-16384-2e-3-0.98-extraln-v1', 'gc', 'C5', -1),
-            ('opt/clipadamw-amp-ViTDP-L-14-16384-2e-3-0.98-v1', 'gc', 'C0', -1),
+            # ('opt/clipadamw-amp-ViTDP-L-14-16384-2e-3-0.98-v1', 'gc', 'C0', -1),
 
         ]:
             newtemp = template.format(model)
@@ -119,26 +97,41 @@ if __name__ == '__main__':
             if d == 6:
                 ax.set_yscale('log')
 
-            l1 = 2900
-            l2 = 3000
-            l1 = 2879
-            l2 = 3021
+            # l1 = 2900
+            # l2 = 3000
+            # l1 = 2850
+            # l2 = 3050
+            l1 = 500
+            l2 = 5000
+            l1, l2 = 2000, 3000
             ax.set_xlim(l1, l2)
             #axins2.set_xlim(l1, l2)
             # make an axvline wiht a skinny line
-            ax.axvline(2924, color='red', linestyle='--', linewidth=0.9)
-            #ax.axvline(2928, color='green', linestyle='--', linewidth=0.75)
+            #ax.axvline(2924, color='red', linestyle='--', linewidth=0.75)
+
             tdf = df[(df[0] > l1) & (df[0] < l2)]
             if d == 14:
-                ax.plot(tdf.iloc[:, 0], np.sqrt(tdf.iloc[:, d]), color=color,alpha=1, label=name, linewidth=1.0)
+                ax.plot(tdf.iloc[:, 0], np.sqrt(tdf.iloc[:, d]), color=color,alpha=1, label=name, linewidth=0.9)
             else:
-                ax.plot(tdf.iloc[:, 0], tdf.iloc[:, d], color=color,alpha=1, label=name, linewidth=1.0)#, marker='o')#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                ax.plot(tdf.iloc[:, 0], tdf.iloc[:, d], color=color,alpha=1, label=name, linewidth=0.9)#, marker='o')#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
             badness = 0
             if d == 6:
                 for axv in tdf[np.isinf(tdf[6])][0].values:
-                    ax.axvline(axv, color='gray', linestyle='--', alpha=0.75, linewidth=0.9)
+                    ax.axvline(axv, color='gray', linestyle='--', alpha=0.75, linewidth=0.75)
                     print(axv)
                     badness += 1
+
+
+            for m in [2123, 2487, 2726, 2968]:
+                if template == 'opt/customadamw-ViT-H-14-16384-2e-3-0.98-v1':
+                    ax.axvline(m, color='C9', linestyle='--', linewidth=1.)
+                    mdf = df[df[0] == m]
+                    fn = np.sqrt if d == 14 else lambda x: x
+                    #ax.plot(m, fn(mdf[d].values[-1]), color='C6', marker='o', alpha=1, markersize=4)
+                    ax.scatter(m, fn(mdf[d].values[-1]), s=30, facecolors='C6', edgecolors='C9', linewidth=1, zorder=10)
+
+
+
 
             
 
@@ -164,8 +157,12 @@ if __name__ == '__main__':
             # if 'amp' in model:
             #     ax.set_yscale('log')
             #     #axins2.set_yscale('log')
+            
 
-        ax.set_xlabel('Iteration', fontsize=11)
+        if k == 1:
+            ax.set_xlabel('    Iteration', fontsize=11)
+            ax.set_yticks([1,2,3,4])
+            ax.set_yticklabels(['1', '2', '3', '4'])
         if model == 'loss':
             ax.set_ylabel('Loss', fontsize=11)
         elif model == 'amp':
@@ -198,16 +195,21 @@ if __name__ == '__main__':
         ax.grid()
     import matplotlib.lines as mlines
 
-    red_dashed_line = mlines.Line2D([], [], color='red', linestyle='--', label='RMS spike in embedding layer which preceeds loss spike')
+    # red_dashed_line = mlines.Line2D([], [], color='red', linestyle='--', label='RMS spike in embedding layer which preceeds loss spike')
 
-    grey_dashed_line = mlines.Line2D([], [], color='gray', linestyle='--', label='Inf gradient causing grad scaler decrease')
+    # grey_dashed_line = mlines.Line2D([], [], color='grey', linestyle='--', label='Inf gradient causing grad scaler decrease')
 
     # Add the custom legend to the plot
-    ax.legend(handles=[red_dashed_line, grey_dashed_line], bbox_to_anchor=(0.5, -0.27), ncol=2,fontsize=10.5)
+    #ax.legend(handles=[red_dashed_line, grey_dashed_line], bbox_to_anchor=(0.5, -0.27), ncol=2,fontsize=10.5)
 
+    red_dashed_line = mlines.Line2D([], [], color='C9', linestyle='--', label='RMS spike preceeding loss spike')
+    red_dashed_line1 = mlines.Line2D([], [], color='C6', linestyle='-', label='beta2 = 0.98')
+    red_dashed_line2 = mlines.Line2D([], [], color='gray', linestyle='-', label='beta2 = 0.9')
+    #ax.legend(handles=[red_dashed_line, red_dashed_line1, red_dashed_line2], bbox_to_anchor=(0.5025, 0.85), ncol=3,fontsize=10)
+    ax.legend(handles=[red_dashed_line, red_dashed_line1, red_dashed_line2], bbox_to_anchor=(0.47, -0.2), ncol=3,fontsize=10)
 
     fig.subplots_adjust(
         top=0.95, left=0.07, right=0.9, bottom=0.3, wspace=0.32, hspace=0.35
     )
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper3/amp.pdf', bbox_inches='tight')
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper3/compare_amp.pdf', bbox_inches='tight')

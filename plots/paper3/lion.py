@@ -68,8 +68,8 @@ if __name__ == '__main__':
 
         for template, name, color, marker in [
             ('opt/customadamw-ViT-{}-16384-2e-3-0.99-v0', 'default', cmap(1.), -1),
-            ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0', '+ grad clipping', 'C9', -1),
             ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0', '+ update clipping','C1', -1),
+            ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0', '+ grad clipping', 'C9', -1),
             ('opt3/clipadamw-ViTDP-{}-16384-2e-3-0.99-v0', '+ update clipping + input norm','C2', -1),
             #('opt3/customadamw-ViTls0-{}-16384-2e-3-0.99-v0', 'gc', 'C4', -1),
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
             kernel = np.ones(kernel_size) / kernel_size
             data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
             data_convolved = data_convolved[kernel_size:-kernel_size]
-            ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=1.3)
+            ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=1)
             # axins2.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, linewidth=1)
             # axins2.set_xlim(18500, 20000)
             # if k == 0:

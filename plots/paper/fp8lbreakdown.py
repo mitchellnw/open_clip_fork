@@ -106,10 +106,10 @@ if __name__ == '__main__':
     file_list = [        
         # B
         (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'bfloat16 baseline','C0', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 global','C5', 9800),
-        (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'fp8 global + grad clip','C9', 6900),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'fp8 global + KQ Layernorm','C8', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0',  'fp8 global + zero-init layerscale','gray', ll),
+        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 tensor quantize','C5', 9800),
+        (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'fp8 tensor + grad clip','C9', 6900),
+        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'fp8 tensor + KQ Layernorm','C8', ll),
+        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0',  'fp8 tensor + zero-init layerscale','gray', ll),
 
     ]
 

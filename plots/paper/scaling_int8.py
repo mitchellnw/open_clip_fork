@@ -93,7 +93,7 @@ if __name__ == '__main__':
     for template, name, color, marker in [
 
         ('clipadamw-ViT-{}-16384-2e-3-0.98-v0', 'bfloat16 baseline','C0', 's'),
-        ('clipadamw-camp65kfp8global-ViT-{}-16384-2e-3-0.98-v0', 'standard fp8 baseline','C5', '^'),
+        ('clipadamw-camp65kfp8global-ViT-{}-16384-2e-3-0.98-v0', 'fp8 tensor-wise baseline','C5', '^'),
         ('clipadamw-camp65kfp8mix-ViT-{}-16384-2e-3-0.98-v0', 'SwitchBack fp8','C6', 'o'),
         #('clipadamw-camp65kfp8global-ViTls0-{}-16384-2e-3-0.98-v0', 'k','k', 'o'),
 

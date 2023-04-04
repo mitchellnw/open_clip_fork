@@ -30,7 +30,7 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.5
+BETA2=0.9
 MODEL=ViT-H-14
 BS=16384
 OPT=customadamw
@@ -73,3 +73,8 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v1"
 # 9 - 
 # 8 - 
 # 5 -
+
+# customadamw-ViT-L-14-16384-2e-3-0.8-v1
+# customadamw-ViT-H-14-16384-2e-3-0.98-v1
+# customadamw-ViT-H-14-16384-2e-3-0.9-v1
+# customadamw-ViT-B-32-16384-5e-3-0.99-v0
