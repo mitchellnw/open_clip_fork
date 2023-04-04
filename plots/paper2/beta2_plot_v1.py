@@ -115,9 +115,10 @@ if __name__ == '__main__':
 
         if k == 0:
             ax.set_title("ViT-Base model", fontsize=12)
-        else:
+        elif k == 1:
             ax.set_title("ViT-Large model", fontsize=12)
-
+        elif k == 2:
+            ax.set_title("ViT-Huge model", fontsize=12)
     # for k, model in enumerate(['B-32', 'H-14']):
     #     ax = fig.add_subplot(gs[0, k+2])
     #     axins2 = zoomed_inset_axes(ax, zoom=4, loc=1)
