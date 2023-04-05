@@ -132,7 +132,7 @@ if __name__ == '__main__':
             if d == 14:
                 ax.plot(tdf.iloc[:, 0], np.sqrt(tdf.iloc[:, d]), color=color,alpha=1, label=name, linewidth=1.0)
             else:
-                ax.plot(tdf.iloc[:, 0], tdf.iloc[:, d], color=color,alpha=1, label=name, linewidth=1.0)#, marker='o')#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
+                ax.plot(tdf.iloc[:, 0], np.sqrt(tdf.iloc[:, d]), color=color,alpha=1, label=name, linewidth=1.0)#, marker='o')#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
             badness = 0
             if d == 6:
                 for axv in tdf[np.isinf(tdf[6])][0].values:

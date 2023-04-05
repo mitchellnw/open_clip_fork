@@ -85,8 +85,6 @@ if __name__ == '__main__':
             ('params-module.visual.transformer.resblocks.20.mlp.c_proj.weight', 6),
             ('params-module.visual.transformer.resblocks.30.mlp.c_proj.weight', 6),
 
-        
-
         ]):
 
             for template, name, color, marker in [
@@ -113,19 +111,19 @@ if __name__ == '__main__':
 
                 kernel_size = 40
                 kernel = np.ones(kernel_size) / kernel_size
-                data_convolved = np.convolve(tdf.iloc[:, 6], kernel, mode='same')
+                data_convolved = np.convolve(np.sqrt(tdf.iloc[:, 6]), kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
                 ax.plot(tdf.iloc[:, 0][kernel_size:-kernel_size], data_convolved, color=f'C{k}', alpha=1, linewidth=2, label=f'Block {model[-2:]} max')
 
 
 
                 kernel = np.ones(kernel_size) / kernel_size
-                data_convolved = np.convolve(tdf.iloc[:, 4], kernel, mode='same')
+                data_convolved = np.convolve(np.sqrt(tdf.iloc[:, 4]), kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
                 ax.plot(tdf.iloc[:, 0][kernel_size:-kernel_size], data_convolved, color=f'C{k}', linewidth=2, label=f'Block {model[-2:]} max', alpha=0.4)
 
 
-            ax.set_ylim([1e-16, 1e-2])
+            ax.set_ylim([1e-9, 2e-2])
             ax.set_ylabel('MLP weight gradient', fontsize=12)
             ax.set_xlabel('Iteration', fontsize=12)
 

@@ -121,6 +121,7 @@ if __name__ == '__main__':
         ax.tick_params(axis='y', labelsize=11)
         ax.grid()
         #ax.set_ylim([1-k,6])
+        ax.set_title('ViT-Huge, Beta2 = 0.99', fontsize=10)
 
 
         # if k == 0:

@@ -9,13 +9,17 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-#SBATCH --exclude=ip-26-0-140-150,ip-26-0-134-43
+#SBATCH --exclude=ip-26-0-129-245
+# #SBATCH --exclude=a100-st-p4d24xlarge-825,a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437,a100-st-p4d24xlarge-451,a100-st-p4d24xlarge-461
 #SBATCH --requeue
 #SBATCH --comment laion
 
 # can get up to 320
 # 16 * 256 is right
 # 14 * 292
+
+module load openmpi
+module load cuda/11.8
 
 export MASTER_PORT=12802
 
@@ -30,12 +34,12 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.995
+BETA2=0.98
 MODEL=ViT-H-14
 BS=16384
-OPT=customadamw
+OPT=clipadamw
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-gc-v0"
+EXP_NAME="$OPT-sglint8mem-$MODEL-$BS-$LR-$BETA2-v0"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -57,13 +61,14 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-gc-v0"
     --local-loss \
     --gather-with-grad \
     --grad-checkpointing \
-    --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
-    --grad-clip-norm 1. \
     --wandb-project-name open_clip_12 \
     --force-patch-dropout 0.5 \
     --resume 'latest' \
+    --sglint8mem \
+    --precision custom_fp16 \
+    --custom-scaler 65536 \
     --custom-attention vanilla \
     --delete-previous-checkpoint \
     --opt $OPT

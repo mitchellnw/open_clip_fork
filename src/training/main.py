@@ -46,6 +46,7 @@ from training.optimizers.ladamw import LAdamW
 from training.optimizers.ladamw2 import LAdamW2
 from training.optimizers.skipadamw import SkipAdamW
 from training.optimizers.monitoradamw import MonitorAdamW
+from training.optimizers.tadamw import TAdamW
 
 from training.ema import ModelEmaV2
 from training.optimizers.ulion import ULion
@@ -298,6 +299,11 @@ def main(args):
         from .fp8utils import replace_linear
         #from tkernels.modules import SwitchBackGlobalLinear
         replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearGlobal)#
+    if args.sglint8mem:
+        print('using switchback global linear mem')
+        from .fp8utils import replace_linear
+        #from tkernels.modules import SwitchBackGlobalLinear
+        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearGlobalMemEfficient)#
     if args.snew8:
         print('using switchback new linear')
         from .fp8utils import replace_linear
@@ -346,7 +352,7 @@ def main(args):
         if args.ddp_static_graph:
             # this doesn't exist in older PyTorch, arg only added if enabled
             ddp_args['static_graph'] = True
-        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix or args.slint8 or args.sglint8 or args.snew8:
+        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix or args.slint8 or args.sglint8 or args.snew8 or args.sglint8mem:
             model = model.to(device)
 
         if args.rms_load is not None:
@@ -382,6 +388,16 @@ def main(args):
 
         if args.opt.lower() == 'customadamw':
             optimizer = CustomAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'tadamw':
+            optimizer = TAdamW(
                 [
                     {"params": gain_or_bias_params, "weight_decay": 0.},
                     {"params": rest_params, "weight_decay": args.wd},

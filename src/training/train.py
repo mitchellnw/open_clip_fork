@@ -310,7 +310,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                                 optimizer.state[p]['exp_avg_sq'].max().item(), # 'u_max'
                                 optimizer.state[p]['exp_avg_sq'].min().item(), # 'u_min
                             ]
-                        if 'customadamw' in args.opt or 'clipadamw' in args.opt or 'stableadamw' in args.opt or 'momentadamw' in args.opt or 'skipadamw' in args.opt or 'monitoradamw' in args.opt:
+                        if 'customadamw' in args.opt or 'clipadamw' in args.opt or 'momentadamw' in args.opt or 'skipadamw' in args.opt or 'monitoradamw' in args.opt:
                             to_log = to_log + [
                                 optimizer.state[p]['rms_mean'],
                                 optimizer.state[p]['rms_std'],
@@ -322,11 +322,11 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                                 optimizer.state[p]['relu'],
                                 optimizer.state[p]['beta2hat'],
                             ]
-                        if 'stableadamw' in args.opt:
-                            to_log = to_log + [
-                                optimizer.state[p]['k'],
-                                optimizer.state[p]['err'],
-                            ]
+                        # if 'stableadamw' in args.opt:
+                        #     to_log = to_log + [
+                        #         optimizer.state[p]['k'],
+                        #         optimizer.state[p]['err'],
+                        #     ]
 
                         if 'monitoradamw' in args.opt:
                             to_log = to_log + [

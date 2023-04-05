@@ -41,8 +41,8 @@ if __name__ == '__main__':
     # NOTE: LOOK AT FEATURE STDDEV!
 
     #fig, axlist = plt.subplots(log_level, 2, figsize=(16, 5 * log_level))
-    fig = plt.figure(figsize=(14, 3))#, layout='tight')
-    gs = gridspec.GridSpec(1, 3)
+    fig = plt.figure(figsize=(12, 3))#, layout='tight')
+    gs = gridspec.GridSpec(1, 2)
     # if log_level == 1:
     #     axlist = [axlist]
 
@@ -53,59 +53,119 @@ if __name__ == '__main__':
         'L-14' : 'Large',
         'H-14' : 'Huge',
     }
+    idx = {
+        0.5 : 0,
+        0.8 : 1,
+
+        0.9 : 2,
+        0.95 : 3,
+        0.98 : 4,
+        0.99 : 5,
+    }
 
     #axins2 = zoomed_inset_axes(axlist[0], zoom=3, bbox_to_anchor=(1, 1))
-    for k, model in enumerate(['B-32', 'L-14', 'H-14']):
+    for k, model in enumerate(['H-14']):
         ax = fig.add_subplot(gs[0, k])
-        axins2 = zoomed_inset_axes(ax, zoom=10 if k ==2 else 8, loc=1)
+        #axins2 = zoomed_inset_axes(ax, zoom=10 if k ==2 else 8, loc=1)
 
-        for template, name, color, marker in [
-            ('customadamw-ViT-{}-16384-2e-3-0.99-v0', 'beta2 = 0.99',cmap(1.), -1),
-            ('customadamw-ViT-{}-16384-2e-3-0.98-v0', 'beta2 = 0.98',cmap(3./4), -1),
-            ('customadamw-ViT-{}-16384-2e-3-0.95-v0', 'beta2 = 0.95',cmap(2./4), -1),
-            ('customadamw-ViT-{}-16384-2e-3-0.9-v0', 'beta2 = 0.9',cmap(1./4), -1),
-            #('customadamw-ViT-{}-16384-2e-3-0.8-v0', 'beta2 = 0.8','k', -1),
-            ('customadamw-ViT-{}-16384-2e-3-0.5-v0', 'beta2 = 0.5',cmap(0./4), -1),
-        ]:
+        xs, ys = [], []
+
+        to_enum = [
+            ('customadamw-ViT-{}-16384-2e-3-0.99-v1', 'beta2 = 0.99',cmap(1.), -1),
+            ('customadamw-ViT-{}-16384-2e-3-0.98-v1', 'beta2 = 0.98',cmap(3./4), -1),
+            ('customadamw-ViT-{}-16384-2e-3-0.95-v1', 'beta2 = 0.95',cmap(2./4), -1),
+            ('customadamw-ViT-{}-16384-2e-3-0.9-v1', 'beta2 = 0.9',cmap(1./4), -1),
+            ('customadamw-ViT-{}-16384-2e-3-0.8-v4', 'beta2 = 0.8',cmap(1./4), -1),
+
+            #('customadamw-ViT-{}-16384-2e-3-0.8-v1', 'beta2 = 0.8','k', -1),
+            ('customadamw-ViT-{}-16384-2e-3-0.5-v1', 'beta2 = 0.5',cmap(0./4), -1),
+        ]
+        
+
+        for template, name, color, marker in reversed(to_enum):
             newtemp = template.format(model)
-            fname = f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/data/0/loss.csv'
-            if not os.path.exists(fname):
-                fname = fname.replace('v0', 'v1')
-            if not os.path.exists(fname):
-                print('ERROR', fname)
-                continue
-            df = pd.read_csv(fname, names=list(range(2)))
-            df = proc(df, -1)
-            #df = df[df[0] > 30000]
-            #ax.set_yscale('log')
-            #ax.plot(df.iloc[:, 0], np.minimum(min_loss, df.iloc[:, 1]), color=color,alpha=1, label=name)#, alpha=0.5)#, label='beta2 = 0.99' if j ==0 else 'beta2 = 0.9')#, alpha=0.3)#, label=name)# alpha=0.5,
-            #print(fname, df)
-            kernel = np.ones(kernel_size) / kernel_size
-            data_convolved = np.convolve(df.iloc[:, 1], kernel, mode='same')
-            data_convolved = data_convolved[kernel_size:-kernel_size]
-            ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
-            axins2.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, linewidth=2)
-            axins2.set_xlim(18500, 20000)
-            if k == 1:
-                axins2.set_ylim([0.4, 1.])
-            elif k == 2:
-                axins2.set_xlim(19000, 20000)
-                axins2.set_ylim([0.4, 0.6])
-            else:
-                axins2.set_ylim([1.6, 1.95])
-            ax.set_ylim([0, 10])
+            if not os.path.exists(f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'):
+                newtemp = newtemp.replace('v1', 'v0')
+            if not os.path.exists(f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'):
+                print('error', newtemp)
+            fname = f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'
+            top1 = get_metrics(fname)
+            print(fname, top1)
+            if top1 > 0.1:
+                xs.append(float(name.split("=")[-1].strip()))
+                ys.append(top1)
+
+        ax.plot([idx[j] for j in xs], ys, marker='o', color=color, label='default', markersize=6.5)
+
+
+            # ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0', '+ grad clipping', 'C9', -1),
+            # ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0', '+ update clipping','C1', -1),
+        
+        xs, ys = [], []
+        to_enum = [
+            ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0','beta2 = 0.99', cmap(0.), -1),
+            ('opt3/customadamw-ViT-{}-16384-2e-3-0.98-gc1-v0','beta2 = 0.98', cmap(0.), -1),
+        ]
+
+        for template, name, color, marker in reversed(to_enum):
+            newtemp = template.format(model)
+            fname = f'/fsx/home-mitchellw/experimetns/{newtemp}/checkpoints/eval.pt'
+            top1 = get_metrics(fname)
+            print(fname, top1)
+            if top1 > 0.1:
+                xs.append(float(name.split("=")[-1].strip()))
+                ys.append(top1)
+        ax.plot([idx[j] for j in xs], ys, marker='s', color=color, label='+ grad clipping', markersize=6.5)
+
+
+        xs, ys = [], []
+        to_enum = [
+            #('clipadamw-ViT-{}-16384-2e-3-0.995-v0','beta2 = 0.99', cmap(0.5), -1),
+            ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0','beta2 = 0.99', 'C1', -1),
+            ('opt3/clipadamw-ViT-{}-16384-2e-3-0.98-v0','beta2 = 0.98', 'C1', -1),
+        ]
+
+        for template, name, color, marker in reversed(to_enum):
+            newtemp = template.format(model)
+            fname = f'/fsx/home-mitchellw/experimetns/{newtemp}/checkpoints/eval.pt'
+            top1 = get_metrics(fname)
+            print(fname, top1)
+            if top1 > 0.1:
+                xs.append(float(name.split("=")[-1].strip()))
+                ys.append(top1)
+        ax.plot([idx[j] for j in xs], ys, marker='^', color=color, label='+ update clipping', markersize=6.5)
+
+
+        xs, ys = [], []
+        to_enum = [
+            #('clipadamw-ViT-{}-16384-2e-3-0.995-v0','beta2 = 0.99', cmap(0.5), -1),
+            ('opt3/clipadamw-ViTDP-{}-16384-2e-3-0.99-v0','beta2 = 0.99', 'C2', -1),
+            #('opt/clipadamw-amp-ViTDP-{}-16384-2e-3-0.99-v1','beta2 = 0.99', 'C2', -1),
+            ('opt/clipadamw-amp-ViTDP-{}-16384-2e-3-0.98-v1','beta2 = 0.98', 'C2', -1),
+            #('opt/clipadamw-amp-ViTDP-{}-16384-2e-3-0.995-v1','beta2 = 0.9#', 'C2', -1),
+
+        ]
+
+        for template, name, color, marker in reversed(to_enum):
+            newtemp = template.format(model)
+            fname = f'/fsx/home-mitchellw/experimetns/{newtemp}/checkpoints/eval.pt'
+            top1 = get_metrics(fname)
+            print(fname, top1)
+            if top1 > 0.1:
+                xs.append(float(name.split("=")[-1].strip()))
+                ys.append(top1)
+        ax.plot([idx[j] for j in xs], ys, marker='P', color=color, label='+ update clipping + input norm', markersize=7)
+
 
         ax.set_xlabel('Iteration', fontsize=12)
         ax.set_ylabel('Loss', fontsize=12)
-        if k == 1:
-            leg = ax.legend(bbox_to_anchor=(1.75, -0.27), ncol=5,fontsize=10.5)
-            #leg.get_texts()[-1].set_fontweight('bold')
 
 
-        axins2.set_xticks([])
-        axins2.set_yticks([])
-        axins2.tick_params(labelleft=False, labelbottom=False)
-        mark_inset(ax, axins2, loc1=3, loc2=4, fc="none", ec="0.2")
+
+
+        # ax.set_xticks(idx.keys())
+        ax.set_xticks([0, 1, 2, 3, 4, 5])
+        ax.set_xticklabels([0.5,0.8,  0.9, 0.95, 0.98, 0.99])
 
         ax.tick_params(axis='x', labelsize=11)
         ax.tick_params(axis='y', labelsize=11)
@@ -113,13 +173,19 @@ if __name__ == '__main__':
         #ax.set_ylim([1-k,6])
 
 
-        if k == 0:
-            ax.set_title("ViT-Base model", fontsize=12)
-        else:
-            ax.set_title("ViT-Large model", fontsize=12)
-
+        # if k == 0:
+        #     ax.set_title("ViT-Base model", fontsize=12)
+        # elif k == 1:
+        #     ax.set_title("ViT-Large model", fontsize=12)
+        # elif k == 2:
+        #     ax.set_title("ViT-Huge model", fontsize=12)
+    ax.set_ylim([55, 58])
+    ax.set_ylabel('Zero-shot ImageNet accuracy', fontsize=12)
+    ax.set_xlabel('Beta2', fontsize=12)
+    leg = ax.legend(fontsize=10)
+    ax.set_title('ViT-Huge', fontsize=10)
     fig.subplots_adjust(
         top=0.95, left=0.07, right=0.9, bottom=0.3, wspace=0.32, hspace=0.28
     )
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper2/beta2_plot_v1.pdf', bbox_inches='tight')
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper4/betas.pdf', bbox_inches='tight')

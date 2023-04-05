@@ -8,61 +8,12 @@ except ImportError as e:
     print('triton is not installed, please install by running `pip install triton -U --pre`')
     exit()
 
-
 @triton.autotune(configs = [
-    triton.Config({}, num_warps = 4),
+    triton.Config({'BLOCK_SIZE': 4096}, num_warps = 4),
 
 ], key = ['n_elements'])
 @triton.jit
-def update_fn_kernel1(
-    grad_ptr,
-    exp_avg2_ptr,
-    smem_numerator_ptr,
-    smem_denominator_ptr,
-    beta2,
-    eps,
-    update_clip,
-    n_elements,
-    BLOCK_SIZE: tl.constexpr,
-):
-    pid = tl.program_id(axis = 0)
-
-    block_start = pid * BLOCK_SIZE
-    offsets = block_start + tl.arange(0, BLOCK_SIZE)
-
-    mask = offsets < n_elements
-
-    # offsetted pointers
-
-    offset_grad_ptr = grad_ptr + offsets
-    offset_exp_avg2_ptr = exp_avg2_ptr + offsets
-
-    # load, early exit if nan
-    grad = tl.load(offset_grad_ptr, mask = mask)
-    if tl.max(tl.libdevice.isnan(grad), 0) >= 1:
-        return
-
-    exp_avg2 = tl.load(offset_exp_avg2_ptr, mask = mask)
-    g2 = grad * grad
-    exp_avg2 = beta2 * exp_avg2 + (1 - beta2) * g2
-    
-    if update_clip:
-        ratio = tl.where(mask, g2 / tl.maximum(exp_avg2, eps * eps), 0)
-        numerator = tl.sum(tl.where(mask, ratio, 0), axis=0)
-        denominator = tl.sum(mask, axis=0)
-        tl.store(smem_numerator_ptr + pid, numerator)
-        tl.store(smem_denominator_ptr + pid, denominator)
-
-    tl.store(offset_exp_avg2_ptr, exp_avg2, mask = mask)
-
-
-
-@triton.autotune(configs = [
-    triton.Config({}, num_warps = 4),
-
-], key = ['n_elements'])
-@triton.jit
-def update_fn_kernel2(
+def update_fn_kernel(
     p_ptr,
     grad_ptr,
     exp_avg_ptr,
@@ -70,7 +21,7 @@ def update_fn_kernel2(
     lr,
     wd,
     beta1,
-    rms,
+    beta2,
     eps,
     update_clip,
     n_elements,
@@ -105,16 +56,24 @@ def update_fn_kernel2(
 
     # update exp_avgs
     exp_avg = beta1 * exp_avg + (1 - beta1) * grad
+    g2 = grad * grad
+    exp_avg2 = beta2 * exp_avg2 + (1 - beta2) * g2
 
+    
+    if update_clip:
+        ratio = tl.where(mask, g2 / tl.maximum(exp_avg2, eps * eps), 0)
+        rms = tl.sqrt(tl.sum(ratio, axis=0) / tl.sum(mask, axis=0))
+        eta = lr / tl.maximum(rms, 1.)
+    else:
+        eta = lr
 
-    rms = tl.load(rms)
-    eta = lr / tl.maximum(rms, 1.)
     p = p - eta * (exp_avg / (tl.sqrt(exp_avg2) + eps))
 
     # store new params and momentum running average coefficient
 
     tl.store(offset_p_ptr, p, mask = mask)
     tl.store(offset_exp_avg_ptr, exp_avg, mask = mask)
+    tl.store(offset_exp_avg2_ptr, exp_avg2, mask = mask)
 
 
 def update_fn(
@@ -132,31 +91,9 @@ def update_fn(
     assert all([t.is_cuda for t in (p, grad, exp_avg)])
     n_elements = p.numel()
 
-    BLOCK_SIZE = 1024
-    nkernels = triton.cdiv(n_elements, BLOCK_SIZE)
-    grid = lambda meta: (nkernels,)
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)    
 
-    smem_numerator = torch.zeros(nkernels, dtype=torch.float32, device=p.device)
-    smem_denominator = torch.zeros(nkernels, dtype=torch.int32, device=p.device)
-    
-    update_fn_kernel1[grid](
-        grad,
-        exp_avg2,
-        smem_numerator,
-        smem_denominator,
-        beta2,
-        eps,
-        update_clip,
-        n_elements,
-        BLOCK_SIZE,
-    )
-
-    if update_clip:
-        rms = torch.sqrt(smem_numerator.sum() / smem_denominator.sum())
-    else:
-        rms = torch.tensor(1.0, device=p.device)
-
-    update_fn_kernel2[grid](
+    update_fn_kernel[grid](
         p,
         grad,
         exp_avg,
@@ -164,11 +101,10 @@ def update_fn(
         lr,
         wd,
         beta1,
-        rms,
+        beta2,
         eps,
         update_clip,
-        n_elements,
-        BLOCK_SIZE,
+        n_elements
     )
 
 def test_update(
@@ -202,7 +138,7 @@ def test_update(
         g.pow(2), 
         torch.maximum(u, (eps ** 2) * torch.ones_like(u))
     )
-    # rms = torch.tensor(1.)
+    #rms = torch.tensor(1.)
 
     #p = p.mul_(1.0-lr*wd)
     p = p.mul_(1.0-lr*wd).addcdiv_(
@@ -216,13 +152,13 @@ def test_update(
 import numpy as np
 import torch
 
-class StableAdamW(torch.optim.Optimizer):
+class TAdamW(torch.optim.Optimizer):
 
     # Setting things up
     def __init__(self, params, lr=0.004, weight_decay=0.2, betas=(0.9, 0.999), eps=1e-6, update_clip=True):
         beta1, beta2 = betas[0], betas[1]
         defaults = dict(lr=lr, weight_decay=weight_decay, beta1=beta1, beta2=beta2)
-        super(StableAdamW, self).__init__(params, defaults)
+        super(TAdamW, self).__init__(params, defaults)
 
         self.initial_step=True # a flag for an initial step
         self.eps=eps
@@ -231,13 +167,13 @@ class StableAdamW(torch.optim.Optimizer):
         for group in self.param_groups:
             group['step'] = 1.
         
-        print('Using StableAdamW-v1')
+        print('Using TAdamW-v1')
 
 
     def __setstate__(self, state):
-        super(StableAdamW, self).__setstate__(state)
+        super(TAdamW, self).__setstate__(state)
         
-    # One StableAdamW step
+    # One TAdamW step
     def step(self, closure=None):
 
         loss = None
@@ -284,10 +220,10 @@ class StableAdamW(torch.optim.Optimizer):
 
 
 if __name__ == '__main__':
-    test_u = torch.randn(1024, 1024).cuda().abs()
-    test_v = torch.randn(1024, 1024).cuda()
-    test_p = torch.randn(1024, 1024).cuda()
-    test_g = torch.randn(1024, 1024).cuda()
+    test_u = torch.randn(1000, 1025).cuda().abs()
+    test_v = torch.randn(1000, 1025).cuda()
+    test_p = torch.randn(1000, 1025).cuda()
+    test_g = torch.randn(1000, 1025).cuda()
 
     test_u2 = test_u.clone()
     test_v2 = test_v.clone()
@@ -310,7 +246,7 @@ if __name__ == '__main__':
     )
 
     update_fn(
-        test_p2, test_g2, test_v2, test_u2, lr, wd, beta1, beta2, eps, False,
+        test_p2, test_g2, test_v2, test_u2, lr, wd, beta1, beta2, eps, True,
     )
 
     #print((oldp - test_p2).abs().mean())
@@ -327,14 +263,14 @@ if __name__ == '__main__':
     repeat = 32
     for _ in range(repeat // 2):
         update_fn(
-            test_p2, test_g2, test_v2, test_u2, lr, wd, beta1, beta2, eps, False,
+            test_p2, test_g2, test_v2, test_u2, lr, wd, beta1, beta2, eps, True,
         )
 
     torch.cuda.synchronize()
     start = time.time()
     for _ in range(repeat):
         update_fn(
-            test_p2, test_g2, test_v2, test_u2, lr, wd, beta1, beta2, eps, False,
+            test_p2, test_g2, test_v2, test_u2, lr, wd, beta1, beta2, eps, True,
         )
 
     torch.cuda.synchronize()

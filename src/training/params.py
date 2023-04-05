@@ -492,6 +492,11 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "--sglint8mem",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--snew8",
         default=False,
         action="store_true",

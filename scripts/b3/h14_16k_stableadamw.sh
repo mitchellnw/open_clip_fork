@@ -9,7 +9,8 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-#SBATCH --exclude=ip-26-0-140-150,ip-26-0-134-43
+#SBATCH --exclude=ip-26-0-129-245
+# #SBATCH --exclude=a100-st-p4d24xlarge-825,a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437,a100-st-p4d24xlarge-451,a100-st-p4d24xlarge-461
 #SBATCH --requeue
 #SBATCH --comment laion
 
@@ -17,10 +18,25 @@
 # 16 * 256 is right
 # 14 * 292
 
+module load openmpi
+module load cuda/11.8
+
+export MASTER_ADDR=`hostname`
 export MASTER_PORT=12802
+export NCCL_PROTO=simple
+export FI_EFA_FORK_SAFE=1
+export FI_LOG_LEVEL=1
+export FI_EFA_USE_DEVICE_RDMA=1
+export NCCL_DEBUG=info
 
 export PYTHONFAULTHANDLER=1
+
 export CUDA_LAUNCH_BLOCKING=0
+export OMPI_MCA_mtl_base_verbose=1
+export FI_EFA_ENABLE_SHM_TRANSFER=0
+export FI_PROVIDER=efa
+export FI_EFA_TX_MIN_CREDITS=64
+export NCCL_TREE_THRESHOLD=0
 
 export HOSTNAMES=`scontrol show hostnames "$SLURM_JOB_NODELIST"`
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
@@ -30,12 +46,12 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.995
+BETA2=0.98
 MODEL=ViT-H-14
 BS=16384
-OPT=customadamw
+OPT=stableadamw
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-gc-v0"
+EXP_NAME="$OPT-py2v2-$MODEL-$BS-$LR-$BETA2-v0"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -60,7 +76,6 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-gc-v0"
     --precision amp_bfloat16 \
     --save-most-recent \
     --advanced-logging \
-    --grad-clip-norm 1. \
     --wandb-project-name open_clip_12 \
     --force-patch-dropout 0.5 \
     --resume 'latest' \

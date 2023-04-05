@@ -30,7 +30,7 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.98
+BETA2=0.995
 MODEL=ViT-H-14
 BS=16384
 OPT=clipadamw

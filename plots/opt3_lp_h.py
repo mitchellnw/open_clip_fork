@@ -94,18 +94,33 @@ if __name__ == '__main__':
     alpha = 1
     file_list = []
     bsz = 4096*4
-    ll = -1
+    ll = 1e3
     file_list = [        
         # B
 
         # H
         # H
-        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
-        (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
-        (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
-        (f'clipadamw-slint8-ViT-H-14-16384-2e-3-0.98-v0', 'slint','k', ll), # 0.5757
-        (f'clipadamw-sglint8-ViT-H-14-16384-2e-3-0.98-v0', 'sglint','C3', ll), # 0.5757
-        (f'clipadamw-slint8v2-ViT-H-14-16384-2e-3-0.98-v0', 'slintv2','C4', ll), # 0.5757
+        # (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
+        # (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
+        # (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
+        # (f'clipadamw-slint8-ViT-H-14-16384-2e-3-0.98-v0', 'slint','k', ll), # 0.5757
+        # (f'clipadamw-sglint8-ViT-H-14-16384-2e-3-0.98-v0', 'sglint','C3', ll), # 0.5757
+        # (f'clipadamw-slint8v2-ViT-H-14-16384-2e-3-0.98-v0', 'slintv2','C4', ll), # 0.5757
+
+
+        (f'customadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
+
+        (f'clipadamw-py2v2-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C1', ll), # 0.5757
+        (f'stableadamw-py2v2-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C2', ll), # 0.5757
+        
+        
+        (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C3', ll),
+        (f'clipadamw-sglint8mem-ViT-H-14-16384-2e-3-0.98-v0', 'sb mem','C4', ll),
+        (f'clipadamw-sglint8v2-ViT-H-14-16384-2e-3-0.98-v0', 'sb ','C5', ll),
+
+
+        #(f'clipadamw-sglint8v2-ViT-H-14-16384-2e-3-0.98-v0', 'sb ','C5', ll),
+
 
         #(f'customadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C1', ll), # 0.5757
 

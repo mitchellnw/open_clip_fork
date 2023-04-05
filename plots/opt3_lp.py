@@ -105,13 +105,15 @@ if __name__ == '__main__':
         #(f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v0', 'adamw','C0', ll),
         #(f'customadamw-ViT-B-32-8192-2e-3-0.995-rmscheck-v1', 'adamw','C0', ll),
         (f'clipadamw-ViT-B-32-16384-2e-3-0.98-v0', 'adamw','C0', ll),
+        (f'clipadamw-int8-ViTls0-B-32-16384-2e-3-0.98-v0', 'adamw','C1', ll),
+        (f'clipadamw-ViTls0-B-32-16384-2e-3-0.98-v0', 'adamw','C2', ll),
 
-        (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real','C1', ll),
-        # (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real mix','C2', ll),
-        (f'clipadamw-sglint8v2-ViT-B-32-16384-2e-3-0.98-v0', 'v2','C3', ll),
-        (f'clipadamw-sglint8v3-ViT-B-32-16384-2e-3-0.98-v0', 'v3','C4', ll),
-        (f'clipadamw-sglint8v5-ViT-B-32-16384-2e-3-0.98-v0', 'v5','k', ll),
-        (f'clipadamw-slint8v5-ViT-B-32-16384-2e-3-0.98-v0', 'v5-s','gray', ll),
+        # (f'clipadamw-int8-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real','C1', ll),
+        # # (f'clipadamw-int8mix-ViT-B-32-16384-2e-3-0.98-v0', 'B/32 int8 real mix','C2', ll),
+        # (f'clipadamw-sglint8v2-ViT-B-32-16384-2e-3-0.98-v0', 'v2','C3', ll),
+        # (f'clipadamw-sglint8v3-ViT-B-32-16384-2e-3-0.98-v0', 'v3','C4', ll),
+        # (f'clipadamw-sglint8v5-ViT-B-32-16384-2e-3-0.98-v0', 'v5','k', ll),
+        # (f'clipadamw-slint8v5-ViT-B-32-16384-2e-3-0.98-v0', 'v5-s','gray', ll),
 
 
         # (f'clipadamw-camp65kfp8newsim-ViT-B-32-16384-2e-3-0.98-v0', 'fp8 sim mix row-wise/global','C4', ll),
