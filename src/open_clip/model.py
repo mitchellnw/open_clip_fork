@@ -174,6 +174,7 @@ class CLIP(nn.Module):
             text_cfg: CLIPTextCfg,
             quick_gelu: bool = False,
             cast_dtype: Optional[torch.dtype] = None,
+            init_temp = 1 / 0.07
     ):
         super().__init__()
         self.visual = _build_vision_tower(embed_dim, vision_cfg, quick_gelu, cast_dtype)
@@ -186,8 +187,9 @@ class CLIP(nn.Module):
         self.ln_final = text.ln_final
         self.text_projection = text.text_projection
         self.register_buffer('attn_mask', text.attn_mask, persistent=False)
+        print('init temp is', init_temp)
 
-        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
+        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(init_temp))
 
     def lock_image_tower(self, unlocked_groups=0, freeze_bn_stats=False):
         # lock image tower as per LiT - https://arxiv.org/abs/2111.07991

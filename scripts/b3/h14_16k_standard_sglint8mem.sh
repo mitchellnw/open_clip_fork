@@ -9,7 +9,7 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
-#SBATCH --exclude=ip-26-0-129-245
+#SBATCH --exclude=ip-26-0-129-245,ip-26-0-138-31
 # #SBATCH --exclude=a100-st-p4d24xlarge-825,a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437,a100-st-p4d24xlarge-451,a100-st-p4d24xlarge-461
 #SBATCH --requeue
 #SBATCH --comment laion

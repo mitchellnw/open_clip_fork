@@ -208,10 +208,11 @@ if __name__ == '__main__':
     red_dashed_line2 = mlines.Line2D([], [], color='gray', linestyle='-', label='beta2 = 0.9')
     #ax.legend(handles=[red_dashed_line, red_dashed_line1, red_dashed_line2], bbox_to_anchor=(0.5025, 0.85), ncol=3,fontsize=10)
     #ax.legend(handles=[red_dashed_line, red_dashed_line1, red_dashed_line2], bbox_to_anchor=(0.47, -0.2), ncol=3,fontsize=10)
-    ax.legend(handles=[red_dashed_line, red_dashed_line1, red_dashed_line2], bbox_to_anchor=(1.01,2.5), ncol=3,fontsize=10)
+    ax.legend(handles=[red_dashed_line, red_dashed_line1, red_dashed_line2], bbox_to_anchor=(1.005,2.44), ncol=3,fontsize=10, framealpha=0.95)
 
     fig.subplots_adjust(
         top=0.95, left=0.07, right=0.9, bottom=0.3, wspace=0.32, hspace=0.35
     )
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper3/compare_amp3.pdf', bbox_inches='tight')
+    #plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper3/compare_amp3.pdf', bbox_inches='tight')
+    plt.savefig('/fsx/home-mitchellw/tmp_plots/compare_amp3.pdf', bbox_inches='tight')

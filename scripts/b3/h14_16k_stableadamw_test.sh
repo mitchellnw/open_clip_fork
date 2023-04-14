@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=g40
 #SBATCH --job-name=sopenclip
-#SBATCH --nodes 8
+#SBATCH --nodes 1
 #SBATCH --ntasks-per-node 8
 #SBATCH --cpus-per-gpu=12
 #SBATCH --gres=gpu:8
@@ -9,6 +9,7 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 #SBATCH --time=4320
+#SBATCH --exclude=ip-26-0-129-245,ip-26-0-138-31
 # #SBATCH --exclude=a100-st-p4d24xlarge-825,a100-st-p4d24xlarge-477,a100-st-p4d24xlarge-820,a100-st-p4d24xlarge-707,a100-st-p4d24xlarge-879,a100-st-p4d24xlarge-426,a100-st-p4d24xlarge-437,a100-st-p4d24xlarge-451,a100-st-p4d24xlarge-461
 #SBATCH --requeue
 #SBATCH --comment laion
@@ -16,6 +17,9 @@
 # can get up to 320
 # 16 * 256 is right
 # 14 * 292
+
+module load openmpi
+module load cuda/11.8
 
 export MASTER_PORT=12802
 
@@ -30,16 +34,15 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.9
-MODEL=ViTDP-H-14
+BETA2=0.98
+MODEL=ViT-H-14
 BS=16384
-OPT=clipadamw
+OPT=stableadamw
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-TEST-$MODEL-$BS-$LR-$BETA2-v1"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
-    --report-to wandb \
     --train-data="s3://s-datasets/laion5b/laion2B-data/{000000..231349}.tar" \
     --train-num-samples 65536000 \
     --dataset-type webdataset \
@@ -50,7 +53,6 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
     --lr $LR \
     --beta2 $BETA2 \
     --workers=10 \
-    --report-to wandb \
     --name ${EXP_NAME} \
     --logs /fsx/home-mitchellw/experimetns/opt3 \
     --model $MODEL \

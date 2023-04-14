@@ -30,12 +30,12 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.9
-MODEL=ViTDP-H-14
+BETA2=0.99
+MODEL=ViT-H-14
 BS=16384
-OPT=clipadamw
+OPT=vclipadamw
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v4"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -54,7 +54,7 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
     --name ${EXP_NAME} \
     --logs /fsx/home-mitchellw/experimetns/opt3 \
     --model $MODEL \
-    --seed 1 \
+    --seed 4 \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \

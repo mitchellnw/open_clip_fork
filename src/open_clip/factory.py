@@ -121,6 +121,7 @@ def create_model(
         force_image_drop_path: float = 0,
         force_text_drop_path: float = 0,
         custom_attention: str = None,
+        init_temp = 1 / 0.07
 ):
     has_hf_hub_prefix = model_name.startswith(HF_HUB_PREFIX)
     if has_hf_hub_prefix:
@@ -196,7 +197,7 @@ def create_model(
                 model_cfg['text_cfg']['hf_model_pretrained'] = pretrained_hf
             model = CustomTextCLIP(**model_cfg, cast_dtype=cast_dtype)
         else:
-            model = CLIP(**model_cfg, cast_dtype=cast_dtype)
+            model = CLIP(**model_cfg, cast_dtype=cast_dtype, init_temp=init_temp)
 
         if pretrained:
             checkpoint_path = ''
@@ -252,6 +253,7 @@ def create_model_and_transforms(
         force_image_drop_path: float = 0,
         force_text_drop_path: float = 0,
         custom_attention : str = None,
+        init_temp = 1 / 0.07,
 ):
     model = create_model(
         model_name,
@@ -269,6 +271,7 @@ def create_model_and_transforms(
         force_image_drop_path=force_image_drop_path,
         force_text_drop_path=force_text_drop_path,
         custom_attention=custom_attention,
+        init_temp=init_temp,
     )
 
     image_mean = image_mean or getattr(model.visual, 'image_mean', None)

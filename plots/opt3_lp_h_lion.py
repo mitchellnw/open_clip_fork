@@ -62,7 +62,7 @@ modules = [
 # #     'module.logit_scale',
 # 'module.positional_embedding',
 # 'module.visual.positional_embedding',
-'module.visual.conv1.weight',
+'module.logit_scale',
 #'module.visual.patchnorm_pre_ln.weight',
 ]
 cmap=plt.get_cmap('cool')
@@ -101,16 +101,19 @@ if __name__ == '__main__':
         # H
         # H
         (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
-        (f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
+        (f'lion-ViT-H-14-16384-2e-4-0.98-wd2beta195-v0', 'H/14 CLIP lion lr 2e-4, betas=(0.95, 0.98), wd=2','C1', ll),
+
+        #(f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
         # (f'clipadamw-sall8v2-ViT-H-14-16384-2e-3-0.98-v0', 'sall','C2', ll), # 0.5757
         # # (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
         # # (f'clipadamw-slint8-ViT-H-14-16384-2e-3-0.98-v0', 'slint','k', ll), # 0.5757
         # (f'clipadamw-sglint8-ViT-H-14-16384-2e-3-0.98-v0', 'sglint','C3', ll), # 0.5757
         # (f'stableadamw-py2v2-ViT-H-14-16384-2e-3-0.98-v1', 'sta','C4', ll), # 0.5757
 
-        (f'clipadamw-sglint8bnb-ViT-H-14-16384-2e-3-0.98-v0', 'vclip','k', ll), # 0.5757
-        (f'wclipadamw-ViT-H-14-16384-2e-3-0.45-v0', 'vclip','C2', ll), # 0.5757
-
+        #(f'clipadamw-ViT-H-14-16384-1e-3-0.99-it30-v0', 'clipadamw','C1', ll), # 0.5757
+        #(f'customadamw-ViT-H-14-16384-1e-3-0.99-it30-v0', 'customadamw','C2', ll), # 0.5757
+        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-it30-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98), init temp 30','C2', ll), # 0.5757
+        (f'lion-ViT-H-14-16384-2e-4-0.98-wd2beta195it30-v0', 'H/14 CLIP lion lr 2e-4, betas=(0.95, 0.98), wd=2, init temp 30','C3', ll),
 
 
         # (f'clipadamw-slint8v2-ViT-H-14-16384-2e-3-0.98-v0', 'slintv2','C4', ll), # 0.5757
@@ -251,7 +254,7 @@ if __name__ == '__main__':
                 #     alpha = 0.25
                 #idx = 14
                 #idx=1
-                idx = 14
+                idx = 1
                 #idx = 14
                 #idx = 18
                 #if jj == 0:
@@ -265,7 +268,7 @@ if __name__ == '__main__':
                 #     badness += 1
                 print('badness',module, badness)
                 #ax.plot(df.iloc[:, 0], df.iloc[:, idx], color=color, alpha=alpha)
-                ax.set_ylabel('grad magnitude', fontsize=16)
+                ax.set_ylabel('param val', fontsize=16)
                 #ax.set_ylabel('max gradient magnitude', fontsize=16)
                 #ax.set_ylabel('mean gradient magnitude', fontsize=16)
 
@@ -360,7 +363,7 @@ if __name__ == '__main__':
             ax.axhline(np.sqrt(df[df[0] == vv][4].values[-1]), color='gray', linestyle='--')
         continue
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/opt3_lp_h.png', bbox_inches='tight')
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/opt3_lp_h_lion.png', bbox_inches='tight')
 
 
 

@@ -369,6 +369,12 @@ def parse_args(args):
         help="Log every n steps to tensorboard/console/wandb.",
     )
     parser.add_argument(
+        "--init-temp",
+        type=float,
+        default=1 / 0.07,
+        help="INIT TEMP",
+    )
+    parser.add_argument(
         "--remote-sync",
         type=str,
         default=None,
@@ -493,6 +499,11 @@ def parse_args(args):
     )
     parser.add_argument(
         "--sglint8mem",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--sall8",
         default=False,
         action="store_true",
     )

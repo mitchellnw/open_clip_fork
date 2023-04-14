@@ -30,12 +30,12 @@ cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
 LR=2e-3
-BETA2=0.9
-MODEL=ViTDP-H-14
+BETA2=0.98
+MODEL=ViT-H-14
 BS=16384
 OPT=clipadamw
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-it30-v0"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -66,6 +66,7 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-v0"
     --force-patch-dropout 0.5 \
     --resume 'latest' \
     --custom-attention vanilla \
+    --init-temp 30 \
     --delete-previous-checkpoint \
     --opt $OPT
 

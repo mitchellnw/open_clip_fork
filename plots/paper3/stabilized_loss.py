@@ -70,7 +70,7 @@ if __name__ == '__main__':
             ('opt/customadamw-ViT-{}-16384-2e-3-0.99-v0', 'default', cmap(1.), -1),
             ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0', '+ grad clipping', 'C9', -1),
             ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0', '+ update clipping','C1', -1),
-            ('opt3/clipadamw-ViTDP-{}-16384-2e-3-0.99-v0', '+ update clipping + input norm','C2', -1),
+            #('opt3/clipadamw-ViTDP-{}-16384-2e-3-0.99-v0', '+ update clipping + input norm','C2', -1),
             #('opt3/customadamw-ViTls0-{}-16384-2e-3-0.99-v0', 'gc', 'C4', -1),
 
             #('customadamw-ViT-{}-16384-2e-3-0.99-gc1-v0', 'clip = 0.9',cmap(0.5), -1),
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         ax.set_ylabel('Loss', fontsize=12)
         if k == 0:
             #leg = ax.legend(bbox_to_anchor=(1., -0.27), ncol=5,fontsize=10.5)
-            leg = ax.legend(fontsize=10)
+            leg = ax.legend(fontsize=10, loc=1)
             #leg.get_texts()[-1].set_fontweight('bold')
         ax.set_ylim([0, 10])
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=g40423
+#SBATCH --partition=g40
 #SBATCH --job-name=sopenclip
 #SBATCH --nodes 8
 #SBATCH --ntasks-per-node 8
@@ -29,13 +29,13 @@ export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 cd /admin/home-mitchellw/forks/open_clip_fork/src
 export PYTHONPATH="$PYTHONPATH:/admin/home-mitchellw/forks/open_clip_fork/src"
 
-LR=5e-4
+LR=2e-4
 BETA2=0.98
 MODEL=ViT-H-14
 BS=16384
 OPT=lion
 
-EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-wd2beta195-v0"
+EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-wd2beta195it30-v0"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \
@@ -68,6 +68,7 @@ EXP_NAME="$OPT-$MODEL-$BS-$LR-$BETA2-wd2beta195-v0"
     --custom-attention vanilla \
     --wd 2.0 \
     --beta1 0.95 \
+    --init-temp 30 \
     --delete-previous-checkpoint \
     --opt $OPT
 

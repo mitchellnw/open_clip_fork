@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os
-
+import matplotlib.patches as patches
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
@@ -173,16 +173,22 @@ if __name__ == '__main__':
             ax.set_ylabel('Grad scaler', fontsize=11)
         elif d == 6:
             ax.set_ylabel('Grad absmax', fontsize=11)
-            ax.set_title(model.replace('params-module.', ''), fontsize=9, loc='left', y=1.1, pad=-20, x = 0.01)
-
+            #ax.set_title(model.replace('params-module.', ''), fontsize=9, loc='left', y=1.1, pad=-20, x = 0.01, zorder=2)
+            title_text = model.replace('params-module.', '')
+            textbox_props = dict(boxstyle='round, pad=0.3', facecolor='white', edgecolor='black', linewidth=1, alpha=0.8)
+            ax.text(0.01, 0.974, title_text, transform=ax.transAxes, fontsize=9, verticalalignment='top', bbox=textbox_props, zorder=2)
         elif d == 14:
             ax.set_ylabel('RMS', fontsize=11)
-            ax.set_title(model.replace('params-module.', ''), fontsize=9, loc='left', y=1.1, pad=-20, x = 0.01)
-
+            #ax.set_title(model.replace('params-module.', ''), fontsize=9, loc='left', y=1.1, pad=-20, x = 0.01, zorder=2)
+            title_text = model.replace('params-module.', '')
+            textbox_props = dict(boxstyle='round, pad=0.3', facecolor='white', edgecolor='black', linewidth=1, alpha=0.8)
+            ax.text(0.01, 0.974, title_text, transform=ax.transAxes, fontsize=9, verticalalignment='top', bbox=textbox_props, zorder=2)
         elif d == 3:
             ax.set_ylabel('Feature max', fontsize=11)
-            ax.set_title(model.replace('features2-module.', ''), fontsize=9, loc='left', y=1.1, pad=-20, x = 0.01)
-
+            #ax.set_title(model.replace('features2-module.', ''), fontsize=9, loc='left', y=1.1, pad=-20, x = 0.01, zorder=2)
+            title_text = model.replace('features2-module.', '')
+            textbox_props = dict(boxstyle='round, pad=0.3', facecolor='white', edgecolor='black', linewidth=1, alpha=0.8)
+            ax.text(0.01, 0.974, title_text, transform=ax.transAxes, fontsize=9, verticalalignment='top', bbox=textbox_props, zorder=2)
         # if k == 0:
         #     leg = ax.legend(bbox_to_anchor=(1., -0.27), ncol=5,fontsize=10.5)
         #     #leg.get_texts()[-1].set_fontweight('bold')

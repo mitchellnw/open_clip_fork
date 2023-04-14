@@ -39,7 +39,12 @@ from training.train import train_one_epoch, evaluate
 from training.file_utils import pt_load, check_exists, start_sync_process, remote_sync
 from training.optimizers.customadamw import CustomAdamW
 from training.optimizers.clipadamw import ClipAdamW
+from training.optimizers.wclipadamw import WClipAdamW
+from training.optimizers.vclipadamw import VClipAdamW
+
 from training.optimizers.stableadamw import StableAdamW
+from training.optimizers.stablewadamw import StableWAdamW
+
 from training.optimizers.momentadamw import MomentAdamW
 from training.optimizers.lion import Lion
 from training.optimizers.ladamw import LAdamW
@@ -253,6 +258,7 @@ def main(args):
         force_image_drop_path=args.force_image_drop_path,
         force_text_drop_path=args.force_text_drop_path,
         custom_attention=args.custom_attention,
+        init_temp=args.init_temp,
     )
     # change linear layers to bnb
     if args.fp8:
@@ -293,7 +299,7 @@ def main(args):
         print('using switchback vector linear v5')
         from .fp8utils import replace_linear
         #from tkernels.modules import SwitchBackGlobalLinear
-        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearVectorized)#
+        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearVectorwise)#
     if args.sglint8:
         print('using switchback global linear v5')
         from .fp8utils import replace_linear
@@ -304,6 +310,11 @@ def main(args):
         from .fp8utils import replace_linear
         #from tkernels.modules import SwitchBackGlobalLinear
         replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearGlobalMemEfficient)#
+    if args.sall8:
+        print('using switchback vector linear v5')
+        from .fp8utils import replace_linear
+        #from tkernels.modules import SwitchBackGlobalLinear
+        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearAll8Bit)#
     if args.snew8:
         print('using switchback new linear')
         from .fp8utils import replace_linear
@@ -352,7 +363,7 @@ def main(args):
         if args.ddp_static_graph:
             # this doesn't exist in older PyTorch, arg only added if enabled
             ddp_args['static_graph'] = True
-        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix or args.slint8 or args.sglint8 or args.snew8 or args.sglint8mem:
+        if args.int8 or args.int8sim or args.fp8 or args.int8castsim or args.int82 or args.int8thresh or args.int8mix or args.fp8global or args.fp4 or args.fp8mix or args.slint8 or args.sglint8 or args.sall8 or args.snew8 or args.sglint8mem:
             model = model.to(device)
 
         if args.rms_load is not None:
@@ -435,6 +446,26 @@ def main(args):
                 betas=(args.beta1, args.beta2),
                 eps=args.eps,
             )
+        elif args.opt.lower() == 'wclipadamw':
+            optimizer = WClipAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'vclipadamw':
+            optimizer = VClipAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
         elif args.opt.lower() == 'skipadamw':
             optimizer = SkipAdamW(
                 [
@@ -477,6 +508,16 @@ def main(args):
             )
         elif args.opt.lower() == 'stableadamw':
             optimizer = StableAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'stablewadamw':
+            optimizer = StableWAdamW(
                 [
                     {"params": gain_or_bias_params, "weight_decay": 0.},
                     {"params": rest_params, "weight_decay": args.wd},

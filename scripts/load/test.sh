@@ -35,3 +35,10 @@ rm -rf logs && torchrun --nproc_per_node 4 -m training.main   \
       --train-num-samples 413000000     --local-loss     --gather-with-grad     --grad-checkpointing \
       --precision custom_fp16 --custom-attention vanilla --opt customadamw --force-patch-dropout 0.5 \
       --custom-scaler 65536 --slint8
+
+
+torchrun --nproc_per_node 2 -m training.main \
+      --batch-size 200   --workers 4 --model ViT-B-32  --train-num-samples 413000000  \
+      --local-loss  --gather-with-grad     --grad-checkpointing       --precision amp_bfloat16  \
+      --save-most-recent --pretrained openai \
+      --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation

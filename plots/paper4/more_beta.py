@@ -85,43 +85,43 @@ if __name__ == '__main__':
         ]
         
 
-        for template, name, color, marker in reversed(to_enum):
-            newtemp = template.format(model)
-            if not os.path.exists(f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'):
-                newtemp = newtemp.replace('v1', 'v0')
-            if not os.path.exists(f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'):
-                print('error', newtemp)
-            fname = f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'
-            top1 = get_metrics(fname)
-            print(fname, top1)
-            if top1 > 0.1:
-                xs.append(float(name.split("=")[-1].strip()))
-                ys.append(top1)
+        # for template, name, color, marker in reversed(to_enum):
+        #     newtemp = template.format(model)
+        #     if not os.path.exists(f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'):
+        #         newtemp = newtemp.replace('v1', 'v0')
+        #     if not os.path.exists(f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'):
+        #         print('error', newtemp)
+        #     fname = f'/fsx/home-mitchellw/experimetns/opt/{newtemp}/checkpoints/eval.pt'
+        #     top1 = get_metrics(fname)
+        #     print(fname, top1)
+        #     if top1 > 0.1:
+        #         xs.append(float(name.split("=")[-1].strip()))
+        #         ys.append(top1)
 
-        ax.plot([idx[j] for j in xs], ys, marker='o', color=color, label='default', markersize=6.5)
+        # ax.plot([idx[j] for j in xs], ys, marker='o', color=color, label='default', markersize=6.5)
 
 
-            # ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0', '+ grad clipping', 'C9', -1),
-            # ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0', '+ update clipping','C1', -1),
+        #     # ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0', '+ grad clipping', 'C9', -1),
+        #     # ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0', '+ update clipping','C1', -1),
         
-        xs, ys = [], []
-        to_enum = [
-            ('opt3/customadamw-ViT-{}-16384-2e-3-0.995-gc-v0','beta2 = 0.995', cmap(0.), -1),
-            ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0','beta2 = 0.99', cmap(0.), -1),
-            ('opt3/customadamw-ViT-{}-16384-2e-3-0.98-gc1-v0','beta2 = 0.98', cmap(0.), -1),
-            ('opt3/customadamw-ViT-{}-16384-2e-3-0.95-gc-v0','beta2 = 0.95', cmap(0.), -1),
+        # xs, ys = [], []
+        # to_enum = [
+        #     ('opt3/customadamw-ViT-{}-16384-2e-3-0.995-gc-v0','beta2 = 0.995', cmap(0.), -1),
+        #     ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0','beta2 = 0.99', cmap(0.), -1),
+        #     ('opt3/customadamw-ViT-{}-16384-2e-3-0.98-gc1-v0','beta2 = 0.98', cmap(0.), -1),
+        #     ('opt3/customadamw-ViT-{}-16384-2e-3-0.95-gc-v0','beta2 = 0.95', cmap(0.), -1),
 
-        ]
+        # ]
 
-        for template, name, color, marker in reversed(to_enum):
-            newtemp = template.format(model)
-            fname = f'/fsx/home-mitchellw/experimetns/{newtemp}/checkpoints/eval.pt'
-            top1 = get_metrics(fname)
-            print(fname, top1)
-            if top1 > 0.1:
-                xs.append(float(name.split("=")[-1].strip()))
-                ys.append(top1)
-        ax.plot([idx[j] for j in xs], ys, marker='s', color=color, label='+ grad clipping', markersize=6.5)
+        # for template, name, color, marker in reversed(to_enum):
+        #     newtemp = template.format(model)
+        #     fname = f'/fsx/home-mitchellw/experimetns/{newtemp}/checkpoints/eval.pt'
+        #     top1 = get_metrics(fname)
+        #     print(fname, top1)
+        #     if top1 > 0.1:
+        #         xs.append(float(name.split("=")[-1].strip()))
+        #         ys.append(top1)
+        # ax.plot([idx[j] for j in xs], ys, marker='s', color=color, label='+ grad clipping', markersize=6.5)
 
 
         xs, ys = [], []
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
             ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0','beta2 = 0.99', 'C1', -1),
             ('opt3/clipadamw-ViT-{}-16384-2e-3-0.98-v0','beta2 = 0.98', 'C1', -1),
-            ('opt3/clipadamw-ViT-{}-16384-2e-3-0.95-v4','beta2 = 0.95', 'C1', -1),
+            #('opt3/clipadamw-ViT-{}-16384-2e-3-0.95-v4','beta2 = 0.95', 'C1', -1),
 
         ]
 
@@ -143,7 +143,7 @@ if __name__ == '__main__':
             if top1 > 0.1:
                 xs.append(float(name.split("=")[-1].strip()))
                 ys.append(top1)
-        ax.plot([idx[j] for j in xs], ys, marker='^', color=color, label='+ update clipping', markersize=6.5)
+        ax.plot(xs, ys, marker='^', color=color, label='+ update clipping', markersize=6.5)
 
 
         # xs, ys = [], []
@@ -170,26 +170,26 @@ if __name__ == '__main__':
 
 
 
-        # xs, ys = [], []
-        # to_enum = [
-        #     ('opt3/wclipadamw-ViT-{}-16384-2e-3-0.8-v0','beta2 = 0.8', 'gray', -1),
-        #     ('opt3/wclipadamw-ViT-{}-16384-2e-3-0.65-v0','beta2 = 0.65', 'gray', -1),
+        xs, ys = [], []
+        to_enum = [
+            #('opt3/wclipadamw-ViT-{}-16384-2e-3-0.8-v0',f'beta2 = {1-20000**(-0.8)}', 'gray', -1),
+            ('opt3/wclipadamw-ViT-{}-16384-2e-3-0.65-v0',f'beta2 = {1-20000**(-0.65)}', 'gray', -1),
 
-        #     ('opt3/wclipadamw-ViT-{}-16384-2e-3-0.5-v0','beta2 = 0.5', 'gray', -1),
-        #     ('opt3/wclipadamw-ViT-{}-16384-2e-3-0.45-v0','beta2 = 0.45', 'gray', -1),
+            ('opt3/wclipadamw-ViT-{}-16384-2e-3-0.5-v0',f'beta2 = {1-20000**(-0.5)}', 'gray', -1),
+            ('opt3/wclipadamw-ViT-{}-16384-2e-3-0.45-v0',f'beta2 = {1-20000**(-0.45)}', 'gray', -1),
 
 
-        # ]
+        ]
 
-        # for template, name, color, marker in reversed(to_enum):
-        #     newtemp = template.format(model)
-        #     fname = f'/fsx/home-mitchellw/experimetns/{newtemp}/checkpoints/eval.pt'
-        #     top1 = get_metrics(fname)
-        #     print(fname, top1)
-        #     if top1 > 0.1:
-        #         xs.append(float(name.split("=")[-1].strip()))
-        #         ys.append(top1)
-        # ax.plot([idx[j] for j in xs], ys, marker='H', color=color, label='+ beta2 warmup', markersize=7)
+        for template, name, color, marker in reversed(to_enum):
+            newtemp = template.format(model)
+            fname = f'/fsx/home-mitchellw/experimetns/{newtemp}/checkpoints/eval.pt'
+            top1 = get_metrics(fname)
+            print(fname, top1)
+            if top1 > 0.1:
+                xs.append(float(name.split("=")[-1].strip()))
+                ys.append(top1)
+        ax.plot(xs, ys, marker='H', color=color, label='+ update clipping + beta2 warmup', markersize=7)
 
 
 
@@ -200,9 +200,9 @@ if __name__ == '__main__':
 
 
 
-        # ax.set_xticks(idx.keys())
-        ax.set_xticks([0, 1, 2, 3, 4, 5, 6])
-        ax.set_xticklabels([0.5,0.8,  0.9, 0.95, 0.98, 0.99, 0.995])
+        # # ax.set_xticks(idx.keys())
+        ax.set_xticks([0.98, 0.985, 0.99, 0.995])
+        ax.set_xticklabels([0.98, 0.985, 0.99, 0.995])
 
         ax.tick_params(axis='x', labelsize=11)
         ax.tick_params(axis='y', labelsize=11)
@@ -225,4 +225,4 @@ if __name__ == '__main__':
         top=0.95, left=0.07, right=0.9, bottom=0.3, wspace=0.32, hspace=0.28
     )
 
-    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper4/betas.pdf', bbox_inches='tight')
+    plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper4/more_beta.pdf', bbox_inches='tight')

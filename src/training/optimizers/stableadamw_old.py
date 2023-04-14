@@ -9,17 +9,16 @@ except ImportError as e:
     exit()
 
 
-@triton.autotune(configs = [
-    triton.Config({'BLOCK_SIZE': 1024}, num_warps = 4),
-    #triton.Config({'BLOCK_SIZE': 1024}, num_warps = 8),
-], key = ['n_elements'])
+# @triton.autotune(configs = [
+#     triton.Config({'BLOCK_SIZE': 1024}, num_warps = 4),
+#     #triton.Config({'BLOCK_SIZE': 1024}, num_warps = 8),
+# ], key = ['n_elements'])
 @triton.jit
 def _opt_kernel1(
     grad_ptr,
     exp_avg2_ptr,
     smem_numerator_ptr,
     smem_denominator_ptr,
-    rms_out_ptr,
     beta2,
     eps2,
     update_clip,
@@ -41,29 +40,26 @@ def _opt_kernel1(
     # load, early exit if nan
     grad = tl.load(offset_grad_ptr, mask = mask)
 
-    #if tl.max(tl.libdevice.isnan(grad), 0) == 0:
+    if tl.max(tl.libdevice.isnan(grad), 0) == 0:
 
-    exp_avg2 = tl.load(offset_exp_avg2_ptr, mask = mask)
-    g2 = grad * grad
-    exp_avg2 = beta2 * exp_avg2 + (1 - beta2) * g2
+        exp_avg2 = tl.load(offset_exp_avg2_ptr, mask = mask)
+        g2 = grad * grad
+        exp_avg2 = beta2 * exp_avg2 + (1 - beta2) * g2
 
-    ratio = g2 / tl.maximum(exp_avg2, eps2)
-    tl.store(rms_out_ptr + offsets, ratio, mask = mask)
+        ratio = tl.where(mask, g2 / tl.maximum(exp_avg2, eps2), 0)
+        numerator = tl.sum(ratio, axis=0)
+        denominator = tl.sum(mask, axis=0)
 
-    # ratio = tl.where(mask, g2 / tl.maximum(exp_avg2, eps2), 0)
-    # numerator = tl.sum(ratio, axis=0)
-    # denominator = tl.sum(mask, axis=0)
-
-    # tl.store(smem_numerator_ptr + pid, numerator)
-    # tl.store(smem_denominator_ptr + pid, denominator)
-    tl.store(offset_exp_avg2_ptr, exp_avg2, mask = mask)
+        tl.store(smem_numerator_ptr + pid, numerator)
+        tl.store(smem_denominator_ptr + pid, denominator)
+        tl.store(offset_exp_avg2_ptr, exp_avg2, mask = mask)
 
 
 
-@triton.autotune(configs = [
-    triton.Config({'BLOCK_SIZE': 1024}, num_warps = 4),
-    #triton.Config({'BLOCK_SIZE': 1024}, num_warps = 8),
-], key = ['n_elements'])
+# @triton.autotune(configs = [
+#     triton.Config({'BLOCK_SIZE': 1024}, num_warps = 4),
+#     #triton.Config({'BLOCK_SIZE': 1024}, num_warps = 8),
+# ], key = ['n_elements'])
 @triton.jit
 def _opt_kernel2(
     p_ptr,
@@ -95,25 +91,25 @@ def _opt_kernel2(
 
     # load, early exit if nan
     grad = tl.load(offset_grad_ptr, mask = mask)
-    #if tl.max(tl.libdevice.isnan(grad), 0) == 0:
+    if tl.max(tl.libdevice.isnan(grad), 0) == 0:
         
-    p = tl.load(offset_p_ptr, mask = mask)
-    exp_avg = tl.load(offset_exp_avg_ptr, mask = mask)
-    exp_avg2 = tl.load(offset_exp_avg2_ptr, mask = mask)
+        p = tl.load(offset_p_ptr, mask = mask)
+        exp_avg = tl.load(offset_exp_avg_ptr, mask = mask)
+        exp_avg2 = tl.load(offset_exp_avg2_ptr, mask = mask)
 
-    # stepweight decay
+        # stepweight decay
 
-    p = p * (1 - lr * wd)
+        p = p * (1 - lr * wd)
 
-    # update exp_avgs
-    exp_avg = beta1 * exp_avg + (1 - beta1) * grad
+        # update exp_avgs
+        exp_avg = beta1 * exp_avg + (1 - beta1) * grad
 
-    p = p - eta * (exp_avg / (tl.sqrt(exp_avg2) + eps))
+        p = p - eta * (exp_avg / (tl.sqrt(exp_avg2) + eps))
 
-    # store new params and momentum running average coefficient
+        # store new params and momentum running average coefficient
 
-    tl.store(offset_p_ptr, p, mask = mask)
-    tl.store(offset_exp_avg_ptr, exp_avg, mask = mask)
+        tl.store(offset_p_ptr, p, mask = mask)
+        tl.store(offset_exp_avg_ptr, exp_avg, mask = mask)
 
 
 def update_fn(
@@ -130,31 +126,29 @@ def update_fn(
 ):
     assert all([t.is_cuda for t in (p, grad, exp_avg)])
     n_elements = p.numel()
-    #BLOCK_SIZE = 1024
-    #min_nkernels = triton.cdiv(n_elements, BLOCK_SIZE)
+    BLOCK_SIZE = 1024
+    min_nkernels = triton.cdiv(n_elements, BLOCK_SIZE)
     grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)    
-    smem_numerator = torch.zeros(1, dtype=torch.float32, device=p.device)
-    smem_denominator = torch.zeros(1, dtype=torch.int32, device=p.device)
-    rms_out = torch.zeros_like(p)
-
+    smem_numerator = torch.zeros(min_nkernels, dtype=torch.float32, device=p.device)
+    smem_denominator = torch.zeros(min_nkernels, dtype=torch.int32, device=p.device)
     
     _opt_kernel1[grid](
         grad,
         exp_avg2,
         smem_numerator,
         smem_denominator,
-        rms_out,
         beta2,
         eps * eps,
         update_clip,
         n_elements,
+        BLOCK_SIZE,
     )
 
-    # if update_clip:
-    rms = rms_out.mean().sqrt().item() #torch.sqrt(smem_numerator.sum() / smem_denominator.sum()).item()
-    eta = lr / max(rms, 1.)
-    # else:
-    #meta = lr
+    if update_clip:
+        rms = torch.sqrt(smem_numerator.sum() / smem_denominator.sum()).item()
+        eta = lr / max(rms, 1.)
+    else:
+        eta = lr
 
     _opt_kernel2[grid](
         p,
@@ -168,6 +162,7 @@ def update_fn(
         eps,
         update_clip,
         n_elements,
+        BLOCK_SIZE,
     )
 
 def test_update(
