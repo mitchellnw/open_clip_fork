@@ -88,7 +88,7 @@ if __name__ == '__main__':
     kernel_size = 40
     min_loss = 10
     max_scaler = 1
-    log_level =2 + len(modules)
+    log_level =1 + len(modules)
 
     # NOTE: LOOK AT FEATURE STDDEV!
     alpha = 1
@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
 
         for jj, module in enumerate(modules):
-            if jj + 2 >= log_level :#- 2:
+            if jj + 1 >= log_level :#- 2:
                 continue
             ax = axlist[jj+1]
 
@@ -258,7 +258,7 @@ if __name__ == '__main__':
                 #idx = 14
                 #idx = 18
                 #if jj == 0:
-                ax.plot(df.iloc[:, 0], np.sqrt(df.iloc[:, idx]), color=color, alpha=alpha)
+                ax.plot(df.iloc[:, 0], df.iloc[:, idx], color=color, alpha=alpha)
                 badness = 0
                 # for axv in df[np.isnan(df[6])][0].values:
                 #     ax.axvline(axv, color='red', alpha = 0.5)
@@ -283,26 +283,26 @@ if __name__ == '__main__':
                 #     ax.set_title(module, fontsize=16, y=1.0, pad=-14)
 
         
-        ax = axlist[-1]
-        for i in range(1):
-            layer = f'features3.0-module.visual.transformer.resblocks.30.csv'
-            filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}'
-            if not os.path.exists(filename):
-                continue
-            df = pd.read_csv(filename, names=list(range(17+5+4+2)))
-            df = proc(df, lim)
+        # ax = axlist[-1]
+        # for i in range(1):
+        #     layer = f'features3.0-module.visual.transformer.resblocks.30.csv'
+        #     filename = f'/fsx/home-mitchellw/experimetns/opt3/{file}/data/{i}/{layer}'
+        #     if not os.path.exists(filename):
+        #         continue
+        #     df = pd.read_csv(filename, names=list(range(17+5+4+2)))
+        #     df = proc(df, lim)
             
-            if not layer.startswith('features3.2'):
-                ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=0.5)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
-            else:
-                #ax.plot(df.iloc[:, 0], 1-df.iloc[:, 2], color=color, alpha=0.5)
-                ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.5)
-                kernel = np.ones(kernel_size) / kernel_size
-                data_convolved = np.convolve(df.iloc[:, 3], kernel, mode='same')
-                data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
-                #ax.set_yscale('log')
+        #     if not layer.startswith('features3.2'):
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 2], color=color, alpha=0.5)
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=alpha)
+        #     else:
+        #         #ax.plot(df.iloc[:, 0], 1-df.iloc[:, 2], color=color, alpha=0.5)
+        #         ax.plot(df.iloc[:, 0], df.iloc[:, 3], color=color, alpha=0.5)
+        #         kernel = np.ones(kernel_size) / kernel_size
+        #         data_convolved = np.convolve(df.iloc[:, 3], kernel, mode='same')
+        #         data_convolved = data_convolved[kernel_size:-kernel_size]
+        #         ax.plot(df.iloc[:, 0][kernel_size:-kernel_size], np.minimum(min_loss, data_convolved), color=color, label=name, linewidth=2)
+        #         #ax.set_yscale('log')
 
             #ax.set_ylabel('feature max to inproj, layer10', fontsize=16)
 
