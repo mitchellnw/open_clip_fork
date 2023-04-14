@@ -39,7 +39,7 @@ MODEL=ViT-H-14
 BS=16384
 OPT=clipadamw
 
-EXP_NAME="$OPT-sglint8bnb-$MODEL-$BS-$LR-$BETA2-v0"
+EXP_NAME="$OPT-sglint8bnb-$MODEL-$BS-$LR-$BETA2-vBENCH"
 
 /opt/slurm/bin/srun --comment laion --cpu_bind=v --accel-bind=gn python -m training.main \
     --save-frequency 1 \

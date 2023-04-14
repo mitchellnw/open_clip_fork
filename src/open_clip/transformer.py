@@ -156,45 +156,49 @@ class Attention(nn.Module):
 
         q, k, v = self.in_proj_linear(x).chunk(3, dim=-1)
 
+        #print(q.shape, k.shape, v.shape)
+
         if self.extra_ln:
             q = self.ln_q(q)
             k = self.ln_k(k)
-            
-        q = q.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
-        k = k.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
-        v = v.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
-
-        if self.logit_scale is not None:
-            attn = torch.bmm(F.normalize(q, dim=-1), F.normalize(k, dim=-1).transpose(-1, -2))
-            logit_scale = torch.clamp(self.logit_scale, max=self.logit_scale_max).exp()
-            attn = attn.view(N, self.num_heads, L, L) * logit_scale
-            attn = attn.view(-1, L, L)
-        else:
-            q = q * self.scale
-            attn = torch.bmm(q, k.transpose(-1, -2))
-
-        if attn_mask is not None:
-            if attn_mask.dtype == torch.bool:
-                new_attn_mask = torch.zeros_like(attn_mask, dtype=q.dtype)
-                new_attn_mask.masked_fill_(attn_mask, float("-inf"))
-                attn_mask = new_attn_mask
-            attn += attn_mask
-
-        if self.advanced_logging:
-            log_features(attn[0], self.training, self.iter, self.logger_file1)
         
-        attn = attn.softmax(dim=-1)
-        # log attn max.
-        if self.advanced_logging:
-            log_features(attn[0], self.training, self.iter, self.logger_file2)
+        # NEED THIS IF PERMUTING!
+        # q = q.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
+        # k = k.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
+        # v = v.contiguous().view(L, N * self.num_heads, -1).transpose(0, 1)
 
-        attn = self.attn_drop(attn)
+        # if self.logit_scale is not None:
+        #     attn = torch.bmm(F.normalize(q, dim=-1), F.normalize(k, dim=-1).transpose(-1, -2))
+        #     logit_scale = torch.clamp(self.logit_scale, max=self.logit_scale_max).exp()
+        #     attn = attn.view(N, self.num_heads, L, L) * logit_scale
+        #     attn = attn.view(-1, L, L)
+        # else:
+        #     q = q * self.scale
+        #     attn = torch.bmm(q, k.transpose(-1, -2))
 
-        x = torch.bmm(attn, v)
-        if self.head_scale is not None:
-            x = x.view(N, self.num_heads, L, C) * self.head_scale
-            x = x.view(-1, L, C)
-        x = x.transpose(0, 1).reshape(L, N, C)
+        # if attn_mask is not None:
+        #     if attn_mask.dtype == torch.bool:
+        #         new_attn_mask = torch.zeros_like(attn_mask, dtype=q.dtype)
+        #         new_attn_mask.masked_fill_(attn_mask, float("-inf"))
+        #         attn_mask = new_attn_mask
+        #     attn += attn_mask
+
+        # if self.advanced_logging:
+        #     log_features(attn[0], self.training, self.iter, self.logger_file1)
+        
+        # attn = attn.softmax(dim=-1)
+        # # log attn max.
+        # if self.advanced_logging:
+        #     log_features(attn[0], self.training, self.iter, self.logger_file2)
+
+        # attn = self.attn_drop(attn)
+
+        # x = torch.bmm(attn, v)
+        # if self.head_scale is not None:
+        #     x = x.view(N, self.num_heads, L, C) * self.head_scale
+        #     x = x.view(-1, L, C)
+        # x = x.transpose(0, 1).reshape(L, N, C)
+        x = F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
 
         if self.advanced_logging:
             log_features(x[:, 0, :], self.training, self.iter, self.logger_file3)
@@ -268,7 +272,7 @@ class ResidualAttentionBlock(nn.Module):
         self.ln_1 = norm_layer(d_model)
         self.custom_attention = custom_attention
         if custom_attention == 'vanilla' or custom_attention == 'extra_ln' or custom_attention == 'rms_norm' or custom_attention == 'swiglu' or custom_attention == 'rms_norm2':
-            old_attn = nn.MultiheadAttention(d_model, n_head)
+            old_attn = nn.MultiheadAttention(d_model, n_head, batch_first=True)
             self.attn = Attention(d_model, n_head, extra_ln = custom_attention == 'extra_ln')
 
             self.attn.in_proj_linear.weight.data.copy_(old_attn.in_proj_weight.data)
@@ -279,7 +283,7 @@ class ResidualAttentionBlock(nn.Module):
             del old_attn
             
         else:
-            self.attn = nn.MultiheadAttention(d_model, n_head)
+            self.attn = nn.MultiheadAttention(d_model, n_head, batch_first=True)
 
         if custom_attention == 'rms_norm2':
             self.ls_1 = RMSNorm(d_model)
@@ -577,9 +581,9 @@ class VisionTransformer(nn.Module):
         x = self.patch_dropout(x)
         x = self.ln_pre(x)
 
-        x = x.permute(1, 0, 2)  # NLD -> LND
+        #x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
-        x = x.permute(1, 0, 2)  # LND -> NLD
+        #x = x.permute(1, 0, 2)  # LND -> NLD
 
         if self.global_average_pool:
             x = x.mean(dim=1)
