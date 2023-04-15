@@ -65,6 +65,7 @@ modules = [
 'module.logit_scale',
 #'module.visual.patchnorm_pre_ln.weight',
 ]
+modules = []
 cmap=plt.get_cmap('cool')
 def get_metrics(filename):
     if not os.path.exists(filename):
@@ -100,7 +101,7 @@ if __name__ == '__main__':
 
         # H
         # H
-        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
+        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98), wd=0.2','C0', ll), # 0.5757
         (f'lion-ViT-H-14-16384-2e-4-0.98-wd2beta195-v0', 'H/14 CLIP lion lr 2e-4, betas=(0.95, 0.98), wd=2','C1', ll),
 
         #(f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
@@ -112,7 +113,7 @@ if __name__ == '__main__':
 
         #(f'clipadamw-ViT-H-14-16384-1e-3-0.99-it30-v0', 'clipadamw','C1', ll), # 0.5757
         #(f'customadamw-ViT-H-14-16384-1e-3-0.99-it30-v0', 'customadamw','C2', ll), # 0.5757
-        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-it30-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98), init temp 30','C2', ll), # 0.5757
+        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-it30-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98), wd=0.2, init temp 30','C2', ll), # 0.5757
         (f'lion-ViT-H-14-16384-2e-4-0.98-wd2beta195it30-v0', 'H/14 CLIP lion lr 2e-4, betas=(0.95, 0.98), wd=2, init temp 30','C3', ll),
 
 
