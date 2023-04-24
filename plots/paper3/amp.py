@@ -170,7 +170,7 @@ if __name__ == '__main__':
             ax.set_ylabel('Loss', fontsize=11)
         elif model == 'amp':
             ax.set_yscale('log', base=2)
-            ax.set_ylabel('Grad scaler', fontsize=11)
+            ax.set_ylabel('Loss scaler', fontsize=11)
         elif d == 6:
             ax.set_ylabel('Grad absmax', fontsize=11)
             #ax.set_title(model.replace('params-module.', ''), fontsize=9, loc='left', y=1.1, pad=-20, x = 0.01, zorder=2)

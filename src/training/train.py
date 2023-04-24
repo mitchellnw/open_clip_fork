@@ -215,7 +215,7 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
 
         if args.ema:
             # model_ema_0.update(model)
-            model_ema_1.update(model)
+            model_ema_1.update()
             #model_ema_2.update(model)
             # model_ema_3.update(model)
         # reset gradient accum, if enabled

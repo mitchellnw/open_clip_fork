@@ -120,7 +120,7 @@ if __name__ == '__main__':
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(np.sqrt(tdf.iloc[:, 4]), kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(tdf.iloc[:, 0][kernel_size:-kernel_size], data_convolved, color=f'C{k}', linewidth=2, label=f'Block {model[-2:]} max', alpha=0.4)
+                ax.plot(tdf.iloc[:, 0][kernel_size:-kernel_size], data_convolved, color=f'C{k}', linewidth=2, label=f'Block {model[-2:]} mean', alpha=0.4)
 
 
             ax.set_ylim([1e-9, 2e-2])
@@ -184,7 +184,7 @@ if __name__ == '__main__':
                 kernel = np.ones(kernel_size) / kernel_size
                 data_convolved = np.convolve(tdf.iloc[:, 2], kernel, mode='same')
                 data_convolved = data_convolved[kernel_size:-kernel_size]
-                ax.plot(tdf.iloc[:, 0][kernel_size:-kernel_size], data_convolved, color=f'C{k}', linewidth=2, label=f'Block {model[-2:]} max', alpha=0.4)
+                ax.plot(tdf.iloc[:, 0][kernel_size:-kernel_size], data_convolved, color=f'C{k}', linewidth=2, label=f'Block {model[-2:]} mean', alpha=0.4)
 
 
 

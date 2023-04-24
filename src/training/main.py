@@ -59,6 +59,8 @@ from training.optimizers.rlion import RLion
 
 LATEST_CHECKPOINT_NAME = "epoch_latest.pt"
 
+def unwrap_model(model):
+    return model.module if hasattr(model, 'module') else model
 
 def random_seed(seed=42, rank=0):
     torch.manual_seed(seed + rank)
@@ -322,11 +324,6 @@ def main(args):
         replace_linear(model, SwitchBackNewLinear)#
 
     model_ema_0, model_ema_1, model_ema_2, model_ema_3 = None, None, None, None
-    if args.ema:
-        # model_ema_0 = ModelEmaV2(model, 0.99, device=device)
-        model_ema_1 = ModelEmaV2(model, 0.999, device=device)
-        # model_ema_2 = ModelEmaV2(model, 0.9999, device=device)
-        # model_ema_3 = ModelEmaV2(model, 0.99999, device=device)
     random_seed(args.seed, args.rank)
 
     if args.trace:
@@ -374,6 +371,11 @@ def main(args):
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
         else:
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
+
+
+    if args.ema:
+        from training.averagers import Averager
+        model_ema_1 = Averager(model, 'poly_8', 1, 1)
 
     # create optimizer and scaler
     optimizer = None
@@ -625,14 +627,8 @@ def main(args):
 
             if args.ema:
                 print('resuming EMAs')
-                # ema_0_sd = torch.load(args.resume.replace('epoch', f'ema_0'), map_location='cpu')['state_dict']
-                # model_ema_0.module.load_state_dict(ema_0_sd)
-                ema_1_sd = torch.load(args.resume.replace('epoch', f'ema_1'), map_location='cpu')['state_dict']
-                model_ema_1.module.load_state_dict(ema_1_sd)
-                # ema_2_sd = torch.load(args.resume.replace('epoch', f'ema_2'), map_location='cpu')['state_dict']
-                # model_ema_2.module.load_state_dict(ema_2_sd)
-                # ema_3_sd = torch.load(args.resume.replace('epoch', f'ema_3'), map_location='cpu')['state_dict']
-                # model_ema_3.module.load_state_dict(ema_3_sd)
+                ema_1_sd = torch.load(args.resume.replace('epoch', f'ema_1'), map_location='cpu')
+                model_ema_1.load_state_dict_avg(ema_1_sd)
         else:
             # loading a bare (model only) checkpoint for fine-tune or evaluation
             model.load_state_dict(checkpoint)
@@ -703,7 +699,17 @@ def main(args):
         
 
     if 'train' not in data:
-        evaluate(model, data, start_epoch, args, writer)
+        if args.ema:
+            model_ema_1.av_model.apply(lambda m : setattr(m, 'advanced_logging', args.advanced_logging))
+            if args.advanced_logging:
+                for n, m in model_ema_1.av_model.named_modules():
+                    setattr(m, 'module_name', n)
+                model_ema_1.av_model.apply(lambda m: setattr(m, 'data_path', args.data_path))
+                model_ema_1.av_model.apply(lambda m: setattr(m, 'logger_file', None))
+                model_ema_1.av_model.apply(lambda m: setattr(m, 'iter', None))
+            evaluate(model_ema_1.av_model, data, start_epoch, args, writer)
+        else:
+            evaluate(model, data, start_epoch, args, writer)
         return
 
     if args.rms_load is not None:
@@ -792,27 +798,28 @@ def main(args):
             if args.ema:
                 count = completed_epoch * data['train'].dataloader.num_batches
                 print('count is', count)
-                # torch.save({k : v.clone().detach() / (1 - (0.99 ** count)) for k, v in model_ema_0.module.state_dict().items()},
-                #            os.path.join(args.checkpoint_path, f"dema_0_{completed_epoch}.pt"))
-                # torch.save({k : v.clone().detach() / (1 - (0.999 ** count)) for k, v in model_ema_1.module.state_dict().items()},
-                #            os.path.join(args.checkpoint_path, f"dema_1_{completed_epoch}.pt"))
-                # torch.save({k : v.clone().detach() / (1 - (0.9999 ** count)) for k, v in model_ema_2.module.state_dict().items()},
-                #            os.path.join(args.checkpoint_path, f"dema_2_{completed_epoch}.pt"))
-                # torch.save({k : v.clone().detach() / (1 - (0.99999 ** count)) for k, v in model_ema_3.module.state_dict().items()},
-                #            os.path.join(args.checkpoint_path, f"dema_3_{completed_epoch}.pt"))
+                # torch.save({f'module.{k}': v for k, v in model_ema_1.get_state_dict_avg().items()},
+                #            os.path.join(args.checkpoint_path, f"ema_1_{completed_epoch}.pt"))
+                torch.save(
+                    {'update_counter': model_ema_1.update_counter, 
+                     'step_counter': model_ema_1.step_counter, 
+                     'freq': model_ema_1.freq, 
+                     #'av_model': model_ema_1.av_model,
+                     'av_model_sd': model_ema_1.av_model.state_dict(), # unwrap model to get the state dict
+                     'T': model_ema_1.T,
+                     'method': model_ema_1.method,
+                     'eta': model_ema_1.eta if hasattr(model_ema_1, 'eta') else None,
+                     'gamma': model_ema_1.gamma if hasattr(model_ema_1, 'gamma') else None,
+                     'suffix_steps': model_ema_1.suffix_steps if hasattr(model_ema_1, 'suffix_steps') else None,
+                     'power': model_ema_1.power if hasattr(model_ema_1, 'power') else None,
+                     'start': model_ema_1.start if hasattr(model_ema_1, 'start') else None,
+                    },
+                    os.path.join(args.checkpoint_path, f"ema_1_{completed_epoch}.pt")
+                )
 
-                # torch.save({'state_dict' : model_ema_0.module.state_dict(), 'count' : count, 'decay' : 0.99},
-                #            os.path.join(args.checkpoint_path, f"ema_0_{completed_epoch}.pt"))
-                torch.save({'state_dict' : model_ema_1.module.state_dict(), 'count' : count, 'decay' : 0.999},
-                           os.path.join(args.checkpoint_path, f"ema_1_{completed_epoch}.pt"))
-                # torch.save({'state_dict' : model_ema_2.module.state_dict(), 'count' : count, 'decay' : 0.9999},
-                #            os.path.join(args.checkpoint_path, f"ema_2_{completed_epoch}.pt"))
-                # torch.save({'state_dict' : model_ema_3.module.state_dict(), 'count' : count, 'decay' : 0.99999},
-                #            os.path.join(args.checkpoint_path, f"ema_3_{completed_epoch}.pt"))
-                
                 if args.delete_previous_checkpoint:
                     previous_checkpoints = [
-                        os.path.join(args.checkpoint_path, f"ema_{ii}_{completed_epoch - 1}.pt") for ii in range(4)
+                        os.path.join(args.checkpoint_path, f"ema_1_{completed_epoch - 1}.pt")
                     ]
                     for previous_checkpoint in previous_checkpoints:
                         if os.path.exists(previous_checkpoint):

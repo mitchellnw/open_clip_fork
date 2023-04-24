@@ -105,11 +105,11 @@ if __name__ == '__main__':
     
     file_list = [        
         # B
-        (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'bfloat16 baseline','C0', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'fp8 tensor quantize','C5', 9800),
-        (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'fp8 tensor + grad clip','C9', 6900),
-        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'fp8 tensor + KQ Layernorm','C8', ll),
-        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0',  'fp8 tensor + zero-init layerscale','gray', ll),
+        (f'clipadamw-ViT-L-14-16384-2e-3-0.98-v0', 'i) bfloat16 baseline','C0', ll),
+        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-v0', 'ii) fp8 tensor quantize','C5', 9800),
+        (f'customadamw-ampfp8globalsim-ViT-L-14-16384-2e-3-0.98-gc1-v0', 'iii) fp8 tensor + grad clip','C9', 6900),
+        (f'clipadamw-camp65kfp8globalsim-ViT-L-14-16384-2e-3-0.98-extraln-v0', 'iv) fp8 tensor + KQ Layernorm','C8', ll),
+        (f'clipadamw-camp65kfp8globalsim-ViTls0-L-14-16384-2e-3-0.98-v0',  'v) fp8 tensor + zero-init layerscale','gray', ll),
 
     ]
 
@@ -252,7 +252,7 @@ if __name__ == '__main__':
 
     for j, ax in enumerate(axlist):
 
-        leg = ax.legend(bbox_to_anchor=(1.05, -0.25), ncol=2)
+        leg = ax.legend(bbox_to_anchor=(1.05, -0.25), ncol=2, fontsize=9.5)
         ax.set_title("ViT-Large model", fontsize=12)
         leg.get_texts()[-1].set_fontweight('bold')
         ax.tick_params(axis='x', labelsize=11)
@@ -300,9 +300,10 @@ if __name__ == '__main__':
         continue
 
     axins2.set_xticks([])
-    axins2.set_yticks([])
+    #axins2.set_yticks([])
 
-    axins2.tick_params(labelleft=False, labelbottom=False)
+    #axins2.tick_params(labelleft=False, labelbottom=False)
+    axins2.tick_params(labelbottom=False)
     mark_inset(ax, axins2, loc1=3, loc2=4, fc="none", ec="0.2")
 
     plt.savefig('/admin/home-mitchellw/forks/open_clip_fork/plots/paper/fp8lbreakdown.pdf', bbox_inches='tight')
