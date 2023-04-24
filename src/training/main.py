@@ -41,6 +41,7 @@ from training.optimizers.customadamw import CustomAdamW
 from training.optimizers.clipadamw import ClipAdamW
 from training.optimizers.wclipadamw import WClipAdamW
 from training.optimizers.vclipadamw import VClipAdamW
+from training.optimizers.g1clipadamw import G1AdamW
 
 from training.optimizers.stableadamw import StableAdamW
 from training.optimizers.stablewadamw import StableWAdamW
@@ -440,6 +441,16 @@ def main(args):
             )
         elif args.opt.lower() == 'clipadamw':
             optimizer = ClipAdamW(
+                [
+                    {"params": gain_or_bias_params, "weight_decay": 0.},
+                    {"params": rest_params, "weight_decay": args.wd},
+                ],
+                lr=args.lr,
+                betas=(args.beta1, args.beta2),
+                eps=args.eps,
+            )
+        elif args.opt.lower() == 'g1adamw':
+            optimizer = G1AdamW(
                 [
                     {"params": gain_or_bias_params, "weight_decay": 0.},
                     {"params": rest_params, "weight_decay": args.wd},

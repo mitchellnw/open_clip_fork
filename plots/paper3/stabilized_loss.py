@@ -70,6 +70,9 @@ if __name__ == '__main__':
             ('opt/customadamw-ViT-{}-16384-2e-3-0.99-v0', 'default', cmap(1.), -1),
             ('opt3/customadamw-ViT-{}-16384-2e-3-0.99-gc-v0', '+ grad clipping', 'C9', -1),
             ('opt3/clipadamw-ViT-{}-16384-2e-3-0.99-v0', '+ update clipping','C1', -1),
+            ('opt3/g1adamw-ViT-{}-16384-2e-3-0.99-v0', '+ new thing','k', -1),
+
+            
             #('opt3/clipadamw-ViTDP-{}-16384-2e-3-0.99-v0', '+ update clipping + input norm','C2', -1),
             #('opt3/customadamw-ViTls0-{}-16384-2e-3-0.99-v0', 'gc', 'C4', -1),
 

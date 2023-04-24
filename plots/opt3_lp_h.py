@@ -94,13 +94,13 @@ if __name__ == '__main__':
     alpha = 1
     file_list = []
     bsz = 4096*4
-    ll = 5000
+    ll = -1
     file_list = [        
         # B
 
         # H
         # H
-        (f'clipadamw-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
+        (f'clipadamw-ViT-H-14-16384-2e-3-0.99-v0', 'H/14 CLIP adamw lr 2e-3, betas=(0.9, 0.98)','C0', ll), # 0.5757
         #(f'clipadamw-int8-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real','C1', ll),
         # (f'clipadamw-sall8v2-ViT-H-14-16384-2e-3-0.98-v0', 'sall','C2', ll), # 0.5757
         # # (f'clipadamw-int8mix-ViT-H-14-16384-2e-3-0.98-v0', 'H/14 int8 real mix','C2', ll),
@@ -108,8 +108,8 @@ if __name__ == '__main__':
         # (f'clipadamw-sglint8-ViT-H-14-16384-2e-3-0.98-v0', 'sglint','C3', ll), # 0.5757
         # (f'stableadamw-py2v2-ViT-H-14-16384-2e-3-0.98-v1', 'sta','C4', ll), # 0.5757
 
-        (f'clipadamw-sglint8bnb-ViT-H-14-16384-2e-3-0.98-v0', 'vclip','C1', ll), # 0.5757
-        (f'clipadamw-sglint8bnb-ViT-H-14-16384-2e-3-0.98-vBENCH', 'BENCH','k', ll), # 0.5757
+        (f'g1adamw-ViT-H-14-16384-2e-3-0.99-v0', 'vclip','C1', ll), # 0.5757
+        #(f'clipadamw-sglint8bnb-ViT-H-14-16384-2e-3-0.98-vBENCH', 'BENCH','k', ll), # 0.5757
 
         #(f'wclipadamw-ViT-H-14-16384-2e-3-0.45-v0', 'vclip','C2', ll), # 0.5757
 
