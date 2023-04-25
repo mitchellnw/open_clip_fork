@@ -43,8 +43,18 @@ rm -rf logs && torchrun --nproc_per_node 4 -m training.main   \
 ### BATCH 128
 
 # H
-# 363.4
-# 325.5
+# sb - 369.5
+# llm.int8 - 170
+
+# L 
+# sb - 687
+# llm.int8 - 306
+
+
+# B 
+# sb - 1887
+# llm.int8 - 862
+
 
 ### BATCH 256
 
@@ -58,13 +68,16 @@ rm -rf logs && torchrun --nproc_per_node 4 -m training.main   \
 # 735.1 samples/s sglint8
 # 599.9 autogradlinear
 # 683.1 samples/s nnlinear
+# llm.int8 - 330
 
 # B-16
 # 2090 
 # 1830
 # 2085 
+# llm.int8 - 951
 
 ### BATCH 128
 
 
-# aws s3 ls s3://deep-floyd-s3/datasets/laion_cleaned-part6/
+# SB
+# 21 mem originally 
