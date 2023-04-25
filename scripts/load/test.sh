@@ -42,3 +42,13 @@ torchrun --nproc_per_node 2 -m training.main \
       --local-loss  --gather-with-grad     --grad-checkpointing       --precision amp_bfloat16  \
       --save-most-recent --pretrained openai \
       --imagenet-val /fsx/rom1504/imagenetval/imagenet_validation
+
+
+
+
+# autolinear
+# 
+# SB
+# 25
+# SBMEM
+# 23

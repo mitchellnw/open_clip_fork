@@ -317,7 +317,7 @@ def main(args):
         print('using switchback vector linear v5')
         from .fp8utils import replace_linear
         #from tkernels.modules import SwitchBackGlobalLinear
-        replace_linear(model, bnb.nn.triton_based_modules.SwitchBackLinearAll8Bit)#
+        replace_linear(model, bnb.nn.triton_based_modules.StandardLinear)#
     if args.snew8:
         print('using switchback new linear')
         from .fp8utils import replace_linear
