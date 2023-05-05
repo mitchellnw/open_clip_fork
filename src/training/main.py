@@ -35,6 +35,7 @@ from training.params import parse_args
 from training.scheduler import cosine_lr, const_lr, const_lr_cooldown
 from training.train import train_one_epoch, evaluate
 from training.file_utils import pt_load, check_exists, start_sync_process, remote_sync
+from training.average_utils import ModelAverager
 
 
 LATEST_CHECKPOINT_NAME = "epoch_latest.pt"
@@ -61,6 +62,7 @@ def get_latest_checkpoint(path: str, remote : bool):
         checkpoints = [os.path.join(path, x.split(' ')[-1]) for x in result.stdout.decode().split('\n')[:-1]]
     else:
         checkpoints = glob.glob(path + '**/*.pt', recursive=True)
+        checkpoints = [c for c in checkpoints if 'epoch' in c]
     if checkpoints:
         checkpoints = sorted(checkpoints, key=natural_key)
         return checkpoints[-1]
@@ -296,6 +298,10 @@ def main(args):
     # create optimizer and scaler
     optimizer = None
     scaler = None
+    averagers = None
+
+    if args.averagers is not None:
+        averagers = ModelAverager(model, args.averagers, 1)
 
     if args.train_data or args.dataset_type == "synthetic":
         assert not args.trace, 'Cannot train with traced model'
@@ -339,6 +345,13 @@ def main(args):
             if scaler is not None and 'scaler' in checkpoint:
                 scaler.load_state_dict(checkpoint['scaler'])
             logging.info(f"=> resuming checkpoint '{args.resume}' (epoch {start_epoch})")
+
+            if args.averagers is not None:
+                logging.info("=> resuming averagers")
+                for k in averagers.avgs_dict:
+                    avg_sd = torch.load(args.resume.replace('epoch', k), map_location='cpu')
+                    avg_sd['av_model_sd'] = {f'module.{k}': v for k, v in avg_sd['av_model_sd'].items()}
+                    averagers.avgs_dict[k].load_state_dict_avg(avg_sd)
         else:
             # loading a bare (model only) checkpoint for fine-tune or evaluation
             model.load_state_dict(checkpoint)
@@ -411,7 +424,7 @@ def main(args):
         if is_master(args):
             logging.info(f'Start epoch {epoch}')
 
-        train_one_epoch(model, data, loss, epoch, optimizer, scaler, scheduler, dist_model, args, tb_writer=writer)
+        train_one_epoch(model, data, loss, epoch, optimizer, scaler, scheduler, dist_model, averagers, args, tb_writer=writer)
         completed_epoch = epoch + 1
 
         if any(v in data for v in ('val', 'imagenet-val', 'imagenet-v2')):
@@ -435,6 +448,15 @@ def main(args):
                     checkpoint_dict,
                     os.path.join(args.checkpoint_path, f"epoch_{completed_epoch}.pt"),
                 )
+
+            if averagers is not None:
+                logging.info('=> saving averagers')
+                for k in averagers.avgs_dict:
+                    torch.save(
+                        averagers.avgs_dict[k].get_state_dict_avg(),
+                        os.path.join(args.checkpoint_path, f"{k}_{completed_epoch}.pt"),
+                    )
+
             if args.delete_previous_checkpoint:
                 previous_checkpoint = os.path.join(args.checkpoint_path, f"epoch_{completed_epoch - 1}.pt")
                 if os.path.exists(previous_checkpoint):
@@ -484,3 +506,52 @@ def copy_codebase(args):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+
+"""
+To run on JSC.
+
+torchrun --nproc-per-node 2 -m training.main \
+    --save-frequency 1 \
+    --train-data="/p/fastdata/mmlaion/laion2B-en/{00000..23295}.tar" \
+    --train-num-samples=10000 \
+    --warmup 10000 \
+    --batch-size=250 \
+    --dataset-resampled \
+    --epochs=32 \
+    --workers=2 \
+    --model ViT-B-32 \
+    --name testavg \
+    --seed 0 \
+    --lr 1e-3 \
+    --ddp-static-graph \
+    --local-loss \
+    --gather-with-grad \
+    --grad-checkpointing \
+    --precision amp_bfloat16 \
+    --log-every-n-steps 1 \
+    --resume latest \
+    --averagers poly_8_1,poly_16_1
+
+torchrun --nproc-per-node 2 -m training.main \
+    --save-frequency 1 \
+    --train-data="/p/scratch/ccstdl/katta1/LAION-400M/laion400m-dat-release/{00000..41455}.tar" \
+    --train-num-samples=407332084 \
+    --warmup 2000 \
+    --batch-size=672 \
+    --epochs=32 \
+    --workers=2 \
+    --report-to=tensorboard,wandb \
+    --model ViT-B-32 \
+    --name ${EXP_NAME} \
+    --logs logs/${LOGS_NAME} \
+    --force-custom-text \
+    --seed 0 \
+    --lr 1e-3 \
+    --ddp-static-graph \
+    --local-loss \
+    --gather-with-grad \
+    --grad-checkpointing \
+    --precision amp_bfloat16 \
+    --save-most-recent \
+"""

@@ -59,7 +59,7 @@ def backward(total_loss, scaler):
         total_loss.backward()
 
 
-def train_one_epoch(model, data, loss, epoch, optimizer, scaler, scheduler, dist_model, args, tb_writer=None):
+def train_one_epoch(model, data, loss, epoch, optimizer, scaler, scheduler, dist_model, averagers, args, tb_writer=None):
     device = torch.device(args.device)
     autocast = get_autocast(args.precision)
     cast_dtype = get_cast_dtype(args.precision)
@@ -175,6 +175,9 @@ def train_one_epoch(model, data, loss, epoch, optimizer, scaler, scheduler, dist
         # Note: we clamp to 4.6052 = ln(100), as in the original paper.
         with torch.no_grad():
             unwrap_model(model).logit_scale.clamp_(0, math.log(100))
+
+        if averagers is not None:
+            averagers.step()
 
         batch_time_m.update(time.time() - end)
         end = time.time()

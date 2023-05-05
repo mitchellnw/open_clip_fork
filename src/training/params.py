@@ -391,6 +391,12 @@ def parse_args(args):
         help="Weight assigned to contrastive loss when training CoCa."
     )
     parser.add_argument(
+        "--averagers",
+        type=str,
+        default=None,
+        help="Optinoally average checkpoints along the trajectory.",
+    )
+    parser.add_argument(
         "--remote-sync",
         type=str,
         default=None,
