@@ -57,8 +57,9 @@ for i in `ls -t /p/project/ccstdl/wortsman1/open_clip_fork/logs/bigdrop0.110m/ch
 do
     model='ViT-B-32'
 
-    #echo $model
-    save_path="$(dirname $i)/eval_$(basename $i)"
+    #TODO: if not using poly16, change this!
+    newi="${i//epoch/poly_16_1}"
+    save_path="$(dirname $newi)/eval_$(basename $newi)"
 
     if [ -f "$save_path" ]; then
         last=$(tail -c2 $save_path | head -c1)
@@ -73,11 +74,12 @@ do
     elif [[ $save_path == *"latest"* ]]; then
         echo "pass on latest"
     else
-        echo "evaluating $i"
+        # TODO if not using poly16, change this!
+        echo "evaluating $newi"
         torchrun --nproc_per_node 2 -m training.main \
         --batch-size 200   --workers 2 --model $model  --train-num-samples 413000000  \
         --local-loss  --gather-with-grad     --grad-checkpointing   --name $RANDOM    --precision amp_bfloat16  \
-        --save-most-recent --pretrained $i \
+        --save-most-recent --pretrained $i --averagers poly_16_1 \
         --imagenet-val /p/scratch/ccstdl/gordon2/imagenet_val &> $save_path
     fi
 done
