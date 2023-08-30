@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 #SBATCH --account=laionize
-#SBATCH --nodes=32
+#SBATCH --nodes=2
 #SBATCH --exclude=jwb[0026,0098,0193,0631,0731,0729,0801,0807,0833,0964,1021]
 #SBATCH --gres=gpu:4
 #SBATCH --ntasks-per-node=4
@@ -49,25 +49,25 @@ OPEN_CLIP_HOME="/p/project/ccstdl/wortsman1/open_clip_fork"
 export PYTHONPATH="$PYTHONPATH:${OPEN_CLIP_HOME}/src"
 # export PYTHONPATH="$PYTHONPATH:${HOME}/home/open_clip/src"
 
-EXP_NAME="cosine1b"
+EXP_NAME="cosine10m_epochs10"
 
 cd ${OPEN_CLIP_HOME}
 
 srun --cpu_bind=v --accel-bind=gn --threads-per-core=1 python -u -m training.main \
     --save-frequency 1 \
     --train-data="/p/fastdata/mmlaion/laion2B-en/{00000..23295}.tar" \
-    --train-num-samples=65000000 \
+    --train-num-samples=4062500 \
     --dataset-resampled \
     --warmup 2000 \
     --batch-size=60 \
-    --epochs=20 \
+    --epochs=10 \
     --workers=2 \
     --report-to=tensorboard \
     --model ViT-B-32 \
     --name ${EXP_NAME} \
     --logs logs/ \
     --seed 0 \
-    --lr 1e-3 \
+    --lr 5e-4 \
     --ddp-static-graph \
     --local-loss \
     --gather-with-grad \
@@ -75,4 +75,4 @@ srun --cpu_bind=v --accel-bind=gn --threads-per-core=1 python -u -m training.mai
     --precision amp_bfloat16 \
     --resume "latest" \
     --grad-clip-norm 1 \
-    --averagers poly_8_1,poly_16_1
+    --averagers poly_8_1,poly_16_1,poly_32_1

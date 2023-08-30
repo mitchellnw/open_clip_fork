@@ -32,7 +32,7 @@ from training.data import get_data
 from training.distributed import is_master, init_distributed_device, broadcast_object
 from training.logger import setup_logging
 from training.params import parse_args
-from training.scheduler import cosine_lr, const_lr, const_lr_cooldown
+from training.scheduler import cosine_lr, const_lr, const_lr_cooldown, bigdrop_lr
 from training.train import train_one_epoch, evaluate
 from training.file_utils import pt_load, check_exists, start_sync_process, remote_sync
 from training.average_utils import ModelAverager
@@ -369,6 +369,9 @@ def main(args):
             scheduler = cosine_lr(optimizer, args.lr, args.warmup, total_steps)
         elif args.lr_scheduler == "const":
             scheduler = const_lr(optimizer, args.lr, args.warmup, total_steps)
+        elif args.lr_scheduler == "bigdrop":
+            print('using bigdrop-lr')
+            scheduler = bigdrop_lr(optimizer, args.lr, args.warmup, total_steps)
         elif args.lr_scheduler == "const-cooldown":
             assert args.epochs_cooldown is not None,\
                 "Please specify the number of cooldown epochs for this lr schedule."
@@ -414,6 +417,11 @@ def main(args):
         if args.use_bnb_linear is not None:
             from open_clip.utils import convert_int8_model_to_inference_mode
             convert_int8_model_to_inference_mode(model)
+
+        if averagers is not None:
+            k = next(iter(averagers.avgs_dict.keys()))
+            logging.info(f'=> evaluation avg {k}')
+            model = averagers.avgs_dict[k].av_model
         # Evaluate.
         evaluate(model, data, start_epoch, args, writer)
         return

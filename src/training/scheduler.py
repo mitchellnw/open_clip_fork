@@ -39,6 +39,19 @@ def const_lr_cooldown(optimizer, base_lr, warmup_length, steps, cooldown_steps, 
         return lr
     return _lr_adjuster
 
+def bigdrop_lr(optimizer, base_lr, warmup_length, steps):
+    def _lr_adjuster(step):
+        if step < warmup_length:
+            lr = _warmup_lr(base_lr, warmup_length, step)
+        else:
+            if step < 6000:
+                lr = base_lr
+            else:
+                lr = base_lr * 0.1
+        assign_learning_rate(optimizer, lr)
+        return lr
+    return _lr_adjuster
+
 
 def cosine_lr(optimizer, base_lr, warmup_length, steps):
     def _lr_adjuster(step):
