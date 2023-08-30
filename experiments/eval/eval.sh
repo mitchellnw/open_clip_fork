@@ -52,8 +52,7 @@ export PYTHONPATH="$PYTHONPATH:${OPEN_CLIP_HOME}/src"
 cd /p/project/ccstdl/wortsman1/open_clip_fork/src
 
 export CUDA_VISIBLE_DEVICES=0,1
-#for i in `ls -t  /p/project/ccstdl/wortsman1/open_clip_fork/logs/*/checkpoints/epoch*.pt`
-for i in `ls -t /p/project/ccstdl/wortsman1/open_clip_fork/logs/bigdrop0.110m/checkpoints/epoch*.pt`
+for i in `ls -t  /p/project/ccstdl/wortsman1/open_clip_fork/logs/*/checkpoints/epoch*.pt`
 do
     model='ViT-B-32'
 
